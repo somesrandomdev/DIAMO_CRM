@@ -1,0 +1,366 @@
+# Plan Détaillé des Pages et Tableaux de Bord par Rôle
+
+Voici la spécification détaillée de ce que chaque type d'utilisateur doit voir dans son interface, organisé par rôle et par page :
+
+## 🎯 Rôle: Fontainier
+
+### Tableau de Bord
+```json
+{
+  "dashboard_fontainier": {
+    "objectif": "Vue simplifiée et focus sur les actions quotidiennes",
+    "sections": [
+      {
+        "type": "stats_personnelles",
+        "titre": "Mes performances aujourd'hui",
+        "contenu": [
+          "Nombre de ventes aujourd'hui (avec icône 📈)",
+          "Chiffre d'affaires du jour (💰)",
+          "Volume total vendu (💧 en litres)",
+          "Objectif du jour (si défini, avec barre de progression)"
+        ]
+      },
+      {
+        "type": "actions_rapides",
+        "titre": "Actions rapides",
+        "contenu": [
+          "Bouton 'Nouvelle vente' prominent (💵)",
+          "Bouton 'Voir mes clients' (👤)",
+          "Bouton 'Historique des ventes' (📋)"
+        ]
+      },
+      {
+        "type": "ventes_recentes",
+        "titre": "Mes dernières ventes",
+        "contenu": [
+          "Liste des 5 dernières ventes (client, produit, montant, heure)",
+          "Option pour voir tous les détails d'une vente",
+          "Lien pour générer un ticket pour une vente passée"
+        ]
+      }
+    ],
+    "elements_exclus": [
+      "Comparaisons avec d'autres fontainiers",
+      "Classements ou rankings",
+      "Statistiques globales du kiosque"
+    ]
+  }
+}
+```
+
+### Page Ventes
+```json
+{
+  "ventes_fontainier": {
+    "objectif": "Enregistrer une vente rapidement et simplement",
+    "workflow": [
+      {
+        "etape": "Sélection du client",
+        "elements": [
+          "Barre de recherche avec autocomplétion des clients existants",
+          "Bouton 'Nouveau client' si le client n'existe pas",
+          "Affichage des informations client une fois sélectionné"
+        ]
+      },
+      {
+        "etape": "Sélection de l'offre",
+        "elements": [
+          "Liste visuelle des offres disponibles avec images",
+          "Prix bien visible pour chaque offre",
+          "Sélection par click avec feedback visuel"
+        ]
+      },
+      {
+        "etape": "Validation",
+        "elements": [
+          "Récapitulatif de la commande (client, offre, prix total)",
+          "Bouton 'Confirmer la vente' très visible",
+          "Option 'Imprimer le ticket' après confirmation"
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Page Clients
+```json
+{
+  "clients_fontainier": {
+    "objectif": "Gérer les clients du fontainier",
+    "sections": [
+      {
+        "type": "liste_clients",
+        "elements": [
+          "Liste des clients avec photo/avatar si disponible",
+          "Informations essentielles: nom, téléphone, dernière visite",
+          "Barre de recherche et filtres simples",
+          "Statut 'Client fidèle' si applicable (badge)"
+        ]
+      },
+      {
+        "type": "fiche_client",
+        "elements": [
+          "Informations de contact complètes",
+          "Historique des achats avec dates et montants",
+          "Préférences et informations personnelles",
+          "Notes personnelles sur le client"
+        ]
+      }
+    ]
+  }
+```
+
+## 🎯 Rôle: Commercial
+
+### Tableau de Bord
+```json
+{
+  "dashboard_commercial": {
+    "objectif": "Analyser les performances et optimiser les ventes",
+    "sections": [
+      {
+        "type": "stats_avancees",
+        "titre": "Performances du kiosque",
+        "contenu": [
+          "CA total sur différentes périodes (jour, semaine, mois)",
+          "Volume vendu avec tendances",
+          "Nombre de clients actifs et nouveaux",
+          "Taux de fidélisation des clients"
+        ]
+      },
+      {
+        "type": "analytics_clients",
+        "titre": "Analyses clients",
+        "contenu": [
+          "Segmentation clients (VIP, Réguliers, Occasionnels)",
+          "Cartographie des clients par localité",
+          "Préférences des clients (contenants, fréquences)"
+        ]
+      },
+      {
+        "type": "recommandations",
+        "titre": "Recommandations commerciales",
+        "contenu": [
+          "Clients à recontacter (anciens clients inactifs)",
+          "Offres à promouvoir en priorité",
+          "Périodes de forte demande"
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Page Analytics Avancés
+```json
+{
+  "analytics_commercial": {
+    "objectif": "Analyses détaillées pour optimisation commerciale",
+    "sections": [
+      {
+        "type": "analyse_temporaire",
+        "elements": [
+          "Graphiques d'activité par heure/jour/semaine",
+          "Comparaison avec périodes précédentes",
+          "Prévisions de demande"
+        ]
+      },
+      {
+        "type": "segmentation",
+        "elements": [
+          "Filtres avancés par type de client, localité, etc.",
+          "Analyse de la valeur client (RFM)",
+          "Détection des patterns d'achat"
+        ]
+      },
+      {
+        "type": "performance_offres",
+        "elements": [
+          "Performance comparative des différentes offres",
+          "Panier moyen par type d'offre",
+          "Taux de rotation des offres"
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 🎯 Rôle: Administrateur
+
+### Tableau de Bord CEO
+```json
+{
+  "dashboard_administrateur": {
+    "objectif": "Vue d'ensemble de l'ensemble des kiosques",
+    "sections": [
+      {
+        "type": "vue_globale",
+        "titre": "Performance globale",
+        "contenu": [
+          "CA total de tous les kiosques combinés",
+          "Volume total vendu",
+          "Nombre total de clients actifs",
+          "Indicateur de croissance globale"
+        ]
+      },
+      {
+        "type": "comparaison_kiosques",
+        "titre": "Performance par kiosque",
+        "contenu": [
+          "Classement des kiosques par performance",
+          "Tableau comparatif avec indicateurs clés",
+          "Carte de localisation avec indicateurs de performance"
+        ]
+      },
+      {
+        "type": "selection_kiosque",
+        "titre": "Analyse détaillée par kiosque",
+        "contenu": [
+          "Sélecteur de kiosque pour voir les détails spécifiques",
+          "Performance individuelle du kiosque sélectionné",
+          "Liste des utilisateurs assignés à ce kiosque"
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Page Gestion des Offres
+```json
+{
+  "offres_administrateur": {
+    "objectif": "Gérer l'ensemble des offres et leur tarification",
+    "sections": [
+      {
+        "type": "liste_offres",
+        "elements": [
+          "Tableau de toutes les offres avec descriptions",
+          "Statut actif/inactif de chaque offre",
+          "Prix de base pour référence"
+        ]
+      },
+      {
+        "type": "edition_offre",
+        "elements": [
+          "Formulaire de création/modification d'offre",
+          "Champs: nom, volume, description, image",
+          "Validation en temps réel"
+        ]
+      },
+      {
+        "type": "matrice_prix",
+        "elements": [
+          "Tableau editable des prix par kiosque et par offre",
+          "Application en masse des modifications de prix",
+          "Historique des changements de prix"
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Page Gestion des Utilisateurs
+```json
+{
+  "utilisateurs_administrateur": {
+    "objectif": "Gérer les comptes et permissions des utilisateurs",
+    "sections": [
+      {
+        "type": "liste_utilisateurs",
+        "elements": [
+          "Tableau de tous les utilisateurs avec rôle et kiosque",
+          "Statut de connexion (en ligne/hors ligne)",
+          "Date de dernière activité"
+        ]
+      },
+      {
+        "type": "creation_utilisateur",
+        "elements": [
+          "Formulaire de création de compte",
+          "Assignation de rôle et de kiosque",
+          "Génération automatique de mot de passe temporaire"
+        ]
+      },
+      {
+        "type": "actions_utilisateur",
+        "elements": [
+          "Réinitialisation de mot de passe",
+          "Modification des permissions",
+          "Désactivation de compte"
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 🧭 Structure de Navigation par Rôle
+
+### Fontainier
+```
+📊 Tableau de Bord (Accueil)
+💵 Nouvelle Vente
+👤 Mes Clients
+📋 Historique des Ventes
+⚙️ Mon Profil
+🚪 Déconnexion
+```
+
+### Commercial
+```
+📊 Tableau de Bord (Accueil)
+💵 Ventes
+👤 Clients
+📈 Analytics
+📋 Historique
+⚙️ Mon Profil
+🚪 Déconnexion
+```
+
+### Administrateur
+```
+🌍 Vue Globale (Accueil)
+🏪 Kiosques
+📦 Offres
+💰 Tarification
+👥 Utilisateurs
+📊 Toutes les Ventes
+👤 Tous les Clients
+⚙️ Mon Profil
+🚪 Déconnexion
+```
+
+## 🎨 Composants Spécifiques à Développer
+
+1. **Component: KiosqueSelector**
+   - Pour les administrateurs, permet de sélectionner un kiosque spécifique
+   - Affiche la liste des kiosques avec indicateurs de performance
+   - Permet de basculer entre la vue globale et la vue par kiosque
+
+2. **Component: ClientForm**
+   - Formulaire complet avec tous les champs requis
+   - Validation en temps réel
+   - Mode édition et mode création
+
+3. **Component: SalesChart**
+   - Histogrammes pour la visualisation du CA
+   - Options de période (jour, semaine, mois)
+   - Comparaisons avec périodes précédentes
+
+4. **Component: TicketGenerator**
+   - Génération de tickets PDF avec template professionnel
+   - Options d'impression et d'envoi par email
+   - Stockage automatique dans Supabase Storage
+
+## 📱 Responsive Design
+
+Toutes les pages doivent être optimisées pour:
+- **Mobile**: Interface simplifiée, boutons larges, formulaire en une colonne
+- **Tablette**: Layout adapté avec sidebar réduite
+- **Desktop**: Expérience complète avec sidebar étendue
+
+Ce plan détaillé vous donne toutes les spécifications nécessaires pour commencer le développement de chaque page et composant. Votre schéma Supabase est parfaitement aligné avec ces besoins ! 🚀
