@@ -118,7 +118,7 @@ export default function App() {
         } />
 
         {/* Shared Routes */}
-        <Route path="/profil" element={<ProfilePage onBack={handleBackNavigation} />} />
+        <Route path="/profil" element={<ProfilePage />} />
 
         {/* Legacy Routes for Compatibility */}
         <Route path="/stats" element={<Navigate to="/mes-ventes" replace />} />

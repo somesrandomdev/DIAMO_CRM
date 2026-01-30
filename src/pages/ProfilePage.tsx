@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
-import { BackButton, LogoutButton } from '../components/NavControls'
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaSave, FaEdit } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaSave, FaEdit, FaShieldAlt, FaTrashAlt } from 'react-icons/fa'
 
 interface ProfileData {
   username: string
@@ -13,7 +12,7 @@ interface ProfileData {
   kiosques?: { nom: string }
 }
 
-export default function ProfilePage({ onBack }: { onBack: () => void }) {
+export default function ProfilePage() {
   const { profile } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -70,30 +69,52 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <BackButton onBack={onBack} />
-        <LogoutButton />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--color-text)' }}>Mon Profil</h1>
+        <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          {new Date().toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
+      {/* Profile Card */}
+      <div className="card p-0 overflow-hidden">
+        {/* Profile Header */}
+        <div 
+          className="px-6 py-6 border-b"
+          style={{ 
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
+            borderColor: 'var(--color-border)'
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-                <FaUser className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 rounded-full flex items-center justify-center icon-enhanced" style={{ backgroundColor: 'var(--color-surface)' }}>
+                <FaUser className="w-8 h-8 icon-enhanced" style={{ color: 'var(--color-primary)' }} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">{profile?.username}</h1>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(profile?.role || '')}`}>
+                <h2 className="text-2xl font-bold text-white">{profile?.username}</h2>
+                <span 
+                  className={`px-3 py-1 rounded-full text-sm font-medium inline-block ${getRoleColor(profile?.role || '')}`}
+                >
                   {getRoleDisplayName(profile?.role || '')}
                 </span>
               </div>
             </div>
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2"
+              className="btn btn-secondary flex items-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-primary)',
+                border: '1px solid var(--color-surface)'
+              }}
             >
               <FaEdit className="w-4 h-4" />
               {isEditing ? 'Annuler' : 'Modifier'}
@@ -103,151 +124,183 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
 
         {/* Profile Content */}
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Basic Information */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                Informations de base
-              </h2>
-
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nom d'utilisateur
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-gray-900 py-2">{profile?.username}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                {isEditing ? (
-                  <div className="relative">
-                    <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="votre.email@example.com"
-                    />
+                <h3 className="text-lg font-semibold mb-4 border-b pb-2" style={{ 
+                  color: 'var(--color-text)',
+                  borderColor: 'var(--color-border)'
+                }}>
+                  📋 Informations de base
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label">
+                      Nom d'utilisateur
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        className="form-input w-full"
+                        placeholder="Votre nom d'utilisateur"
+                      />
+                    ) : (
+                      <div className="kpi-card">
+                        <p className="font-semibold" style={{ color: 'var(--color-text)' }}>{profile?.username}</p>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-gray-900 py-2">{profile?.email || 'Non défini'}</p>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Téléphone
-                </label>
-                {isEditing ? (
-                  <div className="relative">
-                    <FaPhone className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="+225 XX XX XX XX"
-                    />
+                  <div>
+                    <label className="form-label">
+                      Email
+                    </label>
+                    {isEditing ? (
+                      <div className="relative">
+                        <FaEnvelope className="absolute left-3 top-3 icon-enhanced" style={{ color: 'var(--color-text-secondary)' }} />
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="form-input w-full pl-10"
+                          placeholder="votre.email@example.com"
+                        />
+                      </div>
+                    ) : (
+                      <div className="kpi-card flex items-center gap-3">
+                        <FaEnvelope className="w-5 h-5 icon-enhanced" style={{ color: 'var(--color-primary)' }} />
+                        <span style={{ color: 'var(--color-text)' }}>{profile?.email || 'Non défini'}</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-gray-900 py-2">{formData.phone || 'Non défini'}</p>
-                )}
+
+                  <div>
+                    <label className="form-label">
+                      Téléphone
+                    </label>
+                    {isEditing ? (
+                      <div className="relative">
+                        <FaPhone className="absolute left-3 top-3 icon-enhanced" style={{ color: 'var(--color-text-secondary)' }} />
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className="form-input w-full pl-10"
+                          placeholder="+225 XX XX XX XX"
+                        />
+                      </div>
+                    ) : (
+                      <div className="kpi-card flex items-center gap-3">
+                        <FaPhone className="w-5 h-5 icon-enhanced" style={{ color: 'var(--color-primary)' }} />
+                        <span style={{ color: 'var(--color-text)' }}>{formData.phone || 'Non défini'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Work Information */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                Informations professionnelles
-              </h2>
-
+            {/* Professional Information */}
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rôle
-                </label>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(profile?.role || '')}`}>
-                    {getRoleDisplayName(profile?.role || '')}
-                  </span>
-                  <span className="text-gray-500 text-sm">
-                    (Non modifiable)
-                  </span>
-                </div>
-              </div>
+                <h3 className="text-lg font-semibold mb-4 border-b pb-2" style={{ 
+                  color: 'var(--color-text)',
+                  borderColor: 'var(--color-border)'
+                }}>
+                  💼 Informations professionnelles
+                </h3>
 
-              {profile?.kiosques && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Kiosque assigné
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    <span className="text-gray-900">{profile.kiosques.nom}</span>
+                <div className="space-y-4">
+                  <div>
+                    <label className="form-label">
+                      Rôle
+                    </label>
+                    <div className="kpi-card flex items-center gap-3">
+                      <span 
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(profile?.role || '')}`}
+                      >
+                        {getRoleDisplayName(profile?.role || '')}
+                      </span>
+                      <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                        (Non modifiable)
+                      </span>
+                    </div>
+                  </div>
+
+                  {profile?.kiosques && (
+                    <div>
+                      <label className="form-label">
+                        Kiosque assigné
+                      </label>
+                      <div className="kpi-card flex items-center gap-3">
+                        <FaMapMarkerAlt className="w-5 h-5 icon-enhanced" style={{ color: 'var(--color-primary)' }} />
+                        <span style={{ color: 'var(--color-text)' }}>{profile.kiosques.nom}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="form-label">
+                      Adresse
+                    </label>
+                    {isEditing ? (
+                      <div className="relative">
+                        <FaMapMarkerAlt className="absolute left-3 top-3 icon-enhanced" style={{ color: 'var(--color-text-secondary)' }} />
+                        <textarea
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          className="form-input w-full pl-10"
+                          placeholder="Votre adresse complète"
+                          rows={3}
+                        />
+                      </div>
+                    ) : (
+                      <div className="kpi-card flex items-start gap-3">
+                        <FaMapMarkerAlt className="w-5 h-5 icon-enhanced mt-1" style={{ color: 'var(--color-primary)' }} />
+                        <span style={{ color: 'var(--color-text)' }}>{formData.address || 'Non définie'}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Adresse
-                </label>
-                {isEditing ? (
-                  <div className="relative">
-                    <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
-                    <textarea
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Votre adresse complète"
-                      rows={3}
-                    />
-                  </div>
-                ) : (
-                  <p className="text-gray-900 py-2">{formData.address || 'Non définie'}</p>
-                )}
               </div>
             </div>
           </div>
 
           {/* Account Statistics */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Statistiques du compte
-            </h2>
+          <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <h3 className="text-lg font-semibold mb-6" style={{ color: 'var(--color-text)' }}>
+              📊 Statistiques du compte
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-blue-600">0</p>
-                <p className="text-sm text-gray-600">Ventes totales</p>
+              <div className="kpi-card text-center">
+                <div className="kpi-value" style={{ color: 'var(--color-primary)' }}>0</div>
+                <div className="kpi-label">Ventes totales</div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-green-600">0 CFA</p>
-                <p className="text-sm text-gray-600">Chiffre d'affaires</p>
+              <div className="kpi-card text-center">
+                <div className="kpi-value" style={{ color: 'var(--color-success)' }}>0 CFA</div>
+                <div className="kpi-label">Chiffre d'affaires</div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-purple-600">0</p>
-                <p className="text-sm text-gray-600">Clients actifs</p>
+              <div className="kpi-card text-center">
+                <div className="kpi-value" style={{ color: 'var(--color-accent)' }}>0</div>
+                <div className="kpi-label">Clients actifs</div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
           {isEditing && (
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-8 flex justify-end gap-3">
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-6 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="btn"
+                style={{
+                  backgroundColor: 'var(--color-text-secondary)',
+                  color: 'white'
+                }}
                 disabled={loading}
               >
                 Annuler
@@ -255,7 +308,7 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 flex items-center gap-2"
+                className="btn btn-primary flex items-center gap-2"
               >
                 <FaSave className="w-4 h-4" />
                 {loading ? 'Sauvegarde...' : 'Sauvegarder'}
@@ -266,27 +319,35 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Security Section */}
-      <div className="bg-white rounded-lg shadow-sm border mt-6 p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+          <FaShieldAlt className="w-5 h-5 icon-enhanced" style={{ color: 'var(--color-primary)' }} />
           Sécurité du compte
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <h3 className="font-medium text-gray-700 mb-2">Changer le mot de passe</h3>
-            <p className="text-sm text-gray-600 mb-3">
+        </h3>
+        <div className="space-y-6">
+          <div className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-primary-light)' }}>
+            <h4 className="font-semibold mb-2" style={{ color: 'var(--color-text)' }}>🔐 Changer le mot de passe</h4>
+            <p className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
               Pour des raisons de sécurité, la modification du mot de passe doit être faite via l'authentification Supabase.
             </p>
             <button
               onClick={() => alert('Fonctionnalité à implémenter - Redirection vers la page de réinitialisation de mot de passe')}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm"
+              className="btn"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'white'
+              }}
             >
               Réinitialiser le mot de passe
             </button>
           </div>
 
-          <div className="pt-4 border-t border-gray-200">
-            <h3 className="font-medium text-red-700 mb-2">Zone de danger</h3>
-            <p className="text-sm text-gray-600 mb-3">
+          <div className="p-4 rounded-lg border-2" style={{ borderColor: 'var(--color-error)', backgroundColor: 'rgba(250, 82, 82, 0.05)' }}>
+            <h4 className="font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--color-error)' }}>
+              <FaTrashAlt className="w-4 h-4" />
+              Zone de danger
+            </h4>
+            <p className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
               Supprimer définitivement votre compte. Cette action est irréversible.
             </p>
             <button
@@ -295,7 +356,11 @@ export default function ProfilePage({ onBack }: { onBack: () => void }) {
                   alert('Fonctionnalité à implémenter - Suppression de compte')
                 }
               }}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
+              className="btn"
+              style={{
+                backgroundColor: 'var(--color-error)',
+                color: 'white'
+              }}
             >
               Supprimer le compte
             </button>

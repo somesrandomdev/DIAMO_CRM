@@ -21,7 +21,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
   const [clientSearchQuery, setClientSearchQuery] = useState('')
   const [clientSearchResults, setClientSearchResults] = useState<typeof clients>([])
   const [showClientSuggestions, setShowClientSuggestions] = useState(false)
-  const [selectedClient, setSelectedClient] = useState<typeof clients[0] | null>(null)
+  const [selectedClientId, setSelectedClientId] = useState<string>('')
 
   // Cart management functions
   const addToCart = (offreId: string, qty: number) => {
@@ -107,14 +107,14 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
   }
 
   const selectClient = (client: typeof clients[0]) => {
-    setSelectedClient(client)
+    setSelectedClientId(client.id)
     setClientId(client.id)
     setClientSearchQuery(client.nom)
     setShowClientSuggestions(false)
   }
 
   const clearClientSelection = () => {
-    setSelectedClient(null)
+    setSelectedClientId('')
     setClientId('')
     setClientSearchQuery('')
     setClientSearchResults([])
@@ -215,6 +215,8 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
       // Reset form
       alert(`Vente enregistrée ! ${cartItems.length} offre(s) - Ticket téléchargé.`)
       setClientId('')
+      setSelectedClientId('')
+      setClientSearchQuery('')
       setCartItems([])
       setLoading(false)
       await loadClients(profile!.kiosque_id)
@@ -230,6 +232,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
       <AddClientUltra
         onDone={(newId: string) => {
           setClientId(newId)
+          setSelectedClientId(newId)
           setShowAddClient(false)
           loadClients(profile!.kiosque_id)
         }}
@@ -254,66 +257,96 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
         <div className="space-y-3">
           <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>👤 Sélection du client</h3>
 
-          {/* Client Search Input */}
-          <div className="relative client-search-container">
-            <input
-              type="text"
-              value={clientSearchQuery}
-              onChange={(e) => handleClientSearch(e.target.value)}
-              onFocus={() => clientSearchQuery && setShowClientSuggestions(true)}
-              placeholder="Tapez le nom du client..."
-              className="w-full p-4 text-base rounded-lg font-medium transition-all pr-10"
-              style={{
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)'
-              }}
-            />
-            {selectedClient && (
-              <button
-                onClick={clearClientSelection}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xl"
-              >
-                ✕
-              </button>
+          {/* Client Search Input and Suggestions */}
+          <div className="client-search-container">
+            <div className="relative">
+              <input
+                type="text"
+                value={clientSearchQuery}
+                onChange={(e) => {
+                  if (selectedClientId) {
+                    clearClientSelection()
+                  }
+                  handleClientSearch(e.target.value)
+                }}
+                onFocus={() => clientSearchQuery && setShowClientSuggestions(true)}
+                placeholder="Tapez le nom du client..."
+                readOnly={selectedClientId !== ''}
+                className={`w-full p-4 text-base rounded-lg font-medium transition-all ${
+                  selectedClientId ? 'bg-gray-100 cursor-not-allowed' : ''
+                }`}
+                style={{
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: selectedClientId ? '#f3f4f6' : 'var(--color-surface)',
+                  color: 'var(--color-text)'
+                }}
+              />
+            </div>
+
+            {/* Client Suggestions Dropdown - inside the container */}
+            {showClientSuggestions && clientSearchResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {clientSearchResults.map(client => (
+                  <div
+                    key={client.id}
+                    onClick={() => selectClient(client)}
+                    className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="font-medium text-gray-900">{client.nom}</div>
+                    {client.telephone && (
+                      <div className="text-sm text-gray-500">{client.telephone}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Client Suggestions Dropdown */}
-          {showClientSuggestions && clientSearchResults.length > 0 && (
-            <div className="relative z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-              {clientSearchResults.map(client => (
-                <div
-                  key={client.id}
-                  onClick={() => selectClient(client)}
-                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                >
-                  <div className="font-medium text-gray-900">{client.nom}</div>
-                  {client.telephone && (
-                    <div className="text-sm text-gray-500">{client.telephone}</div>
-                  )}
+          {/* Selected Client Display Field - Prominent and always visible when selected */}
+          {selectedClientId && (
+            <div className="mt-4 p-6 bg-green-50 border-3 border-green-500 rounded-xl shadow-lg animate-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-2xl">✓</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-green-800 mb-2 uppercase tracking-wide">Client sélectionné</div>
+                    <div className="text-2xl font-extrabold text-green-900 mb-1">
+                      {safeClients.find(c => c.id === selectedClientId)?.nom}
+                    </div>
+                    <div className="flex items-center gap-4 text-lg text-green-700">
+                      <span className="flex items-center gap-2">
+                        📞 {safeClients.find(c => c.id === selectedClientId)?.telephone || 'Non renseigné'}
+                      </span>
+                      <span className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm font-medium">
+                        ID: {selectedClientId.substring(0, 8)}...
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Selected Client Display */}
-          {selectedClient && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-blue-900">Client sélectionné:</span>
-                  <span className="ml-2 text-blue-700 font-medium">{selectedClient.nom}</span>
-                  {selectedClient.telephone && (
-                    <span className="ml-2 text-blue-600">({selectedClient.telephone})</span>
-                  )}
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={clearClientSelection}
+                    className="px-6 py-3 bg-white border-2 border-green-500 text-green-700 rounded-lg font-semibold hover:bg-green-100 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-1"
+                  >
+                    Changer de client
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const client = safeClients.find(c => c.id === selectedClientId)
+                      if (client) {
+                        setClientSearchQuery(client.nom)
+                        setShowClientSuggestions(true)
+                      }
+                    }}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  >
+                    Voir dans la liste
+                  </button>
                 </div>
-                <button
-                  onClick={clearClientSelection}
-                  className="text-blue-500 hover:text-blue-700 text-sm underline"
-                >
-                  Changer
-                </button>
               </div>
             </div>
           )}
@@ -450,6 +483,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
 
         {/* Validation */}
         <div className="pt-4">
+          <div className="mb-3 text-sm text-gray-600">
+            Conditions pour valider : 
+            {clientId ? ' ✓ Client sélectionné' : ' ❌ Client non sélectionné'} | 
+            {cartItems.length > 0 ? ` ✓ ${cartItems.length} article(s)` : ' ❌ Panier vide'} | 
+            {loading ? ' ⏳ En cours...' : ' ✅ Prêt'}
+          </div>
           <button
             type="submit"
             disabled={loading || !clientId || cartItems.length === 0}
