@@ -1,30 +1,31 @@
-# UI/UX Design System - Diam'o CRM v2 (Modernized)
+# UI/UX Design System - Diam'o CRM
 
 ## Color Palette
 
-### Core Brand Colors
-- **Primary Blue**: `#1E66D0` (Main brand color)
-- **Primary Hover**: `#1A5BB8` (Hover states)
-- **Primary Soft**: `#E7F0FF` (Subtle highlights)
-- **Background**: `#F9FAFB` (App background)
-- **Surface**: `#FFFFFF` (Card surfaces)
-- **Surface Subtle**: `#F1F3F5` (Secondary panels)
+### Primary Brand Colors
+- **Primary Blue**: `#1C7ED6` (Main brand color)
+- **Primary Dark**: `#1971C2` (Hover states)
+- **Primary Light**: `#A5D8FF` (Backgrounds)
 
-### Semantic Colors (Desaturated)
-- **Success Green**: `#2F9E44` (Positive actions)
-- **Error Red**: `#E03131` (Error states)
-- **Warning Orange**: `#F08C00` (Warning states)
-- **Info Blue**: `#1864AB` (Information)
+### Secondary Colors
+- **Secondary Blue**: `#74C0FC` (Accent color)
+- **Background**: `#F8F9FA` (Main background)
+- **Surface**: `#FFFFFF` (Card surfaces)
+
+### Semantic Colors
+- **Success Green**: `#40C057` (Positive actions)
+- **Error Red**: `#FA5252` (Error states)
+- **Warning Yellow**: `#FFD43B` (Warning states)
 
 ### Text Colors
-- **Primary Text**: `#1F2937` (Main text)
-- **Secondary Text**: `#6B7280` (Secondary text)
-- **Muted Text**: `#9CA3AF` (Disabled/muted text)
+- **Primary Text**: `#212529` (Main text)
+- **Secondary Text**: `#6C757D` (Secondary text)
+- **Muted Text**: `#ADB5BD` (Disabled/muted text)
 
-### Borders & Dividers
-- **Border Subtle**: `#E5E7EB` (Subtle borders)
-- **Border Default**: `#D1D5DB` (Default borders)
-- **Focus Ring**: `rgba(30, 102, 208, 0.35)` (Focus states)
+### UI Elements
+- **Borders**: `#DEE2E6` (Default borders)
+- **Hover Borders**: `#CED4DA` (Hover states)
+- **Focus Borders**: `#1C7ED6` (Focus states)
 
 ## Typography
 
