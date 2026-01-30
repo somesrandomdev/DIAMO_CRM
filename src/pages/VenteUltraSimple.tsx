@@ -283,18 +283,23 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
               />
             </div>
 
-            {/* Client Suggestions Dropdown - inside the container */}
+            {/* Client Suggestions Dropdown */}
             {showClientSuggestions && clientSearchResults.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
                 {clientSearchResults.map(client => (
                   <div
                     key={client.id}
                     onClick={() => selectClient(client)}
-                    className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    className="px-4 py-3 hover:bg-surface-hover cursor-pointer border-b border-border last:border-b-0"
+                    style={{ 
+                      backgroundColor: 'var(--color-surface)',
+                      borderColor: 'var(--color-border)',
+                      color: 'var(--color-text)'
+                    }}
                   >
-                    <div className="font-medium text-gray-900">{client.nom}</div>
+                    <div className="font-medium text-text-primary">{client.nom}</div>
                     {client.telephone && (
-                      <div className="text-sm text-gray-500">{client.telephone}</div>
+                      <div className="text-sm text-text-secondary">{client.telephone}</div>
                     )}
                   </div>
                 ))}
@@ -370,12 +375,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
           </button>
         </div>
 
-        {/* Cart Section */}
+          {/* Cart Section */}
         <div className="space-y-3">
           <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>🛒 Panier de vente</h3>
 
           {/* Add to Cart Form */}
-          <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+          <div className="bg-surface p-4 rounded-lg space-y-3" style={{ backgroundColor: 'var(--color-surface)' }}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <select
                 id="offre-select"
@@ -426,6 +431,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   backgroundColor: 'var(--color-primary)',
                   color: 'white'
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+                }}
               >
                 Ajouter
               </button>
@@ -434,13 +445,13 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
 
           {/* Cart Items */}
           {cartItems.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-surface border border-border rounded-lg p-4" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
               <h4 className="font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
                 Articles ({cartItems.length})
               </h4>
               <div className="space-y-2">
                 {cartItems.map((item) => (
-                  <div key={item.offreId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={item.offreId} className="flex items-center justify-between p-3 bg-surface-hover rounded-lg" style={{ backgroundColor: 'var(--color-surface-hover)' }}>
                     <div className="flex-1">
                       <p className="font-medium" style={{ color: 'var(--color-text)' }}>
                         {item.offre?.nom}
@@ -455,11 +466,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                         min="1"
                         value={item.qty}
                         onChange={(e) => updateCartQuantity(item.offreId, Math.max(1, Number(e.target.value)))}
-                        className="w-16 p-1 text-sm border border-gray-300 rounded"
+                        className="w-16 p-1 text-sm border border-border rounded" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
                       />
                       <button
                         onClick={() => removeFromCart(item.offreId)}
-                        className="text-red-500 hover:text-red-700 p-1"
+                        className="text-error hover:text-error-dark p-1"
+                        style={{ color: 'var(--color-error)' }}
                       >
                         ✕
                       </button>
@@ -467,7 +479,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 pt-3 border-t border-gray-200">
+              <div className="mt-4 pt-3 border-t border-border">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>
                     Total:
@@ -483,7 +495,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
 
         {/* Validation */}
         <div className="pt-4">
-          <div className="mb-3 text-sm text-gray-600">
+          <div className="mb-3 text-sm text-text-secondary">
             Conditions pour valider : 
             {clientId ? ' ✓ Client sélectionné' : ' ❌ Client non sélectionné'} | 
             {cartItems.length > 0 ? ` ✓ ${cartItems.length} article(s)` : ' ❌ Panier vide'} | 
@@ -499,7 +511,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
               opacity: (loading || !clientId || cartItems.length === 0) ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
-              if (!loading && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success)'
+              if (!loading && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success-dark)'
             }}
             onMouseLeave={(e) => {
               if (!loading && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success)'

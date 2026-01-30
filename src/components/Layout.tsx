@@ -231,24 +231,24 @@ export default function Layout({ children }: LayoutProps) {
                     isActive ? 'active' : ''
                   }`}
                   style={{
-                    backgroundColor: isActive ? '#1971C2' : '#1C7ED6',
+                    backgroundColor: isActive ? 'var(--color-primary-dark)' : 'var(--color-primary)',
                     color: 'white',
-                    border: `1px solid ${isActive ? '#155A9A' : '#1971C2'}`,
-                    borderLeft: isActive ? '4px solid #155A9A' : '1px solid #1971C2'
+                    border: `1px solid ${isActive ? 'var(--color-primary-dark)' : 'var(--color-primary)'}`,
+                    borderLeft: isActive ? '4px solid var(--color-primary-dark)' : '1px solid var(--color-primary)'
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#1971C2'
-                      e.currentTarget.style.borderColor = '#155A9A'
-                      e.currentTarget.style.borderLeftColor = '#155A9A'
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
+                      e.currentTarget.style.borderColor = 'var(--color-primary-dark)'
+                      e.currentTarget.style.borderLeftColor = 'var(--color-primary-dark)'
                       e.currentTarget.style.transform = 'translateX(2px)'
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#1C7ED6'
-                      e.currentTarget.style.borderColor = '#1971C2'
-                      e.currentTarget.style.borderLeftColor = '#1971C2'
+                      e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+                      e.currentTarget.style.borderColor = 'var(--color-primary)'
+                      e.currentTarget.style.borderLeftColor = 'var(--color-primary)'
                       e.currentTarget.style.transform = 'translateX(0)'
                     }
                   }}
@@ -261,19 +261,19 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-blue-200">
+          <div className="p-4 border-t border-border" style={{ borderColor: 'var(--color-border)' }}>
             <button
               onClick={handleLogout}
               className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 shadow-sm hover:shadow font-medium"
               style={{
-                backgroundColor: '#1C7ED6',
+                backgroundColor: 'var(--color-primary)',
                 color: 'white'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1971C2'
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#1C7ED6'
+                e.currentTarget.style.backgroundColor = 'var(--color-primary)'
               }}
             >
               <FaSignOutAlt className="w-5 h-5 mr-3" />
@@ -292,7 +292,7 @@ export default function Layout({ children }: LayoutProps) {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-3 rounded-lg hover:bg-primary-light border-2 border-border hover:border-primary transition-all duration-200 shadow-sm focus-ring"
+                className="lg:hidden p-3 rounded-lg hover:bg-surface-hover border-2 border-border hover:border-primary transition-all duration-200 shadow-sm focus-ring"
                 style={{
                   borderColor: 'var(--color-border)',
                   backgroundColor: 'transparent'
@@ -300,7 +300,7 @@ export default function Layout({ children }: LayoutProps) {
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = 'var(--color-primary)'
                   e.currentTarget.style.color = 'var(--color-primary)'
-                  e.currentTarget.style.backgroundColor = 'var(--color-primary-light)'
+                  e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = 'var(--color-border)'
@@ -312,7 +312,7 @@ export default function Layout({ children }: LayoutProps) {
               </button>
 
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-gradient-primary icon-enhanced">
+                <div className="p-2 rounded-lg bg-surface-hover icon-enhanced" style={{ backgroundColor: 'var(--color-surface-hover)' }}>
                   <FaStore className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
                 </div>
                 <div>
