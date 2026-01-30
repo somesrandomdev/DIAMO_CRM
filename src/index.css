@@ -3,24 +3,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Primary Colors - Diam'o Brand */
-  --color-primary: #1C7ED6;        /* Main brand color */
-  --color-secondary: #74C0FC;      /* Light blue accent */
-  --color-background: #F8F9FA;     /* Very light gray background */
+  /* Core Brand Colors - Modernized */
+  --color-primary: #1E66D0;        /* Main brand color */
+  --color-primary-hover: #1A5BB8;  /* Primary hover state */
+  --color-primary-soft: #E7F0FF;   /* Subtle highlights */
+  --color-background: #F9FAFB;     /* App background */
   --color-surface: #FFFFFF;        /* White surface */
-  --color-text: #212529;           /* Dark gray text */
-  --color-success: #40C057;        /* Green success */
-  --color-error: #FA5252;          /* Red error */
-  --color-accent: #FFD43B;         /* Yellow accent */
+  --color-surface-subtle: #F1F3F5; /* Secondary panels */
+  --color-text-primary: #1F2937;   /* Primary text */
+  --color-text-secondary: #6B7280; /* Secondary text */
+  --color-text-muted: #9CA3AF;     /* Muted text */
 
-  /* Extended Palette */
-  --color-primary-dark: #1971C2;   /* Darker primary for hovers */
-  --color-primary-light: #A5D8FF;  /* Lighter primary for backgrounds */
-  --color-text-secondary: #6C757D; /* Secondary text */
-  --color-text-muted: #ADB5BD;     /* Muted text */
-  --color-border: #DEE2E6;         /* Light border */
-  --color-border-hover: #CED4DA;   /* Hover border */
-  --color-border-focus: #1C7ED6;   /* Focus border */
+  /* Semantic Colors - Desaturated */
+  --color-success: #2F9E44;        /* Green success */
+  --color-error: #E03131;          /* Red error */
+  --color-warning: #F08C00;        /* Orange warning */
+  --color-info: #1864AB;           /* Blue info */
+
+  /* Borders & Dividers - Critical change */
+  --color-border-subtle: #E5E7EB;  /* Subtle borders */
+  --color-border-default: #D1D5DB; /* Default borders */
+  --color-border-hover: #D1D5DB;   /* Hover border */
+  --color-border-focus: rgba(30, 102, 208, 0.35); /* Focus ring */
+  --color-accent: #FFD43B;         /* Yellow accent */
 
   /* Enhanced Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
