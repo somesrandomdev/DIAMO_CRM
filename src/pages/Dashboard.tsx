@@ -206,7 +206,7 @@ export default function Dashboard() {
       {/* Logout button */}
       <button
         onClick={() => useAuthStore.getState().signOut()}
-        className="btn btn-danger absolute top-4 right-4"
+        className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 font-medium"
       >
         Déconnexion
       </button>
@@ -232,25 +232,21 @@ export default function Dashboard() {
       <div className="flex flex-col gap-6 w-full max-w-sm">
         <button
           onClick={() => navigate('/ventes')}
-          className="btn btn-success btn-xl btn-full"
+          className="w-full bg-green-600 hover:bg-green-700 text-white text-xl sm:text-2xl py-6 sm:py-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-2 font-semibold"
         >
           <FaPlus className="text-2xl sm:text-3xl" />
           Nouvelle vente
         </button>
         <button
           onClick={() => navigate('/clients')}
-          className="btn btn-primary btn-xl btn-full"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xl sm:text-2xl py-6 sm:py-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-2 font-semibold"
         >
           <FaUsers className="text-2xl sm:text-3xl" />
           Mes clients
         </button>
         <button
           onClick={() => navigate('/stats')}
-          className="btn btn-primary btn-xl btn-full"
-          style={{
-            backgroundColor: '#9333EA',
-            borderColor: '#9333EA'
-          }}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white text-xl sm:text-2xl py-6 sm:py-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-2 font-semibold"
         >
           <FaChartBar className="text-2xl sm:text-3xl" />
           Mes statistiques

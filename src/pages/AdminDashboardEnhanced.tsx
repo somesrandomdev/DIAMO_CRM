@@ -934,7 +934,7 @@ export default function AdminDashboardEnhanced() {
                 <div className="flex items-end">
                   <button
                     onClick={resetGlobalFilters}
-                    className="btn btn-neutral w-full"
+                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                   >
                     Réinitialiser
                   </button>
@@ -1067,7 +1067,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleCreateKiosk}
                 disabled={loading}
-                className="btn btn-primary"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
               >
                 <FaPlus className="w-4 h-4" />
                 Nouveau Kiosque
@@ -1122,7 +1122,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleCreateOffer}
                 disabled={loading}
-                className="btn btn-primary"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
               >
                 <FaPlus className="w-4 h-4" />
                 Nouvelle Offre
@@ -1179,7 +1179,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleSavePricingMatrix}
                 disabled={loading}
-                className="btn btn-success"
+                className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
               >
                 {loading ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
               </button>
@@ -1242,10 +1242,10 @@ export default function AdminDashboardEnhanced() {
                     <p>• Laissez vide pour utiliser le prix par défaut</p>
                   </div>
                   <div className="flex gap-3">
-                    <button className="btn btn-secondary">
+                    <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
                       Annuler
                     </button>
-                    <button className="btn btn-primary">
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                       Appliquer les prix
                     </button>
                   </div>
@@ -1312,7 +1312,7 @@ export default function AdminDashboardEnhanced() {
                     <button
                       onClick={handleBulkPricing}
                       disabled={loading}
-                      className="btn btn-success w-full"
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-green-400"
                     >
                       {loading ? 'Application...' : 'Appliquer'}
                     </button>
@@ -1379,7 +1379,7 @@ export default function AdminDashboardEnhanced() {
                           }
                         }}
                         disabled={loading || bulkPricing.selectedKiosks.length === 0 || !bulkPricing.offerId || !bulkPricing.price}
-                        className="btn btn-primary w-full mt-2"
+                        className="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
                       >
                         {loading ? 'Application...' : `Appliquer à ${bulkPricing.selectedKiosks.length} kiosque(s)`}
                       </button>
@@ -1399,7 +1399,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleCreateUser}
                 disabled={loading}
-                className="btn btn-primary"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
               >
                 <FaPlus className="w-4 h-4" />
                 Nouvel Utilisateur
@@ -1466,7 +1466,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={() => setObjectivesForm({ kioskId: '', monthly: '', daily: '' })}
                 disabled={loading}
-                className="btn btn-primary"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
               >
                 <FaPlus className="w-4 h-4" />
                 Définir Objectif
@@ -1523,7 +1523,7 @@ export default function AdminDashboardEnhanced() {
                 <button
                   onClick={handleSaveObjectives}
                   disabled={loading || !objectivesForm.kioskId || !objectivesForm.monthly || !objectivesForm.daily}
-                  className="btn btn-success"
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   {loading ? 'Sauvegarde...' : 'Sauvegarder Objectif'}
                 </button>
@@ -1611,7 +1611,7 @@ export default function AdminDashboardEnhanced() {
           <h1 className="text-3xl font-bold">Administration</h1>
           <button
             onClick={() => signOut()}
-            className="btn btn-danger"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
           >
             Déconnexion
           </button>
@@ -1698,7 +1698,7 @@ export default function AdminDashboardEnhanced() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowKioskModal(false)}
-                className="btn btn-secondary"
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                 disabled={loading}
               >
                 Annuler
@@ -1706,7 +1706,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleSaveKiosk}
                 disabled={loading}
-                className="btn btn-primary"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
               >
                 {loading ? 'Sauvegarde...' : (editingItem ? 'Modifier' : 'Créer')}
               </button>
@@ -1767,7 +1767,7 @@ export default function AdminDashboardEnhanced() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowOfferModal(false)}
-                className="btn btn-secondary"
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                 disabled={loading}
               >
                 Annuler
@@ -1775,7 +1775,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleSaveOffer}
                 disabled={loading}
-                className="btn btn-primary"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
               >
                 {loading ? 'Sauvegarde...' : (editingItem ? 'Modifier' : 'Créer')}
               </button>
@@ -1843,7 +1843,7 @@ export default function AdminDashboardEnhanced() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowUserModal(false)}
-                className="btn btn-secondary"
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                 disabled={loading}
               >
                 Annuler
@@ -1851,7 +1851,7 @@ export default function AdminDashboardEnhanced() {
               <button
                 onClick={handleSaveUser}
                 disabled={loading}
-                className="btn btn-primary"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
               >
                 {loading ? 'Sauvegarde...' : (editingItem ? 'Modifier' : 'Créer')}
               </button>

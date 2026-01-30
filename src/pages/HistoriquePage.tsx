@@ -121,7 +121,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
         <h1 className="text-3xl font-bold">Historique des Ventes</h1>
         <button
           onClick={exportToCSV}
-          className="btn btn-success flex items-center gap-2"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
         >
           <FaDownload className="w-4 h-4" />
           Exporter CSV
@@ -165,7 +165,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 setSearchTerm('')
                 setDateFilter('')
               }}
-              className="btn btn-neutral w-full flex items-center justify-center gap-2"
+              className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2"
             >
               <FaFilter className="w-4 h-4" />
               Réinitialiser
@@ -265,14 +265,14 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="btn btn-sm"
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       Précédent
                     </button>
                     <button
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages}
-                      className="btn btn-sm"
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                     >
                       Suivant
                     </button>

@@ -176,7 +176,18 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary btn-lg btn-full"
+              className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'white',
+                opacity: loading ? 0.6 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+              }}
             >
               {loading ? 'Chargement...' : isRegister ? 'Créer le compte' : 'Se connecter'}
             </button>
@@ -188,7 +199,20 @@ export default function Login() {
                   setIsRegister(!isRegister)
                   setError('')
                 }}
-                className="btn btn-secondary btn-lg"
+                className="px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text)',
+                  border: '2px solid var(--color-border)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary)'
+                  e.currentTarget.style.color = 'var(--color-primary)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border)'
+                  e.currentTarget.style.color = 'var(--color-text)'
+                }}
               >
                 {isRegister ? 'J\'ai déjà un compte' : 'Créer un compte'}
               </button>

@@ -107,13 +107,18 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="btn btn-secondary flex items-center gap-2"
-              >
-                <FaEdit className="w-4 h-4" />
-                {isEditing ? 'Annuler' : 'Modifier'}
-              </button>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="btn btn-secondary flex items-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-primary)',
+                border: '1px solid var(--color-surface)'
+              }}
+            >
+              <FaEdit className="w-4 h-4" />
+              {isEditing ? 'Annuler' : 'Modifier'}
+            </button>
           </div>
         </div>
 
@@ -291,7 +296,11 @@ export default function ProfilePage() {
             <div className="mt-8 flex justify-end gap-3">
               <button
                 onClick={() => setIsEditing(false)}
-                className="btn btn-neutral"
+                className="btn"
+                style={{
+                  backgroundColor: 'var(--color-text-secondary)',
+                  color: 'white'
+                }}
                 disabled={loading}
               >
                 Annuler
@@ -321,13 +330,16 @@ export default function ProfilePage() {
             <p className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
               Pour des raisons de sécurité, la modification du mot de passe doit être faite via l'authentification Supabase.
             </p>
-              <button
-                onClick={() => alert('Fonctionnalité à implémenter - Redirection vers la page de réinitialisation de mot de passe')}
-                className="btn btn-primary"
-                style={{ padding: '12px 24px' }}
-              >
-                Réinitialiser le mot de passe
-              </button>
+            <button
+              onClick={() => alert('Fonctionnalité à implémenter - Redirection vers la page de réinitialisation de mot de passe')}
+              className="btn"
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'white'
+              }}
+            >
+              Réinitialiser le mot de passe
+            </button>
           </div>
 
           <div className="p-4 rounded-lg border-2" style={{ borderColor: 'var(--color-error)', backgroundColor: 'rgba(250, 82, 82, 0.05)' }}>
@@ -344,7 +356,11 @@ export default function ProfilePage() {
                   alert('Fonctionnalité à implémenter - Suppression de compte')
                 }
               }}
-              className="btn btn-danger"
+              className="btn"
+              style={{
+                backgroundColor: 'var(--color-error)',
+                color: 'white'
+              }}
             >
               Supprimer le compte
             </button>

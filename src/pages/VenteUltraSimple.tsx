@@ -329,7 +329,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   <button
                     type="button"
                     onClick={clearClientSelection}
-                    className="btn btn-outline btn-outline-green"
+                    className="px-6 py-3 bg-white border-2 border-green-500 text-green-700 rounded-lg font-semibold hover:bg-green-100 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-1"
                   >
                     Changer de client
                   </button>
@@ -342,7 +342,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                         setShowClientSuggestions(true)
                       }
                     }}
-                    className="btn btn-success"
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
                   >
                     Voir dans la liste
                   </button>
@@ -354,7 +354,17 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
           <button
             type="button"
             onClick={() => setShowAddClient(true)}
-            className="btn btn-secondary"
+            className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+            style={{
+              backgroundColor: 'var(--color-secondary)',
+              color: 'white'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--color-secondary)'
+            }}
           >
             + Créer un nouveau client
           </button>

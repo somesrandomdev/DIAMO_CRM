@@ -1,38 +1,31 @@
-# UI/UX Design System - Diam'o CRM (Modernized)
+# UI/UX Design System - Diam'o CRM
 
 ## Color Palette
 
-### Core Brand Colors (Modernized)
-- **Primary Blue**: `#1E66D0` (Main brand color - deeper, less saturated)
-- **Primary Hover**: `#1A5BB8` (Hover states)
-- **Primary Soft**: `#E7F0FF` (Subtle highlights)
+### Primary Brand Colors
+- **Primary Blue**: `#1C7ED6` (Main brand color)
+- **Primary Dark**: `#1971C2` (Hover states)
+- **Primary Light**: `#A5D8FF` (Backgrounds)
 
-### Neutral Foundation (Modernized)
-- **App Background**: `#F9FAFB` (Clean background)
-- **Surface**: `#FFFFFF` (White surface)
-- **Surface Subtle**: `#F1F3F5` (Secondary panels)
+### Secondary Colors
+- **Secondary Blue**: `#74C0FC` (Accent color)
+- **Background**: `#F8F9FA` (Main background)
+- **Surface**: `#FFFFFF` (Card surfaces)
 
-### Semantic Colors (Modernized)
-- **Success Green**: `#2F9E44` (Positive actions - desaturated)
-- **Error Red**: `#E03131` (Error states - desaturated)
-- **Warning Orange**: `#F08C00` (Warning states - modernized)
-- **Info Blue**: `#1864AB` (Information)
+### Semantic Colors
+- **Success Green**: `#40C057` (Positive actions)
+- **Error Red**: `#FA5252` (Error states)
+- **Warning Yellow**: `#FFD43B` (Warning states)
 
-### Text Colors (Modernized)
-- **Primary Text**: `#1F2937` (Main text)
-- **Secondary Text**: `#6B7280` (Secondary text)
-- **Muted Text**: `#9CA3AF` (Disabled/muted text)
+### Text Colors
+- **Primary Text**: `#212529` (Main text)
+- **Secondary Text**: `#6C757D` (Secondary text)
+- **Muted Text**: `#ADB5BD` (Disabled/muted text)
 
-### Borders & Dividers (Modernized)
-- **Border Subtle**: `#E5E7EB` (Subtle borders)
-- **Border Default**: `#D1D5DB` (Default borders)
-- **Focus Ring**: `rgba(30, 102, 208, 0.35)` (Focus states)
-
-### Legacy Colors (Backward Compatibility)
-- **Primary Original**: `#1C7ED6` (Legacy blue)
-- **Success Original**: `#40C057` (Legacy green)
-- **Error Original**: `#FA5252` (Legacy red)
-- **Warning Original**: `#FFD43B` (Legacy yellow)
+### UI Elements
+- **Borders**: `#DEE2E6` (Default borders)
+- **Hover Borders**: `#CED4DA` (Hover states)
+- **Focus Borders**: `#1C7ED6` (Focus states)
 
 ## Typography
 
@@ -40,16 +33,16 @@
 - **Primary Font**: Inter (Google Fonts)
 - **Fallback**: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif
 
-### Font Sizes (Modernized)
-- **H1**: 2rem (32px) - Main headings
-- **H2**: 1.875rem (30px) - Section headings
-- **H3**: 1.5rem (24px) - Subsection headings
-- **H4**: 1.25rem (20px) - Content headings
-- **H5**: 1.125rem (18px) - Small headings
-- **H6**: 1rem (16px) - Minor headings
-- **Body**: 0.9375rem (15px) - Main body text
-- **Small**: 0.8125rem (13px) - Secondary text
-- **XSmall**: 0.75rem (12px) - Captions, labels
+### Font Sizes
+- **H1**: 2.25rem (36px)
+- **H2**: 1.875rem (30px)
+- **H3**: 1.5rem (24px)
+- **H4**: 1.25rem (20px)
+- **H5**: 1.125rem (18px)
+- **H6**: 1rem (16px)
+- **Body**: 1rem (16px)
+- **Small**: 0.875rem (14px)
+- **XSmall**: 0.75rem (12px)
 
 ### Line Heights
 - **Tight**: 1.25
@@ -69,71 +62,31 @@
 - **2XL**: 3rem (48px)
 - **3XL**: 4rem (64px)
 
-## Border Radius (Modernized)
+## Border Radius
 
 ### Radius Scale
-- **SM**: 6px
-- **MD**: 10px
-- **LG**: 14px
-- **XL**: 18px
+- **SM**: 4px
+- **MD**: 6px
+- **LG**: 8px
+- **XL**: 12px
+- **2XL**: 16px
 - **Full**: 9999px (Circular)
 
-## Shadows (Modernized)
+## Shadows
 
 ### Shadow Scale
-- **None**: none (Default - no shadows)
-- **SM**: 0 1px 2px rgba(0,0,0,0.04) (Subtle)
-- **MD**: 0 4px 12px rgba(0,0,0,0.06) (Moderate)
-- **LG**: 0 10px 15px -3px rgba(0,0,0,0.1) (Elevated)
-- **XL**: 0 20px 25px -5px rgba(0,0,0,0.1) (Dramatic)
+- **SM**: 0 1px 2px rgba(0, 0, 0, 0.05)
+- **MD**: 0 4px 6px -1px rgba(0, 0, 0, 0.1)
+- **LG**: 0 10px 15px -3px rgba(0, 0, 0, 0.1)
+- **XL**: 0 20px 25px -5px rgba(0, 0, 0, 0.1)
+- **2XL**: 0 25px 50px -12px rgba(0, 0, 0, 0.25)
 
-## Transitions (Modernized)
+## Transitions
 
 ### Transition Scale
-- **Fast**: 120ms ease-out
-- **Normal**: 200ms ease-out
+- **Fast**: 150ms ease-in-out
+- **Normal**: 250ms ease-in-out
 - **Slow**: 350ms ease-in-out
-
-## Design Philosophy (New)
-
-### Layout Style
-- **Flat layouts** - Minimal visual noise
-- **Clear sections** - Strong visual separation using borders
-- **Information density** - Slightly smaller body text (15px) for better data display
-- **Operational focus** - Long-session friendly interfaces
-
-### Motion Guidelines
-- **Subtle movement** - No scale-on-hover, no dramatic effects
-- **Opacity and position** - Preferred animation properties
-- **Respect user preferences** - Strict `prefers-reduced-motion` compliance
-
-### Shadow Philosophy
-- **Shadows are rare** - Borders do most of the work
-- **Minimal elevation** - Only use when absolutely necessary
-- **Functional over decorative** - Purpose-driven shadows only
-
-### Component Design
-- **Calm and trustworthy** - Avoid flashy or decorative elements
-- **Operational efficiency** - Designed for business workflows
-- **Consistent patterns** - Reusable, predictable components
-
-### Accessibility (Enhanced)
-- **WCAG AA minimum** - Always meet accessibility standards
-- **No color-only indicators** - Always include text or icons
-- **Touch targets** - 44px minimum where applicable
-- **Focus visibility** - Always maintain clear focus indicators
-
-### Brand Expression
-Diam'o CRM should feel:
-- **Calm** - No jarring colors or animations
-- **Trustworthy** - Professional, reliable appearance
-- **Operational** - Business-focused, task-oriented
-- **Long-session friendly** - Comfortable for extended use
-
-**Not:**
-- Flashy or decorative
-- Animated for animation's sake
-- Cluttered or visually noisy
 
 ## Component States
 
