@@ -176,19 +176,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
-              style={{
-                backgroundColor: 'var(--color-primary)',
-                color: 'white',
-                opacity: loading ? 0.6 : 1,
-                borderColor: 'var(--color-primary)'
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary)'
-              }}
+              className="btn btn-primary btn-lg btn-full"
             >
               {loading ? 'Chargement...' : isRegister ? 'Créer le compte' : 'Se connecter'}
             </button>
@@ -200,20 +188,7 @@ export default function Login() {
                   setIsRegister(!isRegister)
                   setError('')
                 }}
-                className="px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
-                style={{
-                  backgroundColor: 'var(--color-surface)',
-                  color: 'var(--color-text-primary)',
-                  border: '2px solid var(--color-border-default)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-primary)'
-                  e.currentTarget.style.color = 'var(--color-primary)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border-default)'
-                  e.currentTarget.style.color = 'var(--color-text-primary)'
-                }}
+                className="btn btn-secondary btn-lg"
               >
                 {isRegister ? 'J\'ai déjà un compte' : 'Créer un compte'}
               </button>

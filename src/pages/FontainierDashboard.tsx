@@ -90,7 +90,12 @@ export default function FontainierDashboard() {
       {/* Logout button */}
       <button
         onClick={handleLogout}
-        className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 font-medium"
+        className="btn btn-danger absolute top-4 right-4"
+        style={{
+          padding: '12px 16px',
+          borderRadius: '10px',
+          fontWeight: '600'
+        }}
       >
         Déconnexion
       </button>
@@ -116,38 +121,27 @@ export default function FontainierDashboard() {
       <div className="flex flex-col gap-6 w-full max-w-sm">
         <button
           onClick={() => navigate('/nouvelle-vente')}
-          className="btn btn-primary w-full text-xl sm:text-2xl py-6 sm:py-8 rounded-lg flex flex-col items-center justify-center gap-2 font-semibold card-interactive"
+          className="btn btn-primary btn-xl btn-full"
         >
-          <FaPlus className="text-2xl sm:text-3xl icon-enhanced" />
+          <FaPlus className="text-2xl sm:text-3xl" />
           Nouvelle vente
         </button>
         <button
           onClick={() => navigate('/mes-clients')}
-          className="btn btn-secondary w-full text-xl sm:text-2xl py-6 sm:py-8 rounded-lg flex flex-col items-center justify-center gap-2 font-semibold card-interactive"
+          className="btn btn-secondary btn-xl btn-full"
         >
-          <FaUsers className="text-2xl sm:text-3xl icon-enhanced" />
+          <FaUsers className="text-2xl sm:text-3xl" />
           Mes clients
         </button>
         <button
           onClick={() => navigate('/mes-ventes')}
-          className="btn w-full text-xl sm:text-2xl py-6 sm:py-8 rounded-lg flex flex-col items-center justify-center gap-2 font-semibold card-interactive"
+          className="btn btn-primary btn-xl btn-full"
           style={{
-            background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-            color: 'white',
-            boxShadow: '0 4px 14px 0 rgba(139, 92, 246, 0.39)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)'
-            e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.23)'
-            e.currentTarget.style.transform = 'translateY(-1px)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)'
-            e.currentTarget.style.boxShadow = '0 4px 14px 0 rgba(139, 92, 246, 0.39)'
-            e.currentTarget.style.transform = 'translateY(0)'
+            backgroundColor: 'var(--color-info)',
+            borderColor: 'var(--color-info)'
           }}
         >
-          <FaChartBar className="text-2xl sm:text-3xl icon-enhanced" />
+          <FaChartBar className="text-2xl sm:text-3xl" />
           Mes statistiques
         </button>
       </div>

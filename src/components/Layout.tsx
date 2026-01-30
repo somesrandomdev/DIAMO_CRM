@@ -210,9 +210,10 @@ export default function Layout({ children }: LayoutProps) {
             {/* Close button for mobile */}
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-blue-50 transition-colors"
+              className="btn btn-icon lg:hidden"
+              style={{ padding: '0.5rem' }}
             >
-              <FaBars className="w-5 h-5 transform rotate-45 text-blue-600" />
+              <FaBars className="w-5 h-5 transform rotate-45" style={{ color: 'var(--color-primary)' }} />
             </button>
           </div>
 
@@ -227,30 +228,15 @@ export default function Layout({ children }: LayoutProps) {
                     handleNavigation(item.path)
                     setMobileMenuOpen(false)
                   }}
-                  className={`nav-item w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 shadow-sm hover:shadow-md ${
-                    isActive ? 'active' : ''
+                  className={`btn w-full flex items-center px-4 py-3 text-left justify-start ${
+                    isActive ? 'btn-primary' : 'btn-primary'
                   }`}
                   style={{
-                    backgroundColor: isActive ? '#1971C2' : '#1C7ED6',
-                    color: 'white',
-                    border: `1px solid ${isActive ? '#155A9A' : '#1971C2'}`,
-                    borderLeft: isActive ? '4px solid #155A9A' : '1px solid #1971C2'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#1971C2'
-                      e.currentTarget.style.borderColor = '#155A9A'
-                      e.currentTarget.style.borderLeftColor = '#155A9A'
-                      e.currentTarget.style.transform = 'translateX(2px)'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#1C7ED6'
-                      e.currentTarget.style.borderColor = '#1971C2'
-                      e.currentTarget.style.borderLeftColor = '#1971C2'
-                      e.currentTarget.style.transform = 'translateX(0)'
-                    }
+                    backgroundColor: isActive ? 'var(--color-primary-hover)' : 'var(--color-primary)',
+                    borderColor: isActive ? 'var(--color-primary-hover)' : 'var(--color-primary)',
+                    borderLeftWidth: isActive ? '4px' : '1px',
+                    borderLeftColor: isActive ? 'var(--color-primary-hover)' : 'var(--color-primary)',
+                    justifyContent: 'flex-start'
                   }}
                 >
                   <span className="mr-3" style={{ color: 'white' }}>{item.icon}</span>
@@ -264,17 +250,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="p-4 border-t border-blue-200">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 shadow-sm hover:shadow font-medium"
-              style={{
-                backgroundColor: '#1C7ED6',
-                color: 'white'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1971C2'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#1C7ED6'
-              }}
+              className="btn btn-primary w-full flex items-center justify-start"
             >
               <FaSignOutAlt className="w-5 h-5 mr-3" />
               <span>Déconnexion</span>
@@ -292,23 +268,9 @@ export default function Layout({ children }: LayoutProps) {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-3 rounded-lg hover:bg-primary-light border-2 border-border hover:border-primary transition-all duration-200 shadow-sm focus-ring"
-                style={{
-                  borderColor: 'var(--color-border)',
-                  backgroundColor: 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-primary)'
-                  e.currentTarget.style.color = 'var(--color-primary)'
-                  e.currentTarget.style.backgroundColor = 'var(--color-primary-light)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)'
-                  e.currentTarget.style.color = 'inherit'
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
+                className="btn btn-secondary btn-icon lg:hidden"
               >
-                <FaBars className="w-5 h-5 icon-enhanced" />
+                <FaBars className="w-5 h-5" />
               </button>
 
               <div className="flex items-center space-x-3">
