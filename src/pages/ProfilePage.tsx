@@ -107,13 +107,21 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
-            <button
+              <button
               onClick={() => setIsEditing(!isEditing)}
               className="btn btn-secondary flex items-center gap-2"
               style={{
                 backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-primary)',
-                border: '1px solid var(--color-surface)'
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border-default)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)'
+                e.currentTarget.style.color = 'var(--color-primary)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-border-default)'
+                e.currentTarget.style.color = 'var(--color-text-primary)'
               }}
             >
               <FaEdit className="w-4 h-4" />
@@ -298,7 +306,7 @@ export default function ProfilePage() {
                 onClick={() => setIsEditing(false)}
                 className="btn"
                 style={{
-                  backgroundColor: 'var(--color-text-secondary)',
+                  backgroundColor: 'var(--color-text-muted)',
                   color: 'white'
                 }}
                 disabled={loading}
@@ -309,6 +317,16 @@ export default function ProfilePage() {
                 onClick={handleSave}
                 disabled={loading}
                 className="btn btn-primary flex items-center gap-2"
+                style={{
+                  backgroundColor: 'var(--color-primary)',
+                  color: 'white'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+                }}
               >
                 <FaSave className="w-4 h-4" />
                 {loading ? 'Sauvegarde...' : 'Sauvegarder'}
@@ -330,12 +348,20 @@ export default function ProfilePage() {
             <p className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
               Pour des raisons de sécurité, la modification du mot de passe doit être faite via l'authentification Supabase.
             </p>
-            <button
+              <button
               onClick={() => alert('Fonctionnalité à implémenter - Redirection vers la page de réinitialisation de mot de passe')}
               className="btn"
               style={{
                 backgroundColor: 'var(--color-primary)',
-                color: 'white'
+                color: 'white',
+                borderColor: 'var(--color-primary)',
+                padding: '12px 24px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary)'
               }}
             >
               Réinitialiser le mot de passe

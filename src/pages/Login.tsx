@@ -180,10 +180,11 @@ export default function Login() {
               style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'white',
-                opacity: loading ? 0.6 : 1
+                opacity: loading ? 0.6 : 1,
+                borderColor: 'var(--color-primary)'
               }}
               onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
+                if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'
               }}
               onMouseLeave={(e) => {
                 if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary)'
@@ -202,16 +203,16 @@ export default function Login() {
                 className="px-6 py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
                 style={{
                   backgroundColor: 'var(--color-surface)',
-                  color: 'var(--color-text)',
-                  border: '2px solid var(--color-border)'
+                  color: 'var(--color-text-primary)',
+                  border: '2px solid var(--color-border-default)'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = 'var(--color-primary)'
                   e.currentTarget.style.color = 'var(--color-primary)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)'
-                  e.currentTarget.style.color = 'var(--color-text)'
+                  e.currentTarget.style.borderColor = 'var(--color-border-default)'
+                  e.currentTarget.style.color = 'var(--color-text-primary)'
                 }}
               >
                 {isRegister ? 'J\'ai déjà un compte' : 'Créer un compte'}
