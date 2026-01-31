@@ -219,8 +219,10 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
       setClientSearchQuery('')
       setCartItems([])
       setLoading(false)
-      await loadClients(profile!.kiosque_id)
-      await loadOffres(profile!.kiosque_id)
+      if (profile?.kiosque_id) {
+        await loadClients(profile.kiosque_id)
+        await loadOffres(profile.kiosque_id)
+      }
     } catch (error: any) {
       alert('Erreur lors de la vente : ' + error.message)
       setLoading(false)
@@ -234,7 +236,9 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
           setClientId(newId)
           setSelectedClientId(newId)
           setShowAddClient(false)
-          loadClients(profile!.kiosque_id)
+          if (profile?.kiosque_id) {
+            loadClients(profile.kiosque_id)
+          }
         }}
       />
     )

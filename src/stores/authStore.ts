@@ -1,28 +1,104 @@
 // src/stores/authStore.ts
 import { create } from 'zustand'
-import { supabase } from '../lib/supabase'
+import { supabase, handleSupabaseError } from '../lib/supabase'
+import { validateEmail } from '../utils/validation'
 
-type AuthStore = {
-  user: any
-  profile: any
-  signIn: (email: string, password: string) => Promise<void>
-  signOut: () => Promise<void>
-  loadProfile: () => Promise<void>
+/**
+ * Type definitions for authentication
+ */
+export type UserRole = 'fontainier' | 'commercial' | 'administrateur'
+
+export interface Kiosk {
+  id: string
+  nom: string
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export interface Profile {
+  id: string
+  username: string
+  email?: string
+  phone?: string
+  address?: string
+  role: UserRole
+  kiosque_id?: string | null
+  kiosques?: { nom: string }
+  created_at?: string
+  updated_at?: string
+}
+
+export interface User {
+  id: string
+  email?: string
+  created_at?: string
+}
+
+interface AuthStore {
+  user: User | null
+  profile: Profile | null
+  isLoading: boolean
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  signOut: () => Promise<void>
+  loadProfile: () => Promise<void>
+  isAuthenticated: () => boolean
+  hasRole: (role: UserRole) => boolean
+}
+
+export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   profile: null,
+  isLoading: false,
 
   signIn: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
-    set({ user: data.user })
+    set({ isLoading: true })
+
+    try {
+      // Validate email format
+      const validatedEmail = validateEmail(email)
+      if (!validatedEmail) {
+        set({ isLoading: false })
+        return { success: false, error: 'Format d\'email invalide' }
+      }
+
+      // Validate password
+      if (!password || password.length < 6) {
+        set({ isLoading: false })
+        return { success: false, error: 'Le mot de passe doit contenir au moins 6 caractères' }
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: validatedEmail, 
+        password 
+      })
+
+      if (error) {
+        set({ isLoading: false })
+        return { success: false, error: handleSupabaseError(error) }
+      }
+
+      set({ user: data.user, isLoading: false })
+      
+      // Load profile after successful sign in
+      await get().loadProfile()
+
+      return { success: true }
+    } catch (error: any) {
+      set({ isLoading: false })
+      return { 
+        success: false, 
+        error: error.message || 'Erreur lors de la connexion' 
+      }
+    }
   },
 
   signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null, profile: null })
+    try {
+      await supabase.auth.signOut()
+      set({ user: null, profile: null, isLoading: false })
+    } catch (error: any) {
+      console.error('Sign out error:', error)
+      // Force clear state even if sign out fails
+      set({ user: null, profile: null, isLoading: false })
+    }
   },
 
   loadProfile: async () => {
@@ -33,14 +109,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
         return
       }
 
-      let { data: profile } = await supabase
+      let { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
-      if (!profile) {
-        // fallback : on crée le profil manuellement
+      if (error || !profile) {
+        // Fallback: create profile manually
         const { error: insertError } = await supabase.from('profiles').insert({
           id: user.id,
           username: user.email?.split('@')[0] || 'nouveau',
@@ -54,7 +130,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
           return
         }
 
-        // re-fetch
+        // Re-fetch profile
         const { data: fresh } = await supabase
           .from('profiles')
           .select('*')
@@ -62,7 +138,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
           .single()
 
         if (fresh) {
-          // Load kiosk information for the new profile
+          // Load kiosk information for new profile
           if (fresh.kiosque_id) {
             try {
               const { data: kioskData } = await supabase
@@ -114,5 +190,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
       console.error('Error in loadProfile:', error)
       set({ user: null, profile: null })
     }
+  },
+
+  isAuthenticated: () => {
+    const { user, profile } = get()
+    return user !== null && profile !== null
+  },
+
+  hasRole: (role: UserRole) => {
+    const { profile } = get()
+    return profile?.role === role
   },
 }))

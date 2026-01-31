@@ -1,13 +1,17 @@
 // main.tsx
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'   // ← new
+import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
+import { validateEnv } from './utils/env'
+
+// Validate environment configuration on startup
+validateEnv()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>      {/* ← wrap here */}
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </StrictMode>,

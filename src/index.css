@@ -498,6 +498,150 @@ html {
 }
 
 /* Touch-friendly improvements */
+@media (max-width: 768px) {
+  /* Sidebar mobile optimizations */
+  .sidebar-mobile {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+
+  /* Table responsive improvements */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Card grid optimizations */
+  .card-grid-mobile {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Form improvements */
+  .form-mobile {
+    padding: 1rem;
+  }
+
+  .input-mobile {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+
+  /* Button improvements */
+  .btn-mobile {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    min-height: 44px; /* iOS touch target */
+  }
+
+  /* Chart responsive */
+  .chart-mobile {
+    height: 250px !important;
+  }
+
+  /* Modal improvements */
+  .modal-mobile {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Tablet optimizations */
+  .card-grid-tablet {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .table-tablet {
+    font-size: 0.875rem;
+  }
+}
+
+/* Touch-friendly improvements */
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: #000000;
+    --color-text: #000000;
+    --color-background: #FFFFFF;
+  }
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to main content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--color-primary);
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.3s;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Additional CSS variables for surface hover states */
+:root {
+  --color-surface-hover: #F8F9FA;
+  --color-text-primary: #212529;
+  --color-text-muted: #6C757D;
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
 @media (hover: none) and (pointer: coarse) {
   /* Touch device optimizations */
   button, .btn-touch {
