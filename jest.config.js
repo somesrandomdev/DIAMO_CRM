@@ -7,6 +7,7 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true,
+      diagnostics: { ignoreCodes: [1343, 2339] },
       tsconfig: {
         jsx: 'react-jsx',
         esModuleInterop: true,
