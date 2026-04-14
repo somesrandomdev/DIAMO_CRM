@@ -109,7 +109,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return
       }
 
-      let { data: profile, error } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
