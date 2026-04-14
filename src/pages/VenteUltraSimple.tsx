@@ -1,5 +1,5 @@
 // src/pages/VenteUltraSimple.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useVenteStore } from '../stores/venteStore'
@@ -83,8 +83,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
     }
   }, [profile?.kiosque_id, onBack])
 
-  const safeClients = clients.filter((c) => c?.nom)
-  const safeOffers = offres.filter((o) => o?.offre?.nom)
+  const safeClients = useMemo(() => clients.filter((c) => c?.nom), [clients])
+  const safeOffers = useMemo(() => offres.filter((o) => o?.offre?.nom), [offres])
+  const selectedClient = useMemo(
+    () => safeClients.find((c) => c.id === selectedClientId),
+    [safeClients, selectedClientId]
+  )
 
   // Client search functions
   const handleClientSearch = (query: string) => {
@@ -163,7 +167,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
 
       // Generate a combined ticket for all items
       const ticket = await generateTicket({
-        client: safeClients.find((c) => c.id === clientId) || { nom: 'Client' },
+        client: selectedClient || { nom: 'Client' },
         offres: cartItems.map(item => ({
           ...item.offre,
           prix: item.prix || 0,
@@ -322,11 +326,11 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-green-800 mb-2 uppercase tracking-wide">Client sélectionné</div>
                     <div className="text-2xl font-extrabold text-green-900 mb-1">
-                      {safeClients.find(c => c.id === selectedClientId)?.nom}
+                      {selectedClient?.nom}
                     </div>
                     <div className="flex items-center gap-4 text-lg text-green-700">
                       <span className="flex items-center gap-2">
-                        📞 {safeClients.find(c => c.id === selectedClientId)?.telephone || 'Non renseigné'}
+                        📞 {selectedClient?.telephone || 'Non renseigné'}
                       </span>
                       <span className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm font-medium">
                         ID: {selectedClientId.substring(0, 8)}...
@@ -345,9 +349,8 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   <button
                     type="button"
                     onClick={() => {
-                      const client = safeClients.find(c => c.id === selectedClientId)
-                      if (client) {
-                        setClientSearchQuery(client.nom)
+                      if (selectedClient) {
+                        setClientSearchQuery(selectedClient.nom)
                         setShowClientSuggestions(true)
                       }
                     }}
