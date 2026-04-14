@@ -11,6 +11,7 @@ interface EnvConfig {
   isDevelopment: boolean
   isProduction: boolean
   isTest: boolean
+  sentryDsn?: string
 }
 
 /**
@@ -63,6 +64,7 @@ export function getEnvConfig(): EnvConfig {
     isDevelopment: nodeEnv === 'development',
     isProduction: nodeEnv === 'production',
     isTest: nodeEnv === 'test',
+    sentryDsn: import.meta.env.VITE_SENTRY_DSN,
   }
 }
 
