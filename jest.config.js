@@ -7,6 +7,21 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: true,
+      diagnostics: {
+        ignoreCodes: [1343, 2339]
+      },
+      astTransformers: {
+        before: [
+          {
+            path: 'ts-jest-mock-import-meta',
+            options: { metaObjectReplacement: { env: {
+              VITE_SUPABASE_URL: 'https://example.supabase.co',
+              VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+              MODE: 'test'
+            } } }
+          }
+        ]
+      },
       tsconfig: {
         jsx: 'react-jsx',
         esModuleInterop: true,
