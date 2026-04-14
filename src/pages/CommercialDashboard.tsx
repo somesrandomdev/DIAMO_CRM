@@ -4,36 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { toCFA } from '../utils/price'
 import { FaShoppingCart, FaUsers, FaChartBar, FaTrophy } from 'react-icons/fa'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
-
-interface DashboardStats {
-  totalSales: number
-  totalVolume: number
-  activeClients: number
-  todaySales: number
-  avgSale: number
-  salesGrowth: number
-  topOffer: string
-  newClientsToday: number
-  monthlyObjective: number
-  dailyObjective: number
-  monthlyProgress: number
-  dailyProgress: number
-  recommendations: string[]
-}
-
-interface RecentSale {
-  id: string
-  created_at: string
-  montant_total: number
-  client: { nom: string } | null
-  offre: { nom: string } | null
-}
-
-interface ChartData {
-  date: string
-  sales: number
-  volume: number
-}
+import type { CommercialDashboardStats, RecentSale, ChartData } from '../types/dashboard'
 
 interface CustomerSegment {
   name: string
@@ -43,7 +14,7 @@ interface CustomerSegment {
 
 export default function CommercialDashboard() {
   const { profile } = useAuthStore()
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<CommercialDashboardStats>({
     totalSales: 0,
     totalVolume: 0,
     activeClients: 0,
