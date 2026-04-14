@@ -326,33 +326,32 @@ export default function AdminDashboardEnhanced() {
         revenueByKioskMap[sale.kiosque_id] = (revenueByKioskMap[sale.kiosque_id] || 0) + sale.montant_total
       })
 
-      const revenueByKiosk = await Promise.all(
-        Object.entries(revenueByKioskMap).map(async ([kioskId, revenue]) => {
-          try {
-            const { data: kiosk, error: kioskError } = await supabase.from('kiosques').select('nom').eq('id', kioskId).single()
-            if (kioskError) {
-              console.error(`Error getting kiosk ${kioskId}:`, kioskError)
-              return {
-                id: kioskId,
-                name: `Kiosque ${kioskId}`,
-                value: revenue
-              }
-            }
-            return {
-              id: kioskId,
-              name: kiosk?.nom || 'Kiosque inconnu',
-              value: revenue
-            }
-          } catch (error) {
-            console.error(`Error in kiosk lookup for ${kioskId}:`, error)
-            return {
-              id: kioskId,
-              name: `Kiosque ${kioskId}`,
-              value: revenue
-            }
+      const kioskIds = Object.keys(revenueByKioskMap)
+      let kioskNames: Record<string, string> = {}
+
+      if (kioskIds.length > 0) {
+        try {
+          const { data: kiosks, error: kiosksError } = await supabase.from('kiosques').select('id, nom').in('id', kioskIds)
+          if (kiosksError) {
+            console.error('Error getting kiosks for names:', kiosksError)
+          } else if (kiosks) {
+            kioskNames = kiosks.reduce((acc: Record<string, string>, k) => {
+              acc[k.id] = k.nom || 'Kiosque inconnu'
+              return acc
+            }, {})
           }
-        })
-      )
+        } catch (error) {
+          console.error('Error in kiosks lookup:', error)
+        }
+      }
+
+      const revenueByKiosk = Object.entries(revenueByKioskMap).map(([kioskId, revenue]) => {
+        return {
+          id: kioskId,
+          name: kioskNames[kioskId] || `Kiosque ${kioskId}`,
+          value: revenue
+        }
+      })
 
       const topKiosks = revenueByKiosk
         .sort((a, b) => b.value - a.value)
