@@ -308,7 +308,7 @@ export default function AdminDashboardEnhanced() {
       }
 
       // Get filtered clients data
-      let clientsQuery = supabase.from('clients').select('*', { count: 'exact', head: true })
+      const clientsQuery = supabase.from('clients').select('*', { count: 'exact', head: true })
 
       // Apply date filter for clients if needed (clients don't have created_at, so we'll use a different approach)
       // For now, we'll get all clients since we don't have a reliable way to filter by creation date
@@ -326,33 +326,34 @@ export default function AdminDashboardEnhanced() {
         revenueByKioskMap[sale.kiosque_id] = (revenueByKioskMap[sale.kiosque_id] || 0) + sale.montant_total
       })
 
-      const revenueByKiosk = await Promise.all(
-        Object.entries(revenueByKioskMap).map(async ([kioskId, revenue]) => {
-          try {
-            const { data: kiosk, error: kioskError } = await supabase.from('kiosques').select('nom').eq('id', kioskId).single()
-            if (kioskError) {
-              console.error(`Error getting kiosk ${kioskId}:`, kioskError)
-              return {
-                id: kioskId,
-                name: `Kiosque ${kioskId}`,
-                value: revenue
-              }
-            }
-            return {
-              id: kioskId,
-              name: kiosk?.nom || 'Kiosque inconnu',
-              value: revenue
-            }
-          } catch (error) {
-            console.error(`Error in kiosk lookup for ${kioskId}:`, error)
-            return {
-              id: kioskId,
-              name: `Kiosque ${kioskId}`,
-              value: revenue
-            }
+      const kioskIds = Object.keys(revenueByKioskMap)
+      let kioskNamesMap: Record<string, string> = {}
+
+      if (kioskIds.length > 0) {
+        try {
+          const { data: kiosks, error: kiosksError } = await supabase
+            .from('kiosques')
+            .select('id, nom')
+            .in('id', kioskIds)
+
+          if (kiosksError) {
+            console.error('Error getting kiosks:', kiosksError)
+          } else if (kiosks) {
+            kioskNamesMap = kiosks.reduce((acc, kiosk) => {
+              acc[kiosk.id] = kiosk.nom
+              return acc
+            }, {} as Record<string, string>)
           }
-        })
-      )
+        } catch (error) {
+          console.error('Error in bulk kiosk lookup:', error)
+        }
+      }
+
+      const revenueByKiosk = Object.entries(revenueByKioskMap).map(([kioskId, revenue]) => ({
+        id: kioskId,
+        name: kioskNamesMap[kioskId] || `Kiosque ${kioskId}`,
+        value: revenue
+      }))
 
       const topKiosks = revenueByKiosk
         .sort((a, b) => b.value - a.value)
@@ -731,7 +732,7 @@ export default function AdminDashboardEnhanced() {
       return
     }
 
-    let filtered = { ...globalStats }
+    const filtered = { ...globalStats }
 
     // Filter by kiosk
     if (globalFilters.kioskId) {
