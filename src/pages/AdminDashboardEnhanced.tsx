@@ -219,26 +219,32 @@ export default function AdminDashboardEnhanced() {
       }
 
       if (profilesData) {
-        const profilesWithKiosks = await Promise.all(
-          profilesData.map(async (profile) => {
-            if (profile.kiosque_id) {
-              try {
-                const { data: kioskData } = await supabase
-                  .from('kiosques')
-                  .select('id, nom')
-                  .eq('id', profile.kiosque_id)
-                  .single()
+        let kioskMap: Record<string, { id: string; nom: string }> = {}
+        const kioskIds = Array.from(new Set(profilesData.map(p => p.kiosque_id).filter(Boolean))) as string[]
 
-                if (kioskData) {
-                  return { ...profile, kiosques: kioskData }
-                }
-              } catch (kioskError) {
-                console.error(`Error loading kiosk for profile ${profile.id}:`, kioskError)
-              }
+        if (kioskIds.length > 0) {
+          try {
+            const { data: kiosksData, error: kiosksError } = await supabase
+              .from('kiosques')
+              .select('id, nom')
+              .in('id', kioskIds)
+
+            if (kiosksError) {
+              console.error('Error loading kiosks in batch:', kiosksError)
+            } else if (kiosksData) {
+              kioskMap = Object.fromEntries(kiosksData.map(k => [k.id, k]))
             }
-            return profile
-          })
-        )
+          } catch (kioskError) {
+            console.error('Error executing batch kiosk fetch:', kioskError)
+          }
+        }
+
+        const profilesWithKiosks = profilesData.map((profile) => {
+          if (profile.kiosque_id && kioskMap[profile.kiosque_id]) {
+            return { ...profile, kiosques: kioskMap[profile.kiosque_id] }
+          }
+          return profile
+        })
 
         setProfiles(profilesWithKiosks)
       }
@@ -308,7 +314,7 @@ export default function AdminDashboardEnhanced() {
       }
 
       // Get filtered clients data
-      let clientsQuery = supabase.from('clients').select('*', { count: 'exact', head: true })
+      const clientsQuery = supabase.from('clients').select('*', { count: 'exact', head: true })
 
       // Apply date filter for clients if needed (clients don't have created_at, so we'll use a different approach)
       // For now, we'll get all clients since we don't have a reliable way to filter by creation date
@@ -352,6 +358,33 @@ export default function AdminDashboardEnhanced() {
           value: revenue
         }
       })
+      let kioskNamesMap: Record<string, string> = {}
+
+      if (kioskIds.length > 0) {
+        try {
+          const { data: kiosks, error: kiosksError } = await supabase
+            .from('kiosques')
+            .select('id, nom')
+            .in('id', kioskIds)
+
+          if (kiosksError) {
+            console.error('Error getting kiosks:', kiosksError)
+          } else if (kiosks) {
+            kioskNamesMap = kiosks.reduce((acc, kiosk) => {
+              acc[kiosk.id] = kiosk.nom
+              return acc
+            }, {} as Record<string, string>)
+          }
+        } catch (error) {
+          console.error('Error in bulk kiosk lookup:', error)
+        }
+      }
+
+      const revenueByKiosk = Object.entries(revenueByKioskMap).map(([kioskId, revenue]) => ({
+        id: kioskId,
+        name: kioskNamesMap[kioskId] || `Kiosque ${kioskId}`,
+        value: revenue
+      }))
 
       const topKiosks = revenueByKiosk
         .sort((a, b) => b.value - a.value)
@@ -730,7 +763,7 @@ export default function AdminDashboardEnhanced() {
       return
     }
 
-    let filtered = { ...globalStats }
+    const filtered = { ...globalStats }
 
     // Filter by kiosk
     if (globalFilters.kioskId) {

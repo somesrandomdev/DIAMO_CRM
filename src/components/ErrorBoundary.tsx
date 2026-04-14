@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { captureException } from '../lib/sentry'
 
 interface Props {
   children: ReactNode
@@ -30,10 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
     
     // Log to error tracking service in production
     if (process.env.NODE_ENV === 'production') {
-      // TODO: Integrate with error tracking service (Sentry, LogRocket, etc.)
-      console.error('Production error:', {
-        error: error.message,
-        stack: error.stack,
+      captureException(error, {
         componentStack: errorInfo.componentStack
       })
     }
