@@ -144,26 +144,30 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
     setLoading(true)
 
     try {
-      // Create multiple sales for each cart item
-      const sales = []
-      for (const item of cartItems) {
-        const total = (item.prix || 0) * item.qty
+      // Create multiple sales for each cart item using bulk insert
+      const salesRecords = cartItems.map(item => ({
+        kiosque_id: profile!.kiosque_id,
+        client_id: clientId,
+        offre_id: item.offreId,
+        quantite: item.qty,
+        montant_total: (item.prix || 0) * item.qty,
+      }))
 
-        const { data: sale, error: saleError } = await supabase
-          .from('ventes')
-          .insert({
-            kiosque_id: profile!.kiosque_id,
-            client_id: clientId,
-            offre_id: item.offreId,
-            quantite: item.qty,
-            montant_total: total,
-          })
-          .select('id')
-          .single()
+      const { data: insertedSales, error: saleError } = await supabase
+        .from('ventes')
+        .insert(salesRecords)
+        .select('id, offre_id')
 
-        if (saleError) throw saleError
-        sales.push({ ...sale, ...item, montant_total: total })
-      }
+      if (saleError) throw saleError
+
+      const sales = insertedSales.map((sale) => {
+        const item = cartItems.find(i => i.offreId === sale.offre_id)
+        return {
+          ...sale,
+          ...item,
+          montant_total: (item?.prix || 0) * (item?.qty || 1)
+        }
+      })
 
       // Generate a combined ticket for all items
       const ticket = await generateTicket({
