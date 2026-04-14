@@ -333,6 +333,31 @@ export default function AdminDashboardEnhanced() {
       })
 
       const kioskIds = Object.keys(revenueByKioskMap)
+      let kioskNames: Record<string, string> = {}
+
+      if (kioskIds.length > 0) {
+        try {
+          const { data: kiosks, error: kiosksError } = await supabase.from('kiosques').select('id, nom').in('id', kioskIds)
+          if (kiosksError) {
+            console.error('Error getting kiosks for names:', kiosksError)
+          } else if (kiosks) {
+            kioskNames = kiosks.reduce((acc: Record<string, string>, k) => {
+              acc[k.id] = k.nom || 'Kiosque inconnu'
+              return acc
+            }, {})
+          }
+        } catch (error) {
+          console.error('Error in kiosks lookup:', error)
+        }
+      }
+
+      const revenueByKiosk = Object.entries(revenueByKioskMap).map(([kioskId, revenue]) => {
+        return {
+          id: kioskId,
+          name: kioskNames[kioskId] || `Kiosque ${kioskId}`,
+          value: revenue
+        }
+      })
       let kioskNamesMap: Record<string, string> = {}
 
       if (kioskIds.length > 0) {
