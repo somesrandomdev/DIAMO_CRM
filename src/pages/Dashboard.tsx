@@ -5,27 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import { toCFA } from '../utils/price'
 import { FaShoppingCart, FaUsers, FaChartBar, FaWater, FaPlus } from 'react-icons/fa'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-
-interface DashboardStats {
-  totalSales: number
-  totalVolume: number
-  activeClients: number
-  todaySales: number
-}
-
-interface RecentSale {
-  id: string
-  created_at: string
-  montant_total: number
-  client: { nom: string } | null
-  offre: { nom: string } | null
-}
-
-interface ChartData {
-  date: string
-  sales: number
-  volume: number
-}
+import type { DashboardStats, RecentSale, ChartData } from '../types/dashboard'
 
 interface FontainierStats {
   totalSales: number
