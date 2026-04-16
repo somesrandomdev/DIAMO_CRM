@@ -481,8 +481,10 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                       />
                       <button
                         onClick={() => removeFromCart(item.offreId)}
-                        className="text-error hover:text-error-dark p-1"
+                        className="text-error hover:text-error-dark p-1 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-red-500 rounded transition-all"
                         style={{ color: 'var(--color-error)' }}
+                        aria-label="Retirer l'article"
+                        title="Retirer l'article"
                       >
                         ✕
                       </button>
