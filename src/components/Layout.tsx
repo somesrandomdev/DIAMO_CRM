@@ -200,9 +200,12 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       {/* Sidebar */}
-      <div className={`w-64 bg-surface shadow-xl border-r border-border fixed h-full z-40 transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
-        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div
+        id="mobile-menu"
+        className={`w-64 bg-surface shadow-xl border-r border-border fixed h-full z-40 transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
@@ -210,7 +213,9 @@ export default function Layout({ children }: LayoutProps) {
             {/* Close button for mobile */}
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-blue-50 transition-colors"
+              aria-label="Fermer le menu"
+              aria-expanded={mobileMenuOpen}
+              className="lg:hidden p-2 rounded-lg hover:bg-blue-50 transition-colors focus-ring"
             >
               <FaBars className="w-5 h-5 transform rotate-45 text-blue-600" />
             </button>
@@ -292,6 +297,9 @@ export default function Layout({ children }: LayoutProps) {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
+                aria-label="Ouvrir le menu principal"
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-menu"
                 className="lg:hidden p-3 rounded-lg hover:bg-surface-hover border-2 border-border hover:border-primary transition-all duration-200 shadow-sm focus-ring"
                 style={{
                   borderColor: 'var(--color-border)',
