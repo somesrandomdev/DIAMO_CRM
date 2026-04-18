@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import DOMPurify from 'dompurify'
 
 function escapeHTML(str: string): string {
   if (!str) return ''
@@ -46,7 +47,7 @@ export async function generateTicket(data: {
     `
   }
 
-  container.innerHTML = `
+  const htmlContent = `
     <div style="text-align:center">
       <h2>${escapeHTML(kiosque.nom || 'Diam\'o')}</h2>
       <p>${escapeHTML(kiosque.adresse || '')}</p>
@@ -59,6 +60,8 @@ export async function generateTicket(data: {
       <p style="font-size:10px; color:#555">Merci pour votre confiance !</p>
     </div>
   `
+  // Sanitize the HTML string to prevent XSS before assigning it to innerHTML
+  container.innerHTML = DOMPurify.sanitize(htmlContent)
 
   // 2. Render to canvas → PDF
   document.body.appendChild(container)
