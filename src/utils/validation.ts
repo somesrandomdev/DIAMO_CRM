@@ -331,3 +331,18 @@ export function getValidationErrorMessage(field: string, type: string): string {
 
   return messages[type] || `${field} est invalide`
 }
+
+/**
+ * Sanitizes a string for CSV export to prevent CSV injection
+ * @param input - The string to sanitize
+ * @returns Sanitized string
+ */
+export function sanitizeForCSV(input: string | null | undefined): string {
+  if (!input) return '';
+  const str = String(input);
+  // If the string starts with a potential formula character, prepend a single quote
+  if (/^[=+\-@\t\r]/.test(str)) {
+    return "'" + str;
+  }
+  return str;
+}
