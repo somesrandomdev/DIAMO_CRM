@@ -164,7 +164,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-lg border" style={{
+              <div className="px-4 py-3 rounded-lg border" role="alert" style={{
                 backgroundColor: 'var(--color-error)',
                 borderColor: 'var(--color-error)',
                 color: 'white'
@@ -176,7 +176,8 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+              aria-busy={loading}
+              className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
               style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'white',
@@ -189,7 +190,12 @@ export default function Login() {
                 if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary)'
               }}
             >
-              {loading ? 'Chargement...' : isRegister ? 'Créer le compte' : 'Se connecter'}
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Chargement...
+                </>
+              ) : isRegister ? 'Créer le compte' : 'Se connecter'}
             </button>
 
             <div className="text-center">
