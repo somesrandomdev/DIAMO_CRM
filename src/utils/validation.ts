@@ -4,6 +4,21 @@
  */
 
 /**
+ * Sanitizes a string input to prevent CSV/Formula injection
+ * @param input - The string to sanitize
+ * @returns Sanitized string safe for CSV export
+ */
+export function sanitizeForCSV(input: string | null | undefined): string {
+  if (!input) return ''
+  const str = String(input)
+  // Prepend apostrophe if the string starts with a dangerous character
+  if (/^[=+\-@\t\r]/.test(str)) {
+    return `'${str}`
+  }
+  return str
+}
+
+/**
  * Sanitizes a string input by removing potentially dangerous characters
  * @param input - The string to sanitize
  * @returns Sanitized string

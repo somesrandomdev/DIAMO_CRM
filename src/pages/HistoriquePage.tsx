@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
 import { toCFA } from '../utils/price'
 import { FaSearch, FaFilter, FaDownload } from 'react-icons/fa'
+import { sanitizeForCSV } from '../utils/validation'
 
 interface Sale {
   id: string
@@ -86,8 +87,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
       ['Date', 'Client', 'Offre', 'Montant', 'ID Vente'],
       ...filteredSales.map(sale => [
         new Date(sale.created_at).toLocaleDateString('fr-FR'),
-        sale.client?.nom || 'N/A',
-        sale.offre?.nom || 'N/A',
+        sanitizeForCSV(sale.client?.nom || 'N/A'),
+        sanitizeForCSV(sale.offre?.nom || 'N/A'),
         sale.montant_total.toString(),
         sale.id
       ])
