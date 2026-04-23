@@ -164,11 +164,16 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-lg border" style={{
-                backgroundColor: 'var(--color-error)',
-                borderColor: 'var(--color-error)',
-                color: 'white'
-              }}>
+              <div
+                className="px-4 py-3 rounded-lg border"
+                role="alert"
+                aria-live="polite"
+                style={{
+                  backgroundColor: 'var(--color-error)',
+                  borderColor: 'var(--color-error)',
+                  color: 'white'
+                }}
+              >
                 {error}
               </div>
             )}
@@ -176,6 +181,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
               style={{
                 backgroundColor: 'var(--color-primary)',
