@@ -1,4 +1,4 @@
-import { validateURL } from '../validation';
+import { validateURL, sanitizeForCSV } from '../validation';
 
 describe('validateURL', () => {
   it('should return the URL if it is valid and has an allowed protocol (http, https)', () => {
@@ -35,5 +35,31 @@ describe('validateURL', () => {
 
   it('should sanitize the string before validating', () => {
     expect(validateURL(' https://example.com ')).toBe('https://example.com');
+  })
+
+  describe('sanitizeForCSV', () => {
+    it('returns empty string for null or undefined', () => {
+      expect(sanitizeForCSV(null)).toBe('')
+      expect(sanitizeForCSV(undefined)).toBe('')
+    })
+
+    it('returns the same string if safe', () => {
+      expect(sanitizeForCSV('Safe Value')).toBe('Safe Value')
+      expect(sanitizeForCSV('12345')).toBe('12345')
+    })
+
+    it('prepends apostrophe to formula trigger characters', () => {
+      expect(sanitizeForCSV('=1+2')).toBe("'=1+2")
+      expect(sanitizeForCSV('+1-2')).toBe("'+1-2")
+      expect(sanitizeForCSV('-1+2')).toBe("'-1+2")
+      expect(sanitizeForCSV('@SUM(1,2)')).toBe("'@SUM(1,2)")
+      expect(sanitizeForCSV('\tvalue')).toBe("'\tvalue")
+      expect(sanitizeForCSV('\rvalue')).toBe("'\rvalue")
+    })
+
+    it('converts non-string inputs to string before sanitizing', () => {
+      expect(sanitizeForCSV(123 as any)).toBe('123')
+      expect(sanitizeForCSV({} as any)).toBe('[object Object]')
+    })
   });
 });

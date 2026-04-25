@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
 import { toCFA } from '../utils/price'
+import { sanitizeForCSV } from '../utils/validation'
 import { FaSearch, FaFilter, FaDownload } from 'react-icons/fa'
 
 interface Sale {
@@ -82,14 +83,16 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   }
 
   const exportToCSV = () => {
+    const escapeCSV = (str: string) => `"${str.replace(/"/g, '""')}"`
+
     const csvContent = [
-      ['Date', 'Client', 'Offre', 'Montant', 'ID Vente'],
+      ['Date', 'Client', 'Offre', 'Montant', 'ID Vente'].map(escapeCSV),
       ...filteredSales.map(sale => [
-        new Date(sale.created_at).toLocaleDateString('fr-FR'),
-        sale.client?.nom || 'N/A',
-        sale.offre?.nom || 'N/A',
-        sale.montant_total.toString(),
-        sale.id
+        escapeCSV(new Date(sale.created_at).toLocaleDateString('fr-FR')),
+        escapeCSV(sanitizeForCSV(sale.client?.nom || 'N/A')),
+        escapeCSV(sanitizeForCSV(sale.offre?.nom || 'N/A')),
+        escapeCSV(sale.montant_total.toString()),
+        escapeCSV(sale.id)
       ])
     ]
 
