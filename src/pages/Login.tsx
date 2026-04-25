@@ -83,10 +83,11 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                <label htmlFor="username" className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                   Nom d'utilisateur
                 </label>
                 <input
+                  id="username"
                   placeholder="Votre nom d'utilisateur"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -110,10 +111,11 @@ export default function Login() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+              <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 placeholder="votre.email@example.com"
                 value={email}
@@ -137,10 +139,11 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                 Mot de passe
               </label>
               <input
+                id="password"
                 type="password"
                 placeholder="Minimum 6 caractères"
                 value={password}
@@ -164,7 +167,10 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-lg border" style={{
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="px-4 py-3 rounded-lg border" style={{
                 backgroundColor: 'var(--color-error)',
                 borderColor: 'var(--color-error)',
                 color: 'white'
@@ -176,7 +182,8 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
+              aria-busy={loading}
+              className="w-full py-3 flex justify-center items-center gap-2 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
               style={{
                 backgroundColor: 'var(--color-primary)',
                 color: 'white',
@@ -189,6 +196,16 @@ export default function Login() {
                 if (!loading) e.currentTarget.style.backgroundColor = 'var(--color-primary)'
               }}
             >
+              {loading && (
+                <div
+                  className="w-5 h-5 border-2 rounded-full animate-spin"
+                  style={{
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    borderTopColor: 'white'
+                  }}
+                  aria-hidden="true"
+                />
+              )}
               {loading ? 'Chargement...' : isRegister ? 'Créer le compte' : 'Se connecter'}
             </button>
 
