@@ -312,6 +312,28 @@ export function validateObject<T extends Record<string, any>>(
 }
 
 /**
+ * Sanitizes a string for safe inclusion in a CSV export
+ * Prevents CSV/Formula injection and structural corruption
+ * @param field - The string to sanitize
+ * @returns Sanitized string safe for CSV
+ */
+export function sanitizeForCSV(field: string | null | undefined): string {
+  if (field === null || field === undefined) {
+    return '""'
+  }
+
+  let str = String(field)
+
+  // Prevent CSV injection by prepending an apostrophe if the field starts with a formula trigger
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = "'" + str
+  }
+
+  // Escape internal double quotes and wrap the whole field in double quotes
+  return '"' + str.replace(/"/g, '""') + '"'
+}
+
+/**
  * Creates a validation error message
  * @param field - The field name
  * @param type - The validation type

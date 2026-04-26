@@ -37,3 +37,30 @@ describe('validateURL', () => {
     expect(validateURL(' https://example.com ')).toBe('https://example.com');
   });
 });
+
+import { sanitizeForCSV } from '../validation';
+
+describe('sanitizeForCSV', () => {
+  it('should return empty string enclosed in quotes for null or undefined', () => {
+    expect(sanitizeForCSV(null)).toBe('""');
+    expect(sanitizeForCSV(undefined)).toBe('""');
+  });
+
+  it('should escape double quotes and enclose string in quotes', () => {
+    expect(sanitizeForCSV('test "value"')).toBe('"test ""value"""');
+  });
+
+  it('should prepend apostrophe if string starts with formula trigger', () => {
+    expect(sanitizeForCSV('=1+1')).toBe('"' + "'=1+1" + '"');
+    expect(sanitizeForCSV('+1')).toBe('"' + "'+1" + '"');
+    expect(sanitizeForCSV('-1')).toBe('"' + "'-1" + '"');
+    expect(sanitizeForCSV('@cmd')).toBe('"' + "'@cmd" + '"');
+    expect(sanitizeForCSV('\tcmd')).toBe('"' + "'\tcmd" + '"');
+    expect(sanitizeForCSV('\rcmd')).toBe('"' + "'\rcmd" + '"');
+  });
+
+  it('should wrap normal strings in quotes without prepending apostrophe', () => {
+    expect(sanitizeForCSV('normal string')).toBe('"normal string"');
+    expect(sanitizeForCSV('1+1')).toBe('"1+1"');
+  });
+});
