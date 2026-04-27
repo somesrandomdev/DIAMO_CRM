@@ -1,4 +1,4 @@
-## 2026-04-15 - Fixed XSS vulnerability in ticketGenerator.ts
-**Vulnerability:** User-controlled data (via escapeHTML with some bypass edge cases depending on HTML structure and attributes) was directly interpolated into an HTML string and assigned to `container.innerHTML` without a robust sanitization library.
-**Learning:** Even if data is escaped before being inserted into an HTML string using basic regex replacements, it might still be vulnerable to XSS due to contextual edge cases or omissions in the custom escape function. The `sanitizeString` function is insufficient.
-**Prevention:** Always use a mature, battle-tested sanitization library like `DOMPurify` (using `DOMPurify.sanitize()`) when dynamically injecting HTML content, rather than relying on custom string escaping logic.
+## 2025-04-27 - [CSV/Formula Injection Fix]
+**Vulnerability:** The application was directly exporting user-controlled inputs (client name, offer name) into CSV files without proper sanitization in `src/pages/HistoriquePage.tsx`. When opened with spreadsheet software, inputs starting with formula triggers (`=`, `+`, `-`, `@`, `\t`, `\r`) could lead to code execution (CSV Injection).
+**Learning:** Raw user data should never be directly formatted into CSV strings, as spreadsheet programs will evaluate them as macros or formulas. This app's custom CSV generation lacked safety mechanisms.
+**Prevention:** Always use a dedicated escaping utility like `sanitizeForCSV` to prepend an apostrophe (`'`) to strings starting with dangerous characters, and properly escape/wrap the entire cell in double quotes.
