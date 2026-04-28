@@ -1,4 +1,4 @@
-import { validateURL } from '../validation';
+import { validateURL, sanitizeForCSV } from '../validation';
 
 describe('validateURL', () => {
   it('should return the URL if it is valid and has an allowed protocol (http, https)', () => {
@@ -35,5 +35,31 @@ describe('validateURL', () => {
 
   it('should sanitize the string before validating', () => {
     expect(validateURL(' https://example.com ')).toBe('https://example.com');
+  });
+});
+
+describe('sanitizeForCSV', () => {
+  it('should escape internal quotes and wrap in double quotes', () => {
+    expect(sanitizeForCSV('test')).toBe('"test"');
+    expect(sanitizeForCSV('te"st')).toBe('"te""st"');
+    expect(sanitizeForCSV('test"')).toBe('"test"""');
+  });
+
+  it('should prefix formula trigger characters with an apostrophe', () => {
+    expect(sanitizeForCSV('=1+2')).toBe('"\'=1+2"');
+    expect(sanitizeForCSV('+1+2')).toBe('"\'+1+2"');
+    expect(sanitizeForCSV('-1+2')).toBe('"\'-1+2"');
+    expect(sanitizeForCSV('@cmd')).toBe('"\'@cmd"');
+    expect(sanitizeForCSV('\tcmd')).toBe('"\'\tcmd"');
+    expect(sanitizeForCSV('\rcmd')).toBe('"\'\rcmd"');
+  });
+
+  it('should handle null or undefined correctly', () => {
+    expect(sanitizeForCSV(null)).toBe('""');
+    expect(sanitizeForCSV(undefined)).toBe('""');
+  });
+
+  it('should stringify numbers and correctly format them', () => {
+    expect(sanitizeForCSV(123)).toBe('"123"');
   });
 });
