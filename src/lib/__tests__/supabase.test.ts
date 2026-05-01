@@ -43,6 +43,18 @@ describe('handleSupabaseError', () => {
     it('handles INVALID_REFRESH_TOKEN', () => {
       expect(handleSupabaseError({ code: 'INVALID_REFRESH_TOKEN' })).toBe('Session invalide. Veuillez vous reconnecter.')
     })
+
+    it('prevents user enumeration for Invalid login', () => {
+      expect(handleSupabaseError({ message: 'Invalid login credentials' })).toBe('Identifiants incorrects')
+    })
+
+    it('prevents user enumeration for User not found', () => {
+      expect(handleSupabaseError({ message: 'User not found' })).toBe('Identifiants incorrects')
+    })
+
+    it('prevents user enumeration for Wrong password', () => {
+      expect(handleSupabaseError({ message: 'Wrong password' })).toBe('Identifiants incorrects')
+    })
   })
 
   describe('Fallback behaviors', () => {
