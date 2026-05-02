@@ -39,6 +39,15 @@ export function handleSupabaseError(error: any): string {
     return 'Une erreur inconnue est survenue'
   }
 
+  const msg = error.message || ''
+  if (
+    msg.includes('Invalid login') ||
+    msg.includes('User not found') ||
+    msg.includes('Wrong password')
+  ) {
+    return 'Identifiants incorrects'
+  }
+
   // Handle specific Supabase error codes
   switch (error.code) {
     case 'PGRST116':

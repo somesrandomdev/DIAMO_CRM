@@ -36,6 +36,12 @@ describe('handleSupabaseError', () => {
   })
 
   describe('Auth errors', () => {
+    it('prevents user enumeration by mapping specific auth errors to a generic message', () => {
+      expect(handleSupabaseError({ message: 'Invalid login credentials' })).toBe('Identifiants incorrects')
+      expect(handleSupabaseError({ message: 'User not found' })).toBe('Identifiants incorrects')
+      expect(handleSupabaseError({ message: 'Wrong password' })).toBe('Identifiants incorrects')
+    })
+
     it('handles JWT_EXPIRED', () => {
       expect(handleSupabaseError({ code: 'JWT_EXPIRED' })).toBe('Votre session a expiré. Veuillez vous reconnecter.')
     })
