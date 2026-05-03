@@ -50,11 +50,13 @@ export default function Login() {
     } catch (err: any) {
       /* user-friendly messages */
       const msg = err.message || 'Erreur inconnue'
-      if (msg.includes('Invalid login')) setError('Identifiants incorrects')
-      else if (msg.includes('Email not confirmed')) setError('Confirmez votre e-mail')
-      else if (msg.includes('User not found')) setError('Aucun compte trouvé avec cet email')
-      else if (msg.includes('Wrong password')) setError('Mot de passe incorrect')
-      else setError(msg)
+      if (msg.includes('Invalid login') || msg.includes('User not found') || msg.includes('Wrong password') || msg.includes('Invalid credentials')) {
+        setError('Identifiants incorrects')
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Confirmez votre e-mail')
+      } else {
+        setError(msg)
+      }
       console.error('Supabase error:', err)
     } finally {
       setLoading(false)
