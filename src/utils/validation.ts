@@ -331,3 +331,24 @@ export function getValidationErrorMessage(field: string, type: string): string {
 
   return messages[type] || `${field} est invalide`
 }
+
+/**
+ * Sanitizes input for CSV export to prevent CSV/Formula injection and structural corruption
+ * @param input - The value to sanitize
+ * @returns Sanitized string safe for CSV inclusion
+ */
+export function sanitizeForCSV(input: string | number | null | undefined): string {
+  if (input === null || input === undefined) {
+    return '""';
+  }
+
+  let str = String(input);
+
+  // Prevent CSV Formula Injection (prepend apostrophe to strings starting with formula triggers)
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = "'" + str;
+  }
+
+  // Escape double quotes by doubling them, and wrap the entire string in double quotes
+  return `"${str.replace(/"/g, '""')}"`;
+}
