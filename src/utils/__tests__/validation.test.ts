@@ -37,3 +37,35 @@ describe('validateURL', () => {
     expect(validateURL(' https://example.com ')).toBe('https://example.com');
   });
 });
+
+describe('sanitizeForCSV', () => {
+  const { sanitizeForCSV } = require('../validation');
+
+  it('should wrap basic strings in quotes', () => {
+    expect(sanitizeForCSV('hello')).toBe('"hello"');
+  });
+
+  it('should return empty quotes for null or undefined', () => {
+    expect(sanitizeForCSV(null)).toBe('""');
+    expect(sanitizeForCSV(undefined)).toBe('""');
+  });
+
+  it('should stringify numbers and wrap in quotes', () => {
+    expect(sanitizeForCSV(123)).toBe('"123"');
+    expect(sanitizeForCSV(0)).toBe('"0"');
+  });
+
+  it('should escape strings starting with trigger characters', () => {
+    expect(sanitizeForCSV('=1+1')).toBe('"' + "'=1+1" + '"');
+    expect(sanitizeForCSV('+A1')).toBe('"' + "'+A1" + '"');
+    expect(sanitizeForCSV('-B2')).toBe('"' + "'-B2" + '"');
+    expect(sanitizeForCSV('@SUM(A1:A10)')).toBe('"' + "'@SUM(A1:A10)" + '"');
+    expect(sanitizeForCSV('\tHello')).toBe('"' + "'\tHello" + '"');
+    expect(sanitizeForCSV('\rWorld')).toBe('"' + "'\rWorld" + '"');
+  });
+
+  it('should double internal quotes', () => {
+    expect(sanitizeForCSV('hello "world"')).toBe('"hello ""world"""');
+    expect(sanitizeForCSV('="malicious"')).toBe('"\'=""malicious"""');
+  });
+});

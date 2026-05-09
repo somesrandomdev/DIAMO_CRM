@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
 import { toCFA } from '../utils/price'
 import { FaSearch, FaFilter, FaDownload } from 'react-icons/fa'
+import { sanitizeForCSV } from '../utils/validation'
 
 interface Sale {
   id: string
@@ -93,7 +94,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
       ])
     ]
 
-    const csvString = csvContent.map(row => row.join(',')).join('\n')
+    const csvString = csvContent.map(row => row.map(sanitizeForCSV).join(',')).join('\n')
     const blob = new Blob([csvString], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
