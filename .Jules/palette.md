@@ -4,3 +4,6 @@
 ## 2024-04-16 - Add ARIA labels and focus states to cart remove buttons
 **Learning:** Icon-only interactive elements in dynamic lists (like cart items) frequently lack proper accessible names and focus indicators, making it hard for screen reader users to identify the action and for keyboard users to navigate.
 **Action:** Consistently add `aria-label`, `title`, and `focus-visible` ring utilities to icon-only buttons (`<button>✕</button>`) across the application to ensure they are accessible and intuitive for all users.
+## 2025-05-10 - Login form accessibility fixes
+**Learning:** Basic authentication forms often miss crucial accessibility features out of the box. Specifically, disconnected labels and missing live regions for errors are common.
+**Action:** When working on login or registration forms, always ensure `htmlFor` and `id` properly link labels to inputs, use `aria-live="assertive"` on error message containers to notify screen readers, and add `aria-busy={true}` to buttons during async submission states.
