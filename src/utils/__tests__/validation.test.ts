@@ -1,4 +1,4 @@
-import { validateURL } from '../validation';
+import { validateURL, sanitizeForCSV } from '../validation';
 
 describe('validateURL', () => {
   it('should return the URL if it is valid and has an allowed protocol (http, https)', () => {
@@ -35,5 +35,35 @@ describe('validateURL', () => {
 
   it('should sanitize the string before validating', () => {
     expect(validateURL(' https://example.com ')).toBe('https://example.com');
+  });
+});
+
+
+describe('sanitizeForCSV', () => {
+  it('should return empty string wrapped in quotes for null or undefined', () => {
+    expect(sanitizeForCSV(null)).toBe('""');
+    expect(sanitizeForCSV(undefined)).toBe('""');
+  });
+
+  it('should wrap basic strings in quotes', () => {
+    expect(sanitizeForCSV('hello')).toBe('"hello"');
+    expect(sanitizeForCSV(123)).toBe('"123"');
+  });
+
+  it('should escape internal quotes by doubling them', () => {
+    expect(sanitizeForCSV('hello "world"')).toBe('"hello ""world"""');
+  });
+
+  it('should prepend an apostrophe to strings starting with formula trigger characters', () => {
+    expect(sanitizeForCSV('=1+2')).toBe('"' + "'=1+2" + '"');
+    expect(sanitizeForCSV('+1+2')).toBe('"' + "'+1+2" + '"');
+    expect(sanitizeForCSV('-1+2')).toBe('"' + "'-1+2" + '"');
+    expect(sanitizeForCSV('@1+2')).toBe('"' + "'@1+2" + '"');
+    expect(sanitizeForCSV('\t1+2')).toBe('"' + "'\t1+2" + '"');
+    expect(sanitizeForCSV('\r1+2')).toBe('"' + "'\r1+2" + '"');
+  });
+
+  it('should handle formulas with quotes', () => {
+    expect(sanitizeForCSV('="cmd|\' /C calc\'!A0"')).toBe('"\'=""cmd|\' /C calc\'!A0"""');
   });
 });

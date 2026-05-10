@@ -8,6 +8,28 @@
  * @param input - The string to sanitize
  * @returns Sanitized string
  */
+
+/**
+ * Sanitizes a string for CSV export to prevent CSV/Formula injection
+ * @param value - The value to sanitize
+ * @returns Sanitized and properly escaped CSV string
+ */
+export function sanitizeForCSV(value: any): string {
+  if (value === null || value === undefined) {
+    return '""';
+  }
+
+  let str = String(value);
+
+  // If the string starts with a formula trigger character, prepend an apostrophe
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = "'" + str;
+  }
+
+  // Always wrap in double quotes and escape internal double quotes by doubling them
+  return '"' + str.replace(/"/g, '""') + '"';
+}
+
 export function sanitizeString(input: string): string {
   if (typeof input !== 'string') {
     throw new TypeError('Input must be a string')
