@@ -54,6 +54,14 @@ export function handleSupabaseError(error: any): string {
     case 'INVALID_REFRESH_TOKEN':
       return 'Session invalide. Veuillez vous reconnecter.'
     default:
+      if (
+        error.message &&
+        (error.message.includes('Invalid login') ||
+          error.message.includes('User not found') ||
+          error.message.includes('Wrong password'))
+      ) {
+        return 'Identifiants incorrects'
+      }
       return error.message || 'Une erreur est survenue'
   }
 }
