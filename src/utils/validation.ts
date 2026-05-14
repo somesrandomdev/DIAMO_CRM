@@ -312,6 +312,31 @@ export function validateObject<T extends Record<string, any>>(
 }
 
 /**
+ * Sanitizes input for CSV export to prevent CSV injection vulnerabilities
+ * @param input - The string to sanitize
+ * @returns Sanitized string wrapped in quotes
+ */
+export function sanitizeForCSV(input: string | number | null | undefined): string {
+  if (input === null || input === undefined) {
+    return '""'
+  }
+
+  const str = String(input)
+  let sanitized = str
+
+  // Prevent CSV injection by escaping leading formula characters
+  if (/^[=+\-@\t\r]/.test(str)) {
+    sanitized = "'" + str
+  }
+
+  // Escape internal double quotes by doubling them
+  sanitized = sanitized.replace(/"/g, '""')
+
+  // Always wrap in double quotes
+  return `"${sanitized}"`
+}
+
+/**
  * Creates a validation error message
  * @param field - The field name
  * @param type - The validation type
