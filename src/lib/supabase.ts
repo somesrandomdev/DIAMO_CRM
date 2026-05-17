@@ -34,13 +34,33 @@ export const supabase: SupabaseClient = createClient(
  * @param error - Error object from Supabase
  * @returns User-friendly error message
  */
-export function handleSupabaseError(error: any): string {
-  if (!error) {
+export function getErrorMessage(error: unknown, fallback: string = 'Une erreur est survenue'): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
+    return (error as any).message;
+  }
+  if (typeof error === 'string') return error;
+  return fallback;
+}
+
+export function handleSupabaseError(error: unknown, fallback: string = 'Une erreur est survenue'): string {
+  const msg = getErrorMessage(error, '');
+  if (
+    msg.includes('Invalid login') ||
+    msg.includes('User not found') ||
+    msg.includes('Wrong password') ||
+    msg.includes('Invalid credentials')
+  ) {
+    return 'Identifiants incorrects';
+  }
+
+  const err = error as any;
+  if (!err) {
     return 'Une erreur inconnue est survenue'
   }
 
   // Handle specific Supabase error codes
-  switch (error.code) {
+  switch (err?.code) {
     case 'PGRST116':
       return 'Aucune donnée trouvée'
     case '23505':
@@ -54,7 +74,8 @@ export function handleSupabaseError(error: any): string {
     case 'INVALID_REFRESH_TOKEN':
       return 'Session invalide. Veuillez vous reconnecter.'
     default:
-      return error.message || 'Une erreur est survenue'
+      console.error("Supabase error:", error);
+      return msg || fallback;
   }
 }
 

@@ -45,6 +45,16 @@ describe('handleSupabaseError', () => {
     })
   })
 
+  describe('Authentication user enumeration prevention', () => {
+    it('returns "Identifiants incorrects" for authentication errors to prevent user enumeration', () => {
+      expect(handleSupabaseError({ message: 'User not found' })).toBe('Identifiants incorrects')
+      expect(handleSupabaseError({ message: 'Invalid login credentials' })).toBe('Identifiants incorrects')
+      expect(handleSupabaseError({ message: 'Wrong password' })).toBe('Identifiants incorrects')
+      expect(handleSupabaseError(new Error('Invalid login'))).toBe('Identifiants incorrects')
+      expect(handleSupabaseError('User not found')).toBe('Identifiants incorrects')
+    })
+  })
+
   describe('Fallback behaviors', () => {
     it('returns error.message if available for unknown codes', () => {
       const customError = { code: 'UNKNOWN_CODE', message: 'Erreur personnalisée' }
