@@ -274,6 +274,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
             <div className="relative">
               <input
                 type="text"
+                aria-label="Rechercher un client"
                 value={clientSearchQuery}
                 onChange={(e) => {
                   if (selectedClientId) {
@@ -413,6 +414,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
               <input
                 type="number"
                 id="qty-input"
+                aria-label="Quantité pour l'offre sélectionnée"
                 min="1"
                 placeholder="Qté"
                 className="p-3 text-base rounded-lg font-medium transition-all"
@@ -474,6 +476,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
+                        aria-label={`Modifier la quantité pour ${item.offre?.nom}`}
                         min="1"
                         value={item.qty}
                         onChange={(e) => updateCartQuantity(item.offreId, Math.max(1, Number(e.target.value)))}
