@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
 import { toCFA } from '../utils/price'
+import { sanitizeForCSV } from '../utils/validation'
 import { FaSearch, FaFilter, FaDownload } from 'react-icons/fa'
 
 interface Sale {
@@ -82,19 +83,21 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   }
 
   const exportToCSV = () => {
+    const headers = ['Date', 'Client', 'Offre', 'Montant', 'ID Vente'].map(sanitizeForCSV)
     const csvContent = [
-      ['Date', 'Client', 'Offre', 'Montant', 'ID Vente'],
+      headers,
       ...filteredSales.map(sale => [
-        new Date(sale.created_at).toLocaleDateString('fr-FR'),
-        sale.client?.nom || 'N/A',
-        sale.offre?.nom || 'N/A',
-        sale.montant_total.toString(),
-        sale.id
+        sanitizeForCSV(new Date(sale.created_at).toLocaleDateString('fr-FR')),
+        sanitizeForCSV(sale.client?.nom || 'N/A'),
+        sanitizeForCSV(sale.offre?.nom || 'N/A'),
+        sanitizeForCSV(sale.montant_total.toString()),
+        sanitizeForCSV(sale.id)
       ])
     ]
 
     const csvString = csvContent.map(row => row.join(',')).join('\n')
-    const blob = new Blob([csvString], { type: 'text/csv' })
+    // Ensure file starts with BOM for proper Excel UTF-8 rendering
+    const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

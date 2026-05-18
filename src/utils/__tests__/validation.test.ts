@@ -37,3 +37,33 @@ describe('validateURL', () => {
     expect(validateURL(' https://example.com ')).toBe('https://example.com');
   });
 });
+
+describe('sanitizeForCSV', () => {
+  const { sanitizeForCSV } = require('../validation');
+
+  it('should escape CSV injection prefixes with an apostrophe', () => {
+    expect(sanitizeForCSV('=1+2')).toBe('"\'=1+2"');
+    expect(sanitizeForCSV('+SUM(A1:A2)')).toBe('"\'+SUM(A1:A2)"');
+    expect(sanitizeForCSV('-10')).toBe('"\'-10"');
+    expect(sanitizeForCSV('@cmd|')).toBe('"\'@cmd|"');
+    expect(sanitizeForCSV('\tInjection')).toBe('"\'\tInjection"');
+    expect(sanitizeForCSV('\rInjection')).toBe('"\'\rInjection"');
+  });
+
+  it('should wrap normal text in double quotes', () => {
+    expect(sanitizeForCSV('Normal text')).toBe('"Normal text"');
+  });
+
+  it('should escape existing double quotes', () => {
+    expect(sanitizeForCSV('Text with "quotes"')).toBe('"Text with ""quotes"""');
+  });
+
+  it('should return empty string wrapped in quotes for null or undefined', () => {
+    expect(sanitizeForCSV(null)).toBe('""');
+    expect(sanitizeForCSV(undefined)).toBe('""');
+  });
+
+  it('should stringify and quote numbers', () => {
+    expect(sanitizeForCSV(123)).toBe('"123"');
+  });
+});
