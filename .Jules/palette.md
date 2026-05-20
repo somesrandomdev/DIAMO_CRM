@@ -4,3 +4,6 @@
 ## 2024-04-16 - Add ARIA labels and focus states to cart remove buttons
 **Learning:** Icon-only interactive elements in dynamic lists (like cart items) frequently lack proper accessible names and focus indicators, making it hard for screen reader users to identify the action and for keyboard users to navigate.
 **Action:** Consistently add `aria-label`, `title`, and `focus-visible` ring utilities to icon-only buttons (`<button>✕</button>`) across the application to ensure they are accessible and intuitive for all users.
+## 2026-05-20 - Add explicitly linked labels
+**Learning:** Proper linkage between `<label>` (via `htmlFor`) and `<input>` / `<select>` (via `id`) in multi-field forms is critical to ensure screen readers correctly read out the form, and clicking the label focuses the input.
+**Action:** When creating form inputs, always ensure the `<label>` explicitly uses `htmlFor` matching the `id` of its respective input/select element.
