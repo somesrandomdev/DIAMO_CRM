@@ -47,9 +47,9 @@ export default function Login() {
           window.location.href = '/dashboard'
         }, 500)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       /* user-friendly messages */
-      const msg = err.message || 'Erreur inconnue'
+      const msg = err instanceof Error ? err.message : typeof err === 'object' && err && 'message' in err ? String(err.message) : 'Erreur inconnue'
       if (msg.includes('Invalid login')) setError('Identifiants incorrects')
       else if (msg.includes('Email not confirmed')) setError('Confirmez votre e-mail')
       else if (msg.includes('User not found')) setError('Aucun compte trouvé avec cet email')
@@ -83,10 +83,11 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                <label htmlFor="username" className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                   Nom d'utilisateur
                 </label>
                 <input
+                  id="username"
                   placeholder="Votre nom d'utilisateur"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -110,10 +111,11 @@ export default function Login() {
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+              <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 placeholder="votre.email@example.com"
                 value={email}
@@ -137,10 +139,11 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
                 Mot de passe
               </label>
               <input
+                id="password"
                 type="password"
                 placeholder="Minimum 6 caractères"
                 value={password}
@@ -164,7 +167,7 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-lg border" style={{
+              <div role="alert" aria-live="assertive" className="px-4 py-3 rounded-lg border" style={{
                 backgroundColor: 'var(--color-error)',
                 borderColor: 'var(--color-error)',
                 color: 'white'
@@ -176,6 +179,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
               style={{
                 backgroundColor: 'var(--color-primary)',
