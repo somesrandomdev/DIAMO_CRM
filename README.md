@@ -937,3 +937,26 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
 
 **Diam'o** - Système de Gestion de Franchise avec Analyses Avancées
 *Version 1.1.0 - Production Ready avec Intelligence Commerciale*
+
+---
+
+## 🎨 Refactor UI Professionnel (Blueprint v2.0 - Mai 2026)
+
+Application alignée sur le **Professional Improvement Plan** et le mockup HTML détaillé :
+
+- **Design System Complet** : Polices DM Sans (texte) + Space Mono (nombres), tokens exacts (`--bg: #f4f6fa`, `--blue: #1a6ef5`, palette complète teal/amber/red/green/purple + lights, radius card 10px, shell 14px, sidebar 220px, topbar 52px).
+
+- **Architecture Layout Globale** : Shell flex 100vh avec sidebar role-aware (sections Principal/Rapports/Système/Ventes/Clients avec en-têtes uppercase 10px), footer avatar coloré par rôle + bouton logout, topbar titre + badge rôle pill.
+
+- **Pages Implémentées** :
+  - Admin Dashboard (`/admin/dashboard`) : KPIs 5 cartes, quick actions dashed, CA par kiosque (barres), Alertes, League Table, Donut offres, Heures de pointe.
+  - Commercial (`/analyses`) : KPIs 4, CA quotidien avec objectif, Segmentation VIP/Régulier/Occasionnel, Top clients.
+  - Fontainier (`/ventes/nouvelle`) : Mini-stats bar, formulaire vente 2-colonnes, recherche client + "Créer un nouveau client", historique récent, total live.
+
+- **Sécurité & Routage** : RoleGuard strict, redirect par rôle (fontainier→nouvelle vente, commercial→analyses, admin→dashboard), RLS Supabase complètes, migration DB avec view admin_dashboard_summary + RPC alerts + objectifs table.
+
+- **Améliorations** : Boutons primaires bleus par défaut (fix UI), suppression dead code, nettoyage docs.
+
+Toutes les anciennes versions "Ultra/Enhanced" et rapports de refactor précédents ont été consolidés/supprimés au profit de cette implémentation production-grade finale.
+
+*Le README unique contient désormais toute la documentation consolidée.*

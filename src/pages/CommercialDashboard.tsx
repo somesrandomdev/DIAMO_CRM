@@ -1,498 +1,459 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from '../stores/authStore'
-import { toCFA } from '../utils/price'
-import { FaShoppingCart, FaUsers, FaChartBar, FaTrophy } from 'react-icons/fa'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ComposedChart,
+  Cell,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import { Download, Search, ShoppingCart, Target, Users, Wallet } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/authStore'
+import { exportRowsCSV } from '@/utils/exportCSV'
+import { toCFA } from '@/utils/price'
 
-interface DashboardStats {
-  totalSales: number
-  totalVolume: number
-  activeClients: number
-  todaySales: number
-  avgSale: number
-  salesGrowth: number
-  topOffer: string
-  newClientsToday: number
-  monthlyObjective: number
-  dailyObjective: number
-  monthlyProgress: number
-  dailyProgress: number
-  recommendations: string[]
-}
-
-interface RecentSale {
+interface SaleRow {
   id: string
   created_at: string
-  montant_total: number
-  client: { nom: string } | null
-  offre: { nom: string } | null
+  montant_total: number | null
+  client_id: string | null
+  clients?: { nom?: string } | { nom?: string }[] | null
 }
 
-interface ChartData {
+interface ClientInsight {
+  id: string
+  nom: string
+  derniereVisite: string
+  achatsMois: number
+  montantTotal: number
+  segment: SegmentName
+}
+
+type SegmentName = 'VIP' | 'Regulier' | 'Occasionnel'
+type SortKey = 'nom' | 'derniereVisite' | 'achatsMois' | 'montantTotal' | 'segment'
+
+interface DailyPoint {
   date: string
-  sales: number
-  volume: number
+  label: string
+  ca: number
+  target: number
 }
 
-interface CustomerSegment {
-  name: string
+interface SegmentPoint {
+  name: SegmentName
   value: number
   color: string
 }
 
-export default function CommercialDashboard() {
-  const { profile } = useAuthStore()
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSales: 0,
-    totalVolume: 0,
-    activeClients: 0,
-    todaySales: 0,
-    avgSale: 0,
-    salesGrowth: 0,
-    topOffer: '',
-    newClientsToday: 0,
-    monthlyObjective: 500000, // 500,000 CFA monthly objective
-    dailyObjective: 25000, // 25,000 CFA daily objective
-    monthlyProgress: 0,
-    dailyProgress: 0,
-    recommendations: []
-  })
-  const [recentSales, setRecentSales] = useState<RecentSale[]>([])
-  const [chartData, setChartData] = useState<ChartData[]>([])
-  const [customerSegments, setCustomerSegments] = useState<CustomerSegment[]>([])
-  const [monthlyData, setMonthlyData] = useState<any[]>([])
+function firstJoined<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null
+  return value ?? null
+}
 
-  useEffect(() => {
+function startOfCurrentMonth(): Date {
+  const date = new Date()
+  date.setDate(1)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+function daysInCurrentMonth(): number {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+}
+
+function monthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+function segmentForPurchases(count: number): SegmentName {
+  if (count >= 5) return 'VIP'
+  if (count >= 2) return 'Regulier'
+  return 'Occasionnel'
+}
+
+function segmentBadgeVariant(segment: SegmentName) {
+  if (segment === 'VIP') return 'success'
+  if (segment === 'Regulier') return 'secondary'
+  return 'outline'
+}
+
+export default function CommercialDashboard() {
+  const navigate = useNavigate()
+  const { profile } = useAuthStore()
+  const [isLoading, setIsLoading] = useState(true)
+  const [sales, setSales] = useState<SaleRow[]>([])
+  const [target, setTarget] = useState(0)
+  const [search, setSearch] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('montantTotal')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  const loadDashboardData = useCallback(async () => {
     if (!profile?.kiosque_id) {
-      console.log('No kiosk_id available for commercial dashboard')
+      setIsLoading(false)
       return
     }
+
+    setIsLoading(true)
+    const monthStart = startOfCurrentMonth()
+
+    try {
+      const [salesResult, targetResult] = await Promise.all([
+        supabase
+          .from('ventes')
+          .select('id, created_at, montant_total, client_id, clients(nom)')
+          .eq('kiosque_id', profile.kiosque_id)
+          .gte('created_at', monthStart.toISOString())
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('objectifs')
+          .select('ca_cible')
+          .eq('kiosque_id', profile.kiosque_id)
+          .eq('mois', monthKey(monthStart))
+          .maybeSingle(),
+      ])
+
+      if (salesResult.error) throw salesResult.error
+      if (targetResult.error) throw targetResult.error
+
+      setSales((salesResult.data ?? []) as SaleRow[])
+      setTarget(targetResult.data?.ca_cible ?? 0)
+    } catch (error) {
+      console.error('Error loading commercial dashboard:', error)
+      setSales([])
+      setTarget(0)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [profile?.kiosque_id])
+
+  useEffect(() => {
     loadDashboardData()
-  }, [profile])
+  }, [loadDashboardData])
 
-  async function loadDashboardData() {
-    const kId = profile!.kiosque_id
+  const dailyTarget = target > 0 ? target / daysInCurrentMonth() : 0
 
-    // Load all data in parallel
-    const [
-      { data: salesData },
-      { data: clientsData },
-      { data: todaySalesData },
-      { data: recentSalesData },
-      { data: chartDataRaw },
-      { data: monthlyRaw },
-      { data: offerData },
-      { data: customerData }
-    ] = await Promise.all([
-      supabase.from('ventes').select('montant_total').eq('kiosque_id', kId),
-      supabase.from('clients').select('id').eq('kiosque_id', kId),
-      supabase.from('ventes').select('montant_total').eq('kiosque_id', kId).gte('created_at', new Date().toISOString().split('T')[0]),
-      supabase.from('ventes').select('id, created_at, montant_total, client:clients(nom), offre:offres(nom)').eq('kiosque_id', kId).order('created_at', { ascending: false }).limit(5),
-      supabase.from('ventes').select('created_at, montant_total').eq('kiosque_id', kId).order('created_at', { ascending: false }).limit(30),
-      supabase.from('ventes').select('created_at, montant_total').eq('kiosque_id', kId),
-      supabase.from('ventes').select('offre:offres!inner(nom), montant_total').eq('kiosque_id', kId),
-      supabase.from('ventes').select('client:clients(nom), montant_total').eq('kiosque_id', kId)
-    ])
-
-    // Calculate basic stats
-    const totalSales = salesData?.reduce((sum, sale) => sum + sale.montant_total, 0) || 0
-    const todaySales = todaySalesData?.reduce((sum, sale) => sum + sale.montant_total, 0) || 0
-    const activeClients = clientsData?.length || 0
-    const totalVolume = salesData?.length || 0
-    const avgSale = totalVolume > 0 ? totalSales / totalVolume : 0
-
-    // Calculate sales growth (last 7 days vs previous 7 days)
-    const last7Days = chartDataRaw?.slice(0, 7) || []
-    const previous7Days = chartDataRaw?.slice(7, 14) || []
-    const lastWeekSales = last7Days.reduce((sum, sale) => sum + sale.montant_total, 0)
-    const previousWeekSales = previous7Days.reduce((sum, sale) => sum + sale.montant_total, 0)
-    const salesGrowth = previousWeekSales > 0 ? ((lastWeekSales - previousWeekSales) / previousWeekSales) * 100 : 0
-
-    // Get top offer
-    const offerMap: Record<string, number> = {}
-    offerData?.forEach(v => {
-      const o = (v.offre as any)?.nom || ''
-      offerMap[o] = (offerMap[o] || 0) + v.montant_total
-    })
-    const topOffer = Object.entries(offerMap).sort(([,a], [,b]) => b - a)[0]?.[0] || ''
-
-    // Get new clients today
-    const today = new Date().toISOString().split('T')[0]
-    const { count: newClientsToday } = await supabase
-      .from('clients')
-      .select('*', { count: 'exact', head: true })
-      .eq('kiosque_id', kId)
-      .gte('created_at', today)
-
-    // Calculate objectives and recommendations
-    const monthlyProgress = (totalSales / stats.monthlyObjective) * 100
-    const dailyProgress = (todaySales / stats.dailyObjective) * 100
-
-    const recommendations = []
-    if (dailyProgress < 50) {
-      recommendations.push("Augmentez vos ventes aujourd'hui pour atteindre l'objectif journalier")
-    } else if (dailyProgress >= 100) {
-      recommendations.push("🎉 Objectif journalier atteint ! Continuez sur cette lancée")
-    }
-
-    if (monthlyProgress < 75) {
-      recommendations.push("Intensifiez vos efforts pour atteindre l'objectif mensuel")
-    } else if (monthlyProgress >= 100) {
-      recommendations.push("🌟 Objectif mensuel dépassé ! Excellent travail")
-    }
-
-    if (salesGrowth < 0) {
-      recommendations.push("Les ventes sont en baisse, concentrez-vous sur vos meilleurs clients")
-    } else if (salesGrowth > 10) {
-      recommendations.push("Excellente croissance ! Maintenez cette dynamique")
-    }
-
-    setStats({
-      totalSales,
-      totalVolume,
+  const stats = useMemo(() => {
+    const ca = sales.reduce((sum, sale) => sum + (sale.montant_total ?? 0), 0)
+    const activeClients = new Set(sales.map((sale) => sale.client_id).filter(Boolean)).size
+    return {
+      ca,
+      ventes: sales.length,
       activeClients,
-      todaySales,
-      avgSale,
-      salesGrowth,
-      topOffer,
-      newClientsToday: newClientsToday || 0,
-      monthlyObjective: stats.monthlyObjective,
-      dailyObjective: stats.dailyObjective,
-      monthlyProgress,
-      dailyProgress,
-      recommendations
+      panierMoyen: sales.length > 0 ? Math.round(ca / sales.length) : 0,
+      progress: target > 0 ? (ca / target) * 100 : 0,
+    }
+  }, [sales, target])
+
+  const dailyData = useMemo<DailyPoint[]>(() => {
+    const now = new Date()
+    const dayMap = new Map<string, number>()
+
+    for (let index = 29; index >= 0; index -= 1) {
+      const date = new Date(now)
+      date.setDate(now.getDate() - index)
+      dayMap.set(date.toISOString().slice(0, 10), 0)
+    }
+
+    sales.forEach((sale) => {
+      const key = sale.created_at.slice(0, 10)
+      if (dayMap.has(key)) dayMap.set(key, (dayMap.get(key) ?? 0) + (sale.montant_total ?? 0))
     })
 
-    // Transform recent sales
-    const transformedSales = (recentSalesData || []).map(sale => ({
-      ...sale,
-      client: Array.isArray(sale.client) ? sale.client[0] || null : sale.client,
-      offre: Array.isArray(sale.offre) ? sale.offre[0] || null : sale.offre
+    return Array.from(dayMap.entries()).map(([date, ca]) => ({
+      date,
+      label: new Date(`${date}T00:00:00`).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+      }),
+      ca,
+      target: Math.round(dailyTarget),
     }))
-    setRecentSales(transformedSales)
+  }, [dailyTarget, sales])
 
-    // Process chart data (last 7 days)
-    const last7DaysDates = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      return date.toISOString().split('T')[0]
-    }).reverse()
+  const clients = useMemo<ClientInsight[]>(() => {
+    const map = new Map<string, ClientInsight>()
 
-    const processedChartData = last7DaysDates.map(date => {
-      const daySales = chartDataRaw?.filter(sale => sale.created_at.startsWith(date)) || []
-      const total = daySales.reduce((sum, sale) => sum + sale.montant_total, 0)
-      return {
-        date: new Date(date).toLocaleDateString('fr-FR', { weekday: 'short', month: 'short', day: 'numeric' }),
-        sales: total,
-        volume: daySales.length
+    sales.forEach((sale) => {
+      const clientId = sale.client_id ?? 'inconnu'
+      const client = firstJoined(sale.clients)
+      const existing = map.get(clientId) ?? {
+        id: clientId,
+        nom: client?.nom ?? 'Client inconnu',
+        derniereVisite: sale.created_at,
+        achatsMois: 0,
+        montantTotal: 0,
+        segment: 'Occasionnel' as SegmentName,
       }
-    })
-    setChartData(processedChartData)
 
-    // Process monthly data
-    const monthMap: Record<string, number> = {}
-    monthlyRaw?.forEach(v => {
-      const m = v.created_at.substring(0, 7) // YYYY-MM
-      monthMap[m] = (monthMap[m] || 0) + v.montant_total
-    })
-    setMonthlyData(Object.entries(monthMap).map(([name, value]) => ({ name, value })))
-
-
-    // Process customer segments
-    const customerMap: Record<string, number> = {}
-    customerData?.forEach(v => {
-      const c = (v.client as any)?.nom || ''
-      customerMap[c] = (customerMap[c] || 0) + v.montant_total
+      existing.achatsMois += 1
+      existing.montantTotal += sale.montant_total ?? 0
+      if (new Date(sale.created_at) > new Date(existing.derniereVisite)) {
+        existing.derniereVisite = sale.created_at
+      }
+      existing.segment = segmentForPurchases(existing.achatsMois)
+      map.set(clientId, existing)
     })
 
-    const segments = [
-      { name: 'VIP (5000+ CFA)', value: Object.values(customerMap).filter(amount => amount >= 5000).length, color: '#FF6B6B' },
-      { name: 'Régulier (2000-4999 CFA)', value: Object.values(customerMap).filter(amount => amount >= 2000 && amount < 5000).length, color: '#4ECDC4' },
-      { name: 'Occasionnel (<2000 CFA)', value: Object.values(customerMap).filter(amount => amount < 2000).length, color: '#45B7D1' }
+    return Array.from(map.values())
+  }, [sales])
+
+  const segmentData = useMemo<SegmentPoint[]>(() => {
+    const points: SegmentPoint[] = [
+      { name: 'VIP', value: 0, color: '#40C057' },
+      { name: 'Regulier', value: 0, color: '#1C7ED6' },
+      { name: 'Occasionnel', value: 0, color: '#FFD43B' },
     ]
-    setCustomerSegments(segments.filter(s => s.value > 0))
+
+    clients.forEach((client) => {
+      const point = points.find((item) => item.name === client.segment)
+      if (point) point.value += 1
+    })
+
+    return points.filter((point) => point.value > 0)
+  }, [clients])
+
+  const topClients = useMemo(
+    () => [...clients].sort((a, b) => b.montantTotal - a.montantTotal).slice(0, 5),
+    [clients]
+  )
+
+  const visibleClients = useMemo(() => {
+    const filtered = clients.filter((client) =>
+      client.nom.toLowerCase().includes(search.trim().toLowerCase())
+    )
+
+    return filtered.sort((a, b) => {
+      const modifier = sortDirection === 'asc' ? 1 : -1
+      const aValue = a[sortKey]
+      const bValue = b[sortKey]
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return aValue.localeCompare(bValue) * modifier
+      }
+
+      return ((aValue as number) - (bValue as number)) * modifier
+    })
+  }, [clients, search, sortDirection, sortKey])
+
+  const requestSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))
+      return
+    }
+    setSortKey(key)
+    setSortDirection(key === 'nom' ? 'asc' : 'desc')
   }
 
+  const exportClientTable = () => {
+    exportRowsCSV(
+      visibleClients.map((client) => ({
+        Client: client.nom,
+        'Derniere visite': new Date(client.derniereVisite).toLocaleDateString('fr-FR'),
+        'Achats mois': client.achatsMois,
+        'Montant total': client.montantTotal,
+        Segment: client.segment,
+      })),
+      `clients-${profile?.kiosques?.nom ?? 'kiosque'}.csv`
+    )
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Tableau de bord Commercial</h1>
-        <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          {new Date().toLocaleDateString('fr-FR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-        </div>
-      </div>
-
-      {/* Objectives KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6">
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>🎯 Objectif Mensuel</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--color-primary)' }}>{toCFA(stats.monthlyObjective)}</p>
-              <p className="text-xs mt-1" style={{ color: stats.monthlyProgress >= 100 ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
-                {stats.monthlyProgress.toFixed(1)}% atteint
-              </p>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--color-primary-light)' }}>
-              <FaTrophy className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>📅 Objectif Journalier</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--color-accent)' }}>{toCFA(stats.dailyObjective)}</p>
-              <p className="text-xs mt-1" style={{ color: stats.dailyProgress >= 100 ? 'var(--color-success)' : 'var(--color-text-secondary)' }}>
-                {stats.dailyProgress.toFixed(1)}% atteint
-              </p>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--color-accent)' }}>
-              <FaChartBar className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>📊 Performance Mensuelle</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: stats.monthlyProgress >= 100 ? 'var(--color-success)' : 'var(--color-primary)' }}>
-                {stats.monthlyProgress.toFixed(1)}%
-              </p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div
-                  className="h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(stats.monthlyProgress, 100)}%`,
-                    backgroundColor: stats.monthlyProgress >= 100 ? 'var(--color-success)' : 'var(--color-primary)'
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: stats.monthlyProgress >= 100 ? 'var(--color-success-light)' : 'var(--color-primary-light)' }}>
-              {stats.monthlyProgress >= 100 ? <FaTrophy className="w-6 h-6" style={{ color: 'var(--color-success)' }} /> : <FaChartBar className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>📈 Performance Aujourd'hui</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: stats.dailyProgress >= 100 ? 'var(--color-success)' : 'var(--color-accent)' }}>
-                {stats.dailyProgress.toFixed(1)}%
-              </p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div
-                  className="h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(stats.dailyProgress, 100)}%`,
-                    backgroundColor: stats.dailyProgress >= 100 ? 'var(--color-success)' : 'var(--color-accent)'
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: stats.dailyProgress >= 100 ? 'var(--color-success-light)' : 'var(--color-accent)' }}>
-              {stats.dailyProgress >= 100 ? <FaTrophy className="w-6 h-6" style={{ color: 'var(--color-success)' }} /> : <FaChartBar className="w-6 h-6 text-white" />}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommendations Section */}
-      {stats.recommendations.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-3 text-blue-800 flex items-center gap-2">
-            💡 Recommandations pour atteindre vos objectifs
-          </h3>
-          <div className="space-y-2">
-            {stats.recommendations.map((recommendation, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <p className="text-blue-700">{recommendation}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Advanced KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>💰 CA Total</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--color-text)' }}>{toCFA(stats.totalSales)}</p>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--color-primary-light)' }}>
-              <FaShoppingCart className="w-6 h-6" style={{ color: 'var(--color-primary)' }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>📈 Ventes Aujourd'hui</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--color-success)' }}>{toCFA(stats.todaySales)}</p>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--color-success-light)' }}>
-              <FaChartBar className="w-6 h-6" style={{ color: 'var(--color-success)' }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>👥 Clients Actifs</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--color-text)' }}>{stats.activeClients}</p>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--color-secondary-light)' }}>
-              <FaUsers className="w-6 h-6" style={{ color: 'var(--color-secondary)' }} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>🎯 Panier Moyen</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--color-accent)' }}>{toCFA(stats.avgSale)}</p>
-            </div>
-            <div className="p-3 rounded-full" style={{ backgroundColor: 'var(--color-accent)' }}>
-              <FaTrophy className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Secondary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <div className="bg-surface p-4 rounded-lg shadow-sm border text-center" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-          <p className="text-lg font-bold mb-1" style={{ color: 'var(--color-primary)' }}>{stats.newClientsToday}</p>
-          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>🆕 Nouveaux clients (aujourd'hui)</p>
-        </div>
-        <div className="bg-surface p-4 rounded-lg shadow-sm border text-center" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-          <p className="text-lg font-bold mb-1" style={{ color: stats.salesGrowth >= 0 ? 'var(--color-success)' : 'var(--color-error)' }}>
-            {stats.salesGrowth >= 0 ? '+' : ''}{stats.salesGrowth.toFixed(1)}%
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Analyses commerciales</h1>
+          <p className="text-sm text-muted-foreground">
+            Performance mensuelle de {profile?.kiosques?.nom || 'mon kiosque'}.
           </p>
-          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>📈 Croissance (7 jours)</p>
         </div>
-        <div className="bg-surface p-4 rounded-lg shadow-sm border text-center" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-          <p className="text-lg font-bold mb-1" style={{ color: 'var(--color-accent)' }}>{stats.topOffer || 'N/A'}</p>
-          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>🏆 Offre la plus populaire</p>
-        </div>
-        <div className="bg-surface p-4 rounded-lg shadow-sm border text-center" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
-          <p className="text-lg font-bold mb-1" style={{ color: 'var(--color-primary)' }}>{stats.totalVolume}</p>
-          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>💧 Volume Total</p>
-        </div>
+        <Button type="button" variant="outline" onClick={exportClientTable} disabled={visibleClients.length === 0}>
+          <Download className="h-4 w-4" />
+          Exporter CSV
+        </Button>
       </div>
 
-      {/* Advanced Analytics Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-        {/* Sales Trend Chart */}
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-bold mb-4 border-b border-border pb-2" style={{ color: 'var(--color-text)' }}>📊 Évolution des ventes (7 derniers jours)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <XAxis dataKey="date" />
-              <YAxis tickFormatter={toCFA} />
-              <Tooltip formatter={(value) => [toCFA(value as number), 'CA']} />
-              <Line type="monotone" dataKey="sales" stroke="var(--color-primary)" strokeWidth={3} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Volume Chart */}
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-bold mb-4 border-b border-border pb-2" style={{ color: 'var(--color-text)' }}>📊 Volume des ventes (7 derniers jours)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip formatter={(value) => [value, 'Ventes']} />
-              <Bar dataKey="volume" fill="var(--color-secondary)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Monthly Performance and Customer Analysis */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-        {/* Monthly CA Chart */}
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-bold mb-4 border-b border-border pb-2" style={{ color: 'var(--color-text)' }}>📈 CA par mois</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyData}>
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={toCFA} />
-              <Tooltip formatter={(value) => [toCFA(value as number), 'CA']} />
-              <Bar dataKey="value" fill="var(--color-primary)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Customer Segments */}
-        <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-bold mb-4 border-b border-border pb-2" style={{ color: 'var(--color-text)' }}>👥 Segmentation Clients</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={customerSegments}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label
-              >
-                {customerSegments.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => [value, 'Clients']} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent Sales */}
-      <div className="bg-surface p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow">
-        <h3 className="text-lg font-bold mb-4 border-b border-border pb-2" style={{ color: 'var(--color-text)' }}>🛒 Dernières ventes</h3>
-        {recentSales.length > 0 ? (
-          <div className="space-y-3">
-            {recentSales.map((sale) => (
-              <div key={sale.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-surface-hover hover:shadow-sm transition-all" style={{ backgroundColor: 'var(--color-surface-hover)' }}>
-                <div>
-                  <p className="font-semibold" style={{ color: 'var(--color-text)' }}>{sale.client?.nom || 'Client inconnu'}</p>
-                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{sale.offre?.nom || 'Offre inconnue'}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg" style={{ color: 'var(--color-primary)' }}>{toCFA(sale.montant_total)}</p>
-                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    {new Date(sale.created_at).toLocaleDateString('fr-FR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {isLoading ? (
+          [1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-32 rounded-lg" />)
         ) : (
-          <p className="text-center py-8" style={{ color: 'var(--color-text-secondary)' }}>Aucune vente récente</p>
+          <>
+            <Card className="rounded-lg">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm text-muted-foreground">CA ce mois</CardTitle>
+                <Wallet className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-semibold">{toCFA(stats.ca)}</p>
+                {target > 0 && (
+                  <>
+                    <Progress value={Math.min(stats.progress, 100)} className="mt-3" />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {stats.progress.toFixed(1)}% de {toCFA(target)}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="rounded-lg">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm text-muted-foreground">Nb ventes</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent><p className="text-2xl font-semibold">{stats.ventes}</p></CardContent>
+            </Card>
+            <Card className="rounded-lg">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm text-muted-foreground">Clients actifs</CardTitle>
+                <Users className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent><p className="text-2xl font-semibold">{stats.activeClients}</p></CardContent>
+            </Card>
+            <Card className="rounded-lg">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm text-muted-foreground">Panier moyen</CardTitle>
+                <Target className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent><p className="text-2xl font-semibold">{toCFA(stats.panierMoyen)}</p></CardContent>
+            </Card>
+          </>
         )}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle>CA quotidien 30 jours</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[320px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <ComposedChart data={dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" minTickGap={16} />
+                  <YAxis tickFormatter={(value) => toCFA(Number(value))} width={82} />
+                  <Tooltip formatter={(value) => [toCFA(Number(value)), 'CA']} />
+                  <Bar dataKey="ca" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+                  {target > 0 && (
+                    <Line dataKey="target" stroke="var(--color-destructive)" strokeDasharray="6 4" dot={false} />
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle>Segmentation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[320px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie data={segmentData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={105} label>
+                    {segmentData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(value) => [value, 'Clients']} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle>Top 5 clients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topClients} layout="vertical" margin={{ left: 18 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickFormatter={(value) => toCFA(Number(value))} />
+                <YAxis dataKey="nom" type="category" width={110} />
+                <Tooltip formatter={(value) => [toCFA(Number(value)), 'Montant']} />
+                <Bar dataKey="montantTotal" fill="var(--color-success)" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-lg">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Client intelligence</CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="h-9 w-full rounded-md border bg-background pl-9 pr-3 text-sm sm:w-64"
+                  placeholder="Rechercher un client"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-sm">
+                <thead>
+                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                    <th className="px-3 py-2"><button type="button" onClick={() => requestSort('nom')}>Client</button></th>
+                    <th className="px-3 py-2"><button type="button" onClick={() => requestSort('derniereVisite')}>Derniere visite</button></th>
+                    <th className="px-3 py-2 text-right"><button type="button" onClick={() => requestSort('achatsMois')}>Achats mois</button></th>
+                    <th className="px-3 py-2 text-right"><button type="button" onClick={() => requestSort('montantTotal')}>Montant total</button></th>
+                    <th className="px-3 py-2"><button type="button" onClick={() => requestSort('segment')}>Segment</button></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleClients.map((client) => (
+                    <tr
+                      key={client.id}
+                      className="cursor-pointer border-b last:border-0 hover:bg-muted/60"
+                      onClick={() => navigate(`/clients?client=${client.id}`)}
+                    >
+                      <td className="px-3 py-3 font-medium">{client.nom}</td>
+                      <td className="px-3 py-3">
+                        {new Date(client.derniereVisite).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="px-3 py-3 text-right">{client.achatsMois}</td>
+                      <td className="px-3 py-3 text-right">{toCFA(client.montantTotal)}</td>
+                      <td className="px-3 py-3">
+                        <Badge variant={segmentBadgeVariant(client.segment)}>{client.segment}</Badge>
+                      </td>
+                    </tr>
+                  ))}
+                  {visibleClients.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                        Aucun client a afficher.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

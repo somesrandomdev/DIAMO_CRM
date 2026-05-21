@@ -1,21 +1,28 @@
-import { useEffect, useState, Suspense, lazy } from 'react'
+import { useEffect, useState, Suspense, lazy, useCallback } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useAuthStore } from './stores/authStore'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { ToastProvider } from './components/Toast'
-import { Loading } from './components/Loading'
-import Layout from './components/Layout'
+import { useAuthStore } from '@/stores/authStore'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ToastProvider } from '@/components/Toast'
+import { Loading } from '@/components/Loading'
+import Layout from '@/components/Layout'
+import { RoleGuard } from '@/components/layout/RoleGuard'
+import { Button } from '@/components/ui/button'
+import { getRoleHome } from '@/utils/roleRoutes'
+import { AlertTriangle } from 'lucide-react'
 
 // Lazy load pages for better performance
-const Login = lazy(() => import('./pages/Login'))
-const FontainierDashboard = lazy(() => import('./pages/FontainierDashboard'))
-const CommercialDashboard = lazy(() => import('./pages/CommercialDashboard'))
-const AdminDashboardEnhanced = lazy(() => import('./pages/AdminDashboardEnhanced'))
-const VenteUltraSimple = lazy(() => import('./pages/VenteUltraSimple'))
-const ClientListUltra = lazy(() => import('./pages/ClientListUltra'))
-const CommercialStatsUltra = lazy(() => import('./pages/CommercialStatsUltra'))
-const HistoriquePage = lazy(() => import('./pages/HistoriquePage'))
-const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const Login = lazy(() => import('@/pages/Login'))
+const CommercialDashboard = lazy(() => import('@/pages/CommercialDashboard'))
+const AdminDashboardEnhanced = lazy(() => import('@/pages/AdminDashboardEnhanced'))
+const AdminDashboardProfessional = lazy(() => import('@/pages/AdminDashboardProfessional'))
+const AdminObjectivesPage = lazy(() => import('@/pages/AdminObjectivesPage'))
+const KiosqueDetailPage = lazy(() => import('@/pages/KiosqueDetailPage'))
+const RapportsPage = lazy(() => import('@/pages/RapportsPage'))
+const VenteUltraSimple = lazy(() => import('@/pages/VenteUltraSimple'))
+const ClientListUltra = lazy(() => import('@/pages/ClientListUltra'))
+const HistoriquePage = lazy(() => import('@/pages/HistoriquePage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'))
 
 // Loading component for lazy loaded routes
 function PageLoader() {
@@ -26,16 +33,13 @@ function PageLoader() {
 function ErrorFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <div className="text-6xl mb-4">⚠️</div>
+      <div className="text-center p-8">
+        <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+          <AlertTriangle className="w-10 h-10 text-destructive" />
+        </div>
         <h2 className="text-2xl font-bold mb-2">Une erreur est survenue</h2>
-        <p className="text-gray-600 mb-4">Veuillez rafraîchir la page</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-        >
-          Rafraîchir
-        </button>
+        <p className="text-muted-foreground mb-4">Veuillez rafraîchir la page</p>
+        <Button onClick={() => window.location.reload()}>Rafraîchir</Button>
       </div>
     </div>
   )
@@ -71,6 +75,10 @@ export default function App() {
     }
   }, [loadProfile])
 
+  const handleBackNavigation = useCallback(() => {
+    navigate(getRoleHome(profile?.role), { replace: true })
+  }, [navigate, profile?.role])
+
   // Show loading state during initial load
   if (isLoading || !hasMounted) {
     return <PageLoader />
@@ -92,79 +100,70 @@ export default function App() {
     )
   }
 
-  const handleBackNavigation = () => {
-    navigate('/dashboard', { replace: true })
-  }
-
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>
       <ToastProvider>
         <Layout>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={
-                profile?.role === 'fontainier' ? <FontainierDashboard /> :
-                profile?.role === 'commercial' ? <CommercialDashboard /> :
-                profile?.role === 'administrateur' ? <Navigate to="/vue-globale" replace /> :
-                <Navigate to="/login" replace />
-              } />
-              
-              {/* Fontainier Routes */}
-              <Route path="/nouvelle-vente" element={
-                profile?.role === 'fontainier' ? <VenteUltraSimple onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/mes-clients" element={
-                profile?.role === 'fontainier' ? <ClientListUltra onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/mes-ventes" element={
-                profile?.role === 'fontainier' ? <CommercialStatsUltra onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
+              <Route path="/" element={<Navigate to={getRoleHome(profile.role)} replace />} />
+              <Route path="/dashboard" element={<Navigate to={getRoleHome(profile.role)} replace />} />
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-              {/* Commercial Routes */}
-              <Route path="/ventes" element={
-                profile?.role === 'commercial' ? <VenteUltraSimple onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/clients" element={
-                profile?.role === 'commercial' ? <ClientListUltra onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/analytics" element={
-                profile?.role === 'commercial' ? <CommercialStatsUltra onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/historique" element={
-                profile?.role === 'commercial' ? <HistoriquePage onBack={handleBackNavigation} /> : <Navigate to="/dashboard" replace />
-              } />
+              <Route
+                element={
+                  <RoleGuard allowedRoles={['fontainier', 'commercial', 'administrateur']} />
+                }
+              >
+                <Route path="/ventes/nouvelle" element={<VenteUltraSimple onBack={handleBackNavigation} />} />
+                <Route path="/ventes/historique" element={<HistoriquePage onBack={handleBackNavigation} />} />
+                <Route path="/clients" element={<ClientListUltra onBack={handleBackNavigation} />} />
+              </Route>
 
-              {/* Administrator Routes */}
-              <Route path="/vue-globale" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/kiosques" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/offres" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/tarifs" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/utilisateurs" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/objectifs" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
-              <Route path="/donnees-globales" element={
-                profile?.role === 'administrateur' ? <AdminDashboardEnhanced /> : <Navigate to="/dashboard" replace />
-              } />
+              <Route element={<RoleGuard allowedRoles={['commercial', 'administrateur']} />}>
+                <Route
+                  path="/analyses"
+                  element={
+                    profile.role === 'administrateur' ? (
+                      <Navigate to="/admin/dashboard" replace />
+                    ) : (
+                      <CommercialDashboard />
+                    )
+                  }
+                />
+              </Route>
+
+              <Route element={<RoleGuard allowedRoles={['administrateur']} />}>
+                <Route path="/admin/dashboard" element={<AdminDashboardProfessional />} />
+                <Route path="/admin/kiosques/:id" element={<KiosqueDetailPage />} />
+                <Route path="/admin/kiosques" element={<AdminDashboardEnhanced />} />
+                <Route path="/admin/offres" element={<AdminDashboardEnhanced />} />
+                <Route path="/admin/tarifs" element={<AdminDashboardEnhanced />} />
+                <Route path="/admin/objectifs" element={<AdminObjectivesPage />} />
+                <Route path="/admin/utilisateurs" element={<AdminDashboardEnhanced />} />
+                <Route path="/admin/rapports" element={<RapportsPage />} />
+              </Route>
 
               {/* Shared Routes */}
               <Route path="/profil" element={<ProfilePage />} />
 
               {/* Legacy Routes for Compatibility */}
-              <Route path="/stats" element={<Navigate to="/mes-ventes" replace />} />
-              <Route path="/admin" element={<Navigate to="/vue-globale" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/nouvelle-vente" element={<Navigate to="/ventes/nouvelle" replace />} />
+              <Route path="/mes-clients" element={<Navigate to="/clients" replace />} />
+              <Route path="/mes-ventes" element={<Navigate to="/ventes/historique" replace />} />
+              <Route path="/ventes" element={<Navigate to="/ventes/historique" replace />} />
+              <Route path="/analytics" element={<Navigate to="/analyses" replace />} />
+              <Route path="/historique" element={<Navigate to="/ventes/historique" replace />} />
+              <Route path="/stats" element={<Navigate to="/ventes/historique" replace />} />
+              <Route path="/vue-globale" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/kiosques" element={<Navigate to="/admin/kiosques" replace />} />
+              <Route path="/offres" element={<Navigate to="/admin/offres" replace />} />
+              <Route path="/tarifs" element={<Navigate to="/admin/tarifs" replace />} />
+              <Route path="/objectifs" element={<Navigate to="/admin/objectifs" replace />} />
+              <Route path="/utilisateurs" element={<Navigate to="/admin/utilisateurs" replace />} />
+              <Route path="/donnees-globales" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="*" element={<Navigate to={getRoleHome(profile.role)} replace />} />
             </Routes>
           </Suspense>
         </Layout>

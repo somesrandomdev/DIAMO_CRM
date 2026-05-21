@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
 import { toCFA } from '../utils/price'
+import { exportRowsCSV } from '../utils/exportCSV'
 import { FaSearch, FaFilter, FaDownload } from 'react-icons/fa'
 
 interface Sale {
@@ -82,25 +83,16 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   }
 
   const exportToCSV = () => {
-    const csvContent = [
-      ['Date', 'Client', 'Offre', 'Montant', 'ID Vente'],
-      ...filteredSales.map(sale => [
-        new Date(sale.created_at).toLocaleDateString('fr-FR'),
-        sale.client?.nom || 'N/A',
-        sale.offre?.nom || 'N/A',
-        sale.montant_total.toString(),
-        sale.id
-      ])
-    ]
-
-    const csvString = csvContent.map(row => row.join(',')).join('\n')
-    const blob = new Blob([csvString], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `historique-ventes-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
+    exportRowsCSV(
+      filteredSales.map((sale) => ({
+        Date: new Date(sale.created_at).toLocaleString('fr-FR'),
+        Client: sale.client?.nom || 'N/A',
+        Offre: sale.offre?.nom || 'N/A',
+        Montant: sale.montant_total,
+        'ID Vente': sale.id,
+      })),
+      `historique-ventes-${new Date().toISOString().split('T')[0]}.csv`
+    )
   }
 
   const paginatedSales = filteredSales.slice(

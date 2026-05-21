@@ -1,332 +1,330 @@
 /**
- * Performance optimization utilities
- * Provides memoization, debouncing, throttling, and other performance helpers
+ * Performance utilities for the Diam'o application
+ * Provides production-grade performance optimization functions
  */
 
 /**
- * Debounce function - delays execution until after wait milliseconds have elapsed
- * @param func - Function to debounce
- * @param wait - Wait time in milliseconds
- * @returns Debounced function
+ * Debounce function that delays invoking func until after wait milliseconds
+ * have elapsed since the last time the debounced function was invoked.
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
+  let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      timeout = null
-      func(...args)
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>): void {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
     }
 
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-    timeout = setTimeout(later, wait)
+    timeoutId = setTimeout(() => {
+      func.apply(this, args)
+    }, wait)
   }
 }
 
 /**
- * Throttle function - limits execution to once every wait milliseconds
- * @param func - Function to throttle
- * @param wait - Wait time in milliseconds
- * @returns Throttled function
+ * Throttle function that invokes func at most once per every limit milliseconds.
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
-  wait: number
+  limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle = false
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>): void {
     if (!inThrottle) {
-      func(...args)
+      func.apply(this, args)
       inThrottle = true
       setTimeout(() => {
         inThrottle = false
-      }, wait)
+      }, limit)
     }
   }
 }
 
 /**
- * Memoize function - caches results based on arguments
- * @param func - Function to memoize
- * @returns Memoized function
+ * Memoize function that caches the results of expensive function calls.
  */
 export function memoize<T extends (...args: any[]) => any>(
-  func: T
+  func: T,
+  resolver?: (...args: Parameters<T>) => string
 ): T {
   const cache = new Map<string, ReturnType<T>>()
 
-  return ((...args: Parameters<T>) => {
-    const key = JSON.stringify(args)
-    
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T> {
+    const key = resolver ? resolver(...args) : JSON.stringify(args)
+
     if (cache.has(key)) {
       return cache.get(key)!
     }
 
-    const result = func(...args)
+    const result = func.apply(this, args)
     cache.set(key, result)
+
     return result
-  }) as T
+  } as T
 }
 
 /**
- * Request animation frame throttle
- * Optimizes animations and scroll handlers
- * @param callback - Function to execute
- * @returns Throttled function
+ * Request Idle Callback polyfill for browsers that don't support it
  */
-export function rafThrottle<T extends (...args: any[]) => any>(
-  callback: T
-): (...args: Parameters<T>) => void {
-  let rafId: number | null = null
+export const requestIdleCallback =
+  typeof window !== 'undefined' && 'requestIdleCallback' in window
+    ? window.requestIdleCallback
+    : (cb: IdleRequestCallback): number => {
+        const start = Date.now()
+        return setTimeout(() => {
+          cb({
+            didTimeout: false,
+            timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
+          })
+        }, 1) as unknown as number
+      }
 
-  return function executedFunction(...args: Parameters<T>) {
-    if (rafId !== null) {
-      cancelAnimationFrame(rafId)
+/**
+ * Cancel Idle Callback polyfill
+ */
+export const cancelIdleCallback =
+  typeof window !== 'undefined' && 'cancelIdleCallback' in window
+    ? window.cancelIdleCallback
+    : (id: number): void => {
+        clearTimeout(id)
+      }
+
+/**
+ * Schedule a task to run during browser idle periods
+ */
+export function scheduleIdleTask(callback: () => void, options?: IdleRequestOptions): number {
+  return requestIdleCallback(callback, options)
+}
+
+/**
+ * Chunk an array into smaller arrays for batch processing
+ */
+export function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
+
+/**
+ * Process items in batches with a delay between batches
+ * Useful for preventing UI blocking when processing large datasets
+ */
+export async function processBatched<T, R>(
+  items: T[],
+  processor: (item: T) => R | Promise<R>,
+  batchSize: number = 10,
+  delayMs: number = 0
+): Promise<R[]> {
+  const results: R[] = []
+  const batches = chunkArray(items, batchSize)
+
+  for (const batch of batches) {
+    const batchResults = await Promise.all(batch.map(processor))
+    results.push(...batchResults)
+
+    if (delayMs > 0) {
+      await sleep(delayMs)
     }
-    rafId = requestAnimationFrame(() => {
-      callback(...args)
-      rafId = null
-    })
   }
+
+  return results
 }
 
 /**
- * Lazy load images with Intersection Observer
- * @param img - Image element
- * @param src - Image source
+ * Sleep utility for async operations
  */
-export function lazyLoadImage(img: HTMLImageElement, src: string): void {
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          img.src = src
-          observer.unobserve(img)
-        }
-      })
-    })
-    observer.observe(img)
-  } else {
-    // Fallback for browsers without Intersection Observer
-    img.src = src
-  }
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
- * Measure performance of a function
- * @param label - Performance label
- * @param fn - Function to measure
- * @returns Function result
+ * Measure execution time of a function
  */
-export async function measurePerformance<T>(
+export async function measureTime<T>(
   label: string,
-  fn: () => Promise<T>
-): Promise<T> {
+  fn: () => T | Promise<T>
+): Promise<{ result: T; duration: number }> {
   const start = performance.now()
-  
-  try {
-    const result = await fn()
-    const duration = performance.now() - start
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Performance] ${label}: ${duration.toFixed(2)}ms`)
-    }
-    
-    return result
-  } catch (error) {
-    const duration = performance.now() - start
-    console.error(`[Performance] ${label} failed after ${duration.toFixed(2)}ms:`, error)
-    throw error
+  const result = await fn()
+  const duration = performance.now() - start
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Performance] ${label}: ${duration.toFixed(2)}ms`)
+  }
+
+  return { result, duration }
+}
+
+/**
+ * Create a performance marker for the Performance API
+ */
+export function markPerformance(name: string): void {
+  if (typeof performance !== 'undefined' && performance.mark) {
+    performance.mark(name)
   }
 }
 
 /**
- * Batch DOM updates to reduce reflows
- * @param updates - Array of update functions
+ * Measure performance between two marks
  */
-export function batchDOMUpdates(updates: Array<() => void>): void {
-  requestAnimationFrame(() => {
-    updates.forEach(update => update())
+export function measurePerformance(name: string, startMark: string, endMark: string): void {
+  if (typeof performance !== 'undefined' && performance.measure) {
+    try {
+      performance.measure(name, startMark, endMark)
+      const entries = performance.getEntriesByName(name, 'measure')
+      if (entries.length > 0 && process.env.NODE_ENV === 'development') {
+        console.log(`[Performance] ${name}: ${entries[0].duration.toFixed(2)}ms`)
+      }
+    } catch {
+      // Marks may not exist, ignore
+    }
+  }
+}
+
+/**
+ * Intersection Observer utility for lazy loading
+ */
+export function createIntersectionObserver(
+  callback: IntersectionObserverCallback,
+  options?: IntersectionObserverInit
+): IntersectionObserver | null {
+  if (typeof IntersectionObserver === 'undefined') {
+    return null
+  }
+
+  return new IntersectionObserver(callback, {
+    rootMargin: '50px',
+    threshold: 0.1,
+    ...options,
   })
 }
 
 /**
- * Virtual scroll helper for large lists
- * Calculates visible items based on scroll position
+ * Preload an image
  */
-export interface VirtualScrollOptions {
-  itemCount: number
-  itemHeight: number
-  containerHeight: number
-  scrollTop: number
+export function preloadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
 }
 
-export interface VirtualScrollResult {
-  visibleStartIndex: number
-  visibleEndIndex: number
-  offsetY: number
+/**
+ * Preload multiple images
+ */
+export async function preloadImages(sources: string[]): Promise<HTMLImageElement[]> {
+  return Promise.all(sources.map(preloadImage))
 }
 
-export function calculateVirtualScroll({
-  itemCount,
-  itemHeight,
-  containerHeight,
-  scrollTop,
-}: VirtualScrollOptions): VirtualScrollResult {
-  const visibleStartIndex = Math.floor(scrollTop / itemHeight)
-  const visibleEndIndex = Math.min(
-    visibleStartIndex + Math.ceil(containerHeight / itemHeight) + 1,
-    itemCount
+/**
+ * Check if the browser supports passive event listeners
+ */
+export function supportsPassiveEvents(): boolean {
+  let supported = false
+  try {
+    const options: AddEventListenerOptions = {
+      get passive(): boolean {
+        supported = true
+        return true
+      },
+    }
+    window.addEventListener('test' as keyof WindowEventMap, () => {}, options)
+    window.removeEventListener('test' as keyof WindowEventMap, () => {}, options)
+  } catch {
+    supported = false
+  }
+  return supported
+}
+
+/**
+ * Add an event listener with passive support for better scroll performance
+ */
+export function addPassiveEventListener(
+  element: EventTarget,
+  type: string,
+  listener: EventListener,
+  options?: AddEventListenerOptions
+): void {
+  const passiveOptions = supportsPassiveEvents()
+    ? { passive: true, ...options }
+    : options
+
+  element.addEventListener(type, listener, passiveOptions)
+}
+
+/**
+ * Remove an event listener
+ */
+export function removePassiveEventListener(
+  element: EventTarget,
+  type: string,
+  listener: EventListener,
+  options?: EventListenerOptions
+): void {
+  element.removeEventListener(type, listener, options)
+}
+
+/**
+ * Virtual scrolling helper - calculate visible range
+ */
+export function calculateVisibleRange(
+  scrollTop: number,
+  containerHeight: number,
+  itemHeight: number,
+  totalItems: number,
+  overscan: number = 3
+): { startIndex: number; endIndex: number } {
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan)
+  const endIndex = Math.min(
+    totalItems - 1,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
   )
-  const offsetY = visibleStartIndex * itemHeight
 
-  return {
-    visibleStartIndex,
-    visibleEndIndex,
-    offsetY,
-  }
+  return { startIndex, endIndex }
 }
 
 /**
- * Cache utility with TTL (Time To Live)
+ * RAF-based animation frame scheduler
  */
-export class Cache<T> {
-  private cache: Map<string, { value: T; expiry: number }> = new Map()
-  private defaultTTL: number
+export class AnimationFrameScheduler {
+  private rafId: number | null = null
+  private callbacks: Set<() => void> = new Set()
 
-  constructor(defaultTTL: number = 60000) {
-    this.defaultTTL = defaultTTL
-  }
+  schedule(callback: () => void): void {
+    this.callbacks.add(callback)
 
-  set(key: string, value: T, ttl: number = this.defaultTTL): void {
-    const expiry = Date.now() + ttl
-    this.cache.set(key, { value, expiry })
-  }
-
-  get(key: string): T | null {
-    const item = this.cache.get(key)
-    
-    if (!item) {
-      return null
+    if (this.rafId === null) {
+      this.rafId = requestAnimationFrame(() => {
+        this.rafId = null
+        const callbacks = Array.from(this.callbacks)
+        this.callbacks.clear()
+        callbacks.forEach((cb) => cb())
+      })
     }
-
-    if (Date.now() > item.expiry) {
-      this.cache.delete(key)
-      return null
-    }
-
-    return item.value
   }
 
-  has(key: string): boolean {
-    return this.get(key) !== null
+  cancel(callback: () => void): void {
+    this.callbacks.delete(callback)
   }
 
-  delete(key: string): void {
-    this.cache.delete(key)
-  }
-
-  clear(): void {
-    this.cache.clear()
-  }
-
-  cleanup(): void {
-    const now = Date.now()
-    for (const [key, item] of this.cache.entries()) {
-      if (now > item.expiry) {
-        this.cache.delete(key)
-      }
+  cancelAll(): void {
+    this.callbacks.clear()
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId)
+      this.rafId = null
     }
   }
 }
 
 /**
- * Create a singleton cache instance
+ * Global animation frame scheduler instance
  */
-export const appCache = new Cache<any>(300000) // 5 minutes default TTL
-
-/**
- * Format file size for display
- * @param bytes - File size in bytes
- * @returns Formatted string
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
-
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
-}
-
-/**
- * Check if device is mobile
- * @returns True if mobile device
- */
-export function isMobile(): boolean {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  )
-}
-
-/**
- * Check if device supports touch
- * @returns True if touch device
- */
-export function isTouchDevice(): boolean {
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0
-}
-
-/**
- * Get network information (if available)
- * @returns Network information or null
- */
-export function getNetworkInfo(): {
-  effectiveType?: string
-  downlink?: number
-  rtt?: number
-  saveData?: boolean
-} | null {
-  const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection
-  
-  if (!connection) {
-    return null
-  }
-
-  return {
-    effectiveType: connection.effectiveType,
-    downlink: connection.downlink,
-    rtt: connection.rtt,
-    saveData: connection.saveData,
-  }
-}
-
-/**
- * Optimize image loading based on network conditions
- * @param src - Image source
- * @returns Optimized image source
- */
-export function optimizeImageForNetwork(src: string): string {
-  const networkInfo = getNetworkInfo()
-  
-  if (!networkInfo) {
-    return src
-  }
-
-  // If on slow connection or data saver mode, return lower quality
-  if (networkInfo.saveData || networkInfo.effectiveType === 'slow-2g' || networkInfo.effectiveType === '2g') {
-    // Add quality parameter if using a CDN that supports it
-    if (src.includes('cloudinary.com') || src.includes('imgix.net')) {
-      return src + (src.includes('?') ? '&' : '?') + 'q=50&w=400'
-    }
-  }
-
-  return src
-}
+export const rafScheduler = new AnimationFrameScheduler()

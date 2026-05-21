@@ -1,21 +1,39 @@
 // src/pages/VenteUltraSimple.tsx
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useVenteStore } from '../stores/venteStore'
 import { generateTicket } from '../lib/ticketGenerator'
 import AddClientUltra from './AddClientUltra'
 import { BackButton, LogoutButton } from '../components/NavControls'
+import { useToast } from '../components/Toast'
 import { toCFA } from '../utils/price'
+
+interface RecentSale {
+  id: string
+  created_at: string
+  montant_total: number
+  client_nom: string
+  offre_nom: string
+}
+
+function joinedName(value: { nom?: string } | { nom?: string }[] | null | undefined): string {
+  if (Array.isArray(value)) return value[0]?.nom ?? 'Inconnu'
+  return value?.nom ?? 'Inconnu'
+}
 
 export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
   const { clients, offres, loadClients, loadOffres } = useVenteStore()
+  const { showToast } = useToast()
 
   const [showAddClient, setShowAddClient] = useState(false)
   const [clientId, setClientId] = useState('')
   const [cartItems, setCartItems] = useState<Array<{offreId: string, qty: number, offre?: any, prix?: number}>>([])
   const [loading, setLoading] = useState(false)
+  const [saleSaved, setSaleSaved] = useState(false)
+  const [dailyStats, setDailyStats] = useState({ ventes: 0, ca: 0 })
+  const [recentSales, setRecentSales] = useState<RecentSale[]>([])
 
   // Client search state
   const [clientSearchQuery, setClientSearchQuery] = useState('')
@@ -60,6 +78,58 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
     return cartItems.reduce((total, item) => total + (item.prix || 0) * item.qty, 0)
   }
 
+  const resetForm = useCallback(() => {
+    setClientId('')
+    setSelectedClientId('')
+    setClientSearchQuery('')
+    setClientSearchResults([])
+    setShowClientSuggestions(false)
+    setCartItems([])
+  }, [])
+
+  const loadVenteSummary = useCallback(async (kiosqueId: string) => {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const [todayResult, recentResult] = await Promise.all([
+      supabase
+        .from('ventes')
+        .select('id, montant_total')
+        .eq('kiosque_id', kiosqueId)
+        .gte('created_at', todayStart.toISOString()),
+      supabase
+        .from('ventes')
+        .select('id, created_at, montant_total, clients(nom), offres(nom)')
+        .eq('kiosque_id', kiosqueId)
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ])
+
+    if (todayResult.error) {
+      console.error('Error loading daily sale stats:', todayResult.error)
+    } else {
+      const rows = todayResult.data ?? []
+      setDailyStats({
+        ventes: rows.length,
+        ca: rows.reduce((sum, sale) => sum + (sale.montant_total ?? 0), 0),
+      })
+    }
+
+    if (recentResult.error) {
+      console.error('Error loading recent sales:', recentResult.error)
+    } else {
+      setRecentSales(
+        (recentResult.data ?? []).map((sale) => ({
+          id: sale.id,
+          created_at: sale.created_at,
+          montant_total: sale.montant_total ?? 0,
+          client_nom: joinedName(sale.clients),
+          offre_nom: joinedName(sale.offres),
+        }))
+      )
+    }
+  }, [])
+
   // Load data once the kiosk id is available
   useEffect(() => {
     if (!profile?.kiosque_id) {
@@ -80,8 +150,9 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
     if (profile?.kiosque_id) {
       loadClients(profile.kiosque_id)
       loadOffres(profile.kiosque_id)
+      loadVenteSummary(profile.kiosque_id)
     }
-  }, [profile?.kiosque_id, onBack])
+  }, [loadClients, loadOffres, loadVenteSummary, onBack, profile?.kiosque_id, profile?.role])
 
   const safeClients = clients.filter((c) => c?.nom)
   const safeOffers = offres.filter((o) => o?.offre?.nom)
@@ -183,7 +254,11 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
         .upload(fileName, pdfBlob, { upsert: false })
 
       if (uploadError) {
-        alert('Upload échoué : ' + uploadError.message)
+        showToast({
+          type: 'error',
+          title: 'Upload ticket echoue',
+          message: uploadError.message,
+        })
         setLoading(false)
         return
       }
@@ -198,7 +273,11 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
         .createSignedUrl(fileName, 60, { download: true })
 
       if (!signedData?.signedUrl) {
-        alert('Erreur génération lien téléchargement')
+        showToast({
+          type: 'error',
+          title: 'Lien ticket indisponible',
+          message: 'La vente est enregistree, mais le lien de telechargement a echoue.',
+        })
         setLoading(false)
         return
       }
@@ -212,20 +291,31 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
       link.click()
       document.body.removeChild(link)
 
-      // Reset form
-      alert(`Vente enregistrée ! ${cartItems.length} offre(s) - Ticket téléchargé.`)
-      setClientId('')
-      setSelectedClientId('')
-      setClientSearchQuery('')
-      setCartItems([])
       setLoading(false)
-      if (profile?.kiosque_id) {
-        await loadClients(profile.kiosque_id)
-        await loadOffres(profile.kiosque_id)
-      }
+      setSaleSaved(true)
+      showToast({
+        type: 'success',
+        title: 'Vente enregistree',
+        message: `${cartItems.length} offre(s) - ticket telecharge.`,
+      })
+
+      window.setTimeout(async () => {
+        resetForm()
+        setSaleSaved(false)
+        if (profile?.kiosque_id) {
+          await loadClients(profile.kiosque_id)
+          await loadOffres(profile.kiosque_id)
+          await loadVenteSummary(profile.kiosque_id)
+        }
+      }, 2000)
     } catch (error: any) {
-      alert('Erreur lors de la vente : ' + error.message)
+      showToast({
+        type: 'error',
+        title: 'Erreur lors de la vente',
+        message: error.message,
+      })
       setLoading(false)
+      setSaleSaved(false)
     }
   }
 
@@ -254,6 +344,17 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>💵 Nouvelle vente</h2>
         <p style={{ color: 'var(--color-text-secondary)' }}>Enregistrer une vente</p>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 rounded-lg border p-4" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+        <div>
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Ventes du jour</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>{dailyStats.ventes}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>CA du jour</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--color-success)' }}>{toCFA(dailyStats.ca)}</p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -308,6 +409,21 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   </div>
                 ))}
               </div>
+            )}
+
+            {clientSearchQuery.trim() && !selectedClientId && clientSearchResults.length === 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAddClient(true)}
+                className="mt-2 w-full rounded-lg border px-4 py-3 text-left font-semibold transition-all hover:shadow-sm"
+                style={{
+                  backgroundColor: 'var(--color-surface)',
+                  borderColor: 'var(--color-primary)',
+                  color: 'var(--color-primary)',
+                }}
+              >
+                Creer ce client -&gt;
+              </button>
             )}
           </div>
 
@@ -365,14 +481,14 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
             onClick={() => setShowAddClient(true)}
             className="w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
             style={{
-              backgroundColor: 'var(--color-secondary)',
+              backgroundColor: 'var(--color-primary)',
               color: 'white'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--color-primary)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-secondary)'
+              e.currentTarget.style.backgroundColor = 'var(--color-primary)'
             }}
           >
             + Créer un nouveau client
@@ -507,26 +623,49 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
           </div>
           <button
             type="submit"
-            disabled={loading || !clientId || cartItems.length === 0}
+            disabled={loading || saleSaved || !clientId || cartItems.length === 0}
             className="w-full py-4 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md text-lg"
             style={{
               backgroundColor: 'var(--color-success)',
               color: 'white',
-              opacity: (loading || !clientId || cartItems.length === 0) ? 0.6 : 1
+              opacity: (loading || saleSaved || !clientId || cartItems.length === 0) ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
-              if (!loading && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success-dark)'
+              if (!loading && !saleSaved && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success-dark)'
             }}
             onMouseLeave={(e) => {
-              if (!loading && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success)'
+              if (!loading && !saleSaved && clientId && cartItems.length > 0) e.currentTarget.style.backgroundColor = 'var(--color-success)'
             }}
           >
             {loading
               ? 'Traitement...'
-              : `Enregistrer la vente - ${toCFA(getTotalAmount())}`}
+              : saleSaved
+                ? 'Vente enregistree'
+                : `Enregistrer la vente - ${toCFA(getTotalAmount())}`}
           </button>
         </div>
       </form>
+
+      <div className="mt-8 rounded-lg border p-4" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+        <h3 className="mb-3 text-lg font-semibold" style={{ color: 'var(--color-text)' }}>Dernieres ventes</h3>
+        {recentSales.length > 0 ? (
+          <div className="space-y-2">
+            {recentSales.map((sale) => (
+              <div key={sale.id} className="flex items-center justify-between rounded-lg p-3" style={{ backgroundColor: 'var(--color-surface-hover)' }}>
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--color-text)' }}>{sale.client_nom}</p>
+                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    {sale.offre_nom} - {new Date(sale.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <p className="font-bold" style={{ color: 'var(--color-primary)' }}>{toCFA(sale.montant_total)}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Aucune vente recente.</p>
+        )}
+      </div>
     </div>
   )
 }

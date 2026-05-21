@@ -1,7 +1,7 @@
-// src/stores/authStore.ts
 import { create } from 'zustand'
-import { supabase, handleSupabaseError } from '../lib/supabase'
-import { validateEmail } from '../utils/validation'
+import { supabase, handleSupabaseError } from '@/lib/supabase'
+import { validateEmail } from '@/utils/validation'
+import { RateLimiter } from '@/utils/security'
 
 /**
  * Type definitions for authentication
@@ -43,6 +43,9 @@ interface AuthStore {
   hasRole: (role: UserRole) => boolean
 }
 
+// Rate limiter for login attempts (5 attempts per minute)
+const loginRateLimiter = new RateLimiter(5, 60000)
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   profile: null,
@@ -56,7 +59,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const validatedEmail = validateEmail(email)
       if (!validatedEmail) {
         set({ isLoading: false })
-        return { success: false, error: 'Format d\'email invalide' }
+        return { success: false, error: "Format d'email invalide" }
+      }
+
+      // Check rate limiting
+      if (loginRateLimiter.isRateLimited(validatedEmail)) {
+        set({ isLoading: false })
+        const remaining = loginRateLimiter.getRemainingAttempts(validatedEmail)
+        return {
+          success: false,
+          error: `Trop de tentatives. Réessayez dans une minute. (${remaining} tentatives restantes)`,
+        }
       }
 
       // Validate password
@@ -65,9 +78,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return { success: false, error: 'Le mot de passe doit contenir au moins 6 caractères' }
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: validatedEmail, 
-        password 
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: validatedEmail,
+        password,
       })
 
       if (error) {
@@ -75,17 +88,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return { success: false, error: handleSupabaseError(error) }
       }
 
+      // Reset rate limiter on successful login
+      loginRateLimiter.reset(validatedEmail)
+
       set({ user: data.user, isLoading: false })
-      
+
       // Load profile after successful sign in
       await get().loadProfile()
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
       set({ isLoading: false })
-      return { 
-        success: false, 
-        error: error.message || 'Erreur lors de la connexion' 
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la connexion'
+      return {
+        success: false,
+        error: errorMessage,
       }
     }
   },
@@ -94,7 +111,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       await supabase.auth.signOut()
       set({ user: null, profile: null, isLoading: false })
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign out error:', error)
       // Force clear state even if sign out fails
       set({ user: null, profile: null, isLoading: false })
@@ -103,7 +120,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   loadProfile: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) {
         set({ user: null, profile: null })
         return

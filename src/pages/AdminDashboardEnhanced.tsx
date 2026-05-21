@@ -56,12 +56,12 @@ export default function AdminDashboardEnhanced() {
   // Determine active tab based on current route
   useEffect(() => {
     const path = location.pathname
-    if (path === '/vue-globale') setActiveTab('global')
-    else if (path === '/kiosques') setActiveTab('kiosks')
-    else if (path === '/offres') setActiveTab('offers')
-    else if (path === '/tarifs') setActiveTab('pricing')
-    else if (path === '/objectifs') setActiveTab('objectives')
-    else if (path === '/utilisateurs') setActiveTab('users')
+    if (path === '/vue-globale' || path === '/admin/dashboard') setActiveTab('global')
+    else if (path === '/kiosques' || path === '/admin/kiosques') setActiveTab('kiosks')
+    else if (path === '/offres' || path === '/admin/offres') setActiveTab('offers')
+    else if (path === '/tarifs' || path === '/admin/tarifs') setActiveTab('pricing')
+    else if (path === '/objectifs' || path === '/admin/objectifs') setActiveTab('objectives')
+    else if (path === '/utilisateurs' || path === '/admin/utilisateurs') setActiveTab('users')
     else if (path === '/donnees-globales') setActiveTab('global')
     else setActiveTab('global')
   }, [location.pathname])
@@ -92,7 +92,7 @@ export default function AdminDashboardEnhanced() {
   const [bulkPricing, setBulkPricing] = useState({ offerId: '', kioskId: '', price: '', selectedKiosks: [] as string[] })
 
   // Objectives state
-  const [objectives, setObjectives] = useState<Record<string, { monthly: number; daily: number }>>({})
+  const [objectives, setObjectives] = useState<Record<string, { id?: string; monthly: number; daily: number }>>({})
   const [objectivesForm, setObjectivesForm] = useState({ kioskId: '', monthly: '', daily: '' })
 
   // Filtering state for global data
@@ -250,12 +250,28 @@ export default function AdminDashboardEnhanced() {
 
   const loadObjectives = async () => {
     try {
-      // For now, we'll use localStorage to store objectives
-      // In a real app, this would be stored in the database
-      const storedObjectives = localStorage.getItem('kiosk_objectives')
-      if (storedObjectives) {
-        setObjectives(JSON.parse(storedObjectives))
+      const monthStart = new Date()
+      monthStart.setDate(1)
+      monthStart.setHours(0, 0, 0, 0)
+      const monthValue = monthStart.toISOString().slice(0, 10)
+      const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate()
+
+      const { data, error } = await supabase
+        .from('objectifs')
+        .select('id, kiosque_id, ca_cible')
+        .eq('mois', monthValue)
+
+      if (error) throw error
+
+      const nextObjectives: Record<string, { id?: string; monthly: number; daily: number }> = {}
+      for (const objective of data || []) {
+        nextObjectives[objective.kiosque_id] = {
+          id: objective.id,
+          monthly: objective.ca_cible,
+          daily: Math.round(objective.ca_cible / daysInMonth),
+        }
       }
+      setObjectives(nextObjectives)
     } catch (error) {
       console.error('Error loading objectives:', error)
     }
@@ -1624,13 +1640,13 @@ export default function AdminDashboardEnhanced() {
               {tabs.map(tab => {
                 const getTabPath = (tabId: TabType) => {
                   switch (tabId) {
-                    case 'global': return '/vue-globale'
-                    case 'kiosks': return '/kiosques'
-                    case 'offers': return '/offres'
-                    case 'pricing': return '/tarifs'
-                    case 'objectives': return '/objectifs'
-                    case 'users': return '/utilisateurs'
-                    default: return '/vue-globale'
+                    case 'global': return '/admin/dashboard'
+                    case 'kiosks': return '/admin/kiosques'
+                    case 'offers': return '/admin/offres'
+                    case 'pricing': return '/admin/tarifs'
+                    case 'objectives': return '/admin/objectifs'
+                    case 'users': return '/admin/utilisateurs'
+                    default: return '/admin/dashboard'
                   }
                 }
 

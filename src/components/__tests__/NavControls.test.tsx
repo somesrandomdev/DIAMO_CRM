@@ -1,10 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { BackButton, LogoutButton } from '../NavControls'
-import { useAuthStore } from '../../stores/authStore'
+import { useAuthStore } from '@/stores/authStore'
 
 // Mock the auth store
-jest.mock('../../stores/authStore', () => ({
+jest.mock('@/stores/authStore', () => ({
   useAuthStore: jest.fn()
 }))
 
@@ -32,7 +32,7 @@ describe('NavControls Components', () => {
         </TestWrapper>
       )
 
-      const button = screen.getByText('← Retour')
+      const button = screen.getByText('Retour')
       expect(button).toBeInTheDocument()
     })
 
@@ -45,7 +45,7 @@ describe('NavControls Components', () => {
         </TestWrapper>
       )
 
-      const button = screen.getByText('← Retour')
+      const button = screen.getByText('Retour')
       fireEvent.click(button)
 
       expect(mockOnBack).toHaveBeenCalledTimes(1)
@@ -59,7 +59,10 @@ describe('NavControls Components', () => {
         user: null,
         profile: null,
         signIn: jest.fn(),
-        loadProfile: jest.fn()
+        loadProfile: jest.fn(),
+        isLoading: false,
+        isAuthenticated: jest.fn(),
+        hasRole: jest.fn(),
       })
 
       render(
@@ -79,7 +82,10 @@ describe('NavControls Components', () => {
         user: null,
         profile: null,
         signIn: jest.fn(),
-        loadProfile: jest.fn()
+        loadProfile: jest.fn(),
+        isLoading: false,
+        isAuthenticated: jest.fn(),
+        hasRole: jest.fn(),
       })
 
       render(

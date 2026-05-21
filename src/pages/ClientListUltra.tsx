@@ -10,6 +10,13 @@ type Client = {
   nom: string
   telephone?: string
   adresse?: string
+  email?: string
+  localite?: string
+  type_client?: string
+  nombre_personnes?: number
+  contenant_prefere?: string
+  preference_contact?: string
+  accepte_offres?: boolean
   situation_familiale?: string
   notes?: string
 }
@@ -18,7 +25,9 @@ type Vente = {
   id: string
   created_at: string
   montant_total: number
-  offre: { nom: string } | null
+  quantite?: number
+  lien_ticket?: string
+  offre: { nom: string; volume_ml?: number } | null
 }
 
 export default function ClientListUltra({ onBack }: { onBack: () => void }) {
@@ -60,7 +69,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
   async function loadVentes(clientId: string) {
     const { data } = await supabase
       .from('ventes')
-      .select('id, created_at, montant_total, offre:offres!inner(nom)')
+      .select('id, created_at, montant_total, quantite, lien_ticket, offre:offres!inner(nom, volume_ml)')
       .eq('client_id', clientId)
       .order('created_at', { ascending: false })
 
@@ -153,6 +162,23 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
               </div>
             </div>
 
+            <div className="grid grid-cols-1 gap-3 mb-6">
+              {[
+                ['Localite', selected.localite || 'Non renseignee'],
+                ['Email', selected.email || 'Non renseigne'],
+                ['Type', selected.type_client || 'Particulier'],
+                ['Personnes', String(selected.nombre_personnes || 1)],
+                ['Contenant', selected.contenant_prefere || 'Bouteille 10L'],
+                ['Contact', selected.preference_contact || 'Telephone'],
+                ['Offres', selected.accepte_offres ? 'Accepte' : 'Non accepte'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between items-center gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--color-surface-hover)' }}>
+                  <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{label}:</span>
+                  <span className="text-right" style={{ color: label === 'Offres' && selected.accepte_offres ? 'var(--color-success)' : 'var(--color-text)' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+
             <h4 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>🛒 Historique des achats</h4>
             {ventes.length > 0 ? (
               <div className="space-y-3">
@@ -163,6 +189,11 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                       <span className="font-bold text-lg" style={{ color: 'var(--color-primary)' }}>{toCFA(v.montant_total)}</span>
                     </div>
                     <p className="font-medium" style={{ color: 'var(--color-text)' }}>📦 {v.offre?.nom || 'Offre inconnue'}</p>
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      Qte {v.quantite || 1}
+                      {v.offre?.volume_ml ? ` - ${v.offre.volume_ml / 1000}L` : ''}
+                      {v.lien_ticket ? ' - Ticket disponible' : ''}
+                    </p>
                   </div>
                 ))}
                 {ventes.length > 5 && <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>... et {ventes.length - 5} autres achats</p>}

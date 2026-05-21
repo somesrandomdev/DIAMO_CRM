@@ -1,20 +1,29 @@
-import { useAuthStore } from '../stores/authStore'
+import { memo } from 'react'
+import { ArrowLeft, LogOut } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
+import { Button } from '@/components/ui/button'
 
-export function BackButton({ onBack }: { onBack: () => void }) {
-  return (
-    <button
-      onClick={onBack}
-      className="inline-flex items-center px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 font-medium"
-    >
-      ← Retour
-    </button>
-  )
+interface BackButtonProps {
+  onBack: () => void
 }
 
-export function LogoutButton() {
+export const BackButton = memo(function BackButton({ onBack }: BackButtonProps) {
+  return (
+    <Button
+      variant="secondary"
+      onClick={onBack}
+      className="gap-2"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Retour
+    </Button>
+  )
+})
+
+export const LogoutButton = memo(function LogoutButton() {
   const { signOut } = useAuthStore()
 
-  const handleClick = async () => {
+  const handleClick = async (): Promise<void> => {
     try {
       await signOut()
     } catch (error) {
@@ -23,11 +32,13 @@ export function LogoutButton() {
   }
 
   return (
-    <button
+    <Button
+      variant="destructive"
       onClick={handleClick}
-      className="inline-flex items-center px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 font-medium"
+      className="gap-2"
     >
+      <LogOut className="h-4 w-4" />
       Déconnexion
-    </button>
+    </Button>
   )
-}
+})

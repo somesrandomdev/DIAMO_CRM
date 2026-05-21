@@ -1,17 +1,7 @@
-import { type ReactNode, useState, useMemo } from 'react'
-import { useAuthStore } from '../stores/authStore'
-import { useNavigate, useLocation } from 'react-router-dom'
-import {
-  FaHome,
-  FaShoppingCart,
-  FaUsers,
-  FaSignOutAlt,
-  FaChartBar,
-  FaStore,
-  FaBars,
-  FaTint,
-  FaMoneyBillWave
-} from 'react-icons/fa'
+import { type ReactNode, useCallback, useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { BarChart3, Droplets, FileText, Home, LogOut, ShoppingCart, Store, Target, Users } from 'lucide-react'
+import { useAuthStore, type UserRole } from '@/stores/authStore'
 
 interface LayoutProps {
   children: ReactNode
@@ -22,326 +12,171 @@ interface NavItem {
   label: string
   icon: ReactNode
   path: string
-  roles: string[]
+  roles: UserRole[]
 }
 
 const navigationItems: NavItem[] = [
-  // Fontainier Navigation - EXACT MATCH with specification
-  {
-    id: 'dashboard',
-    label: 'Tableau de bord',
-    icon: <FaHome className="w-5 h-5" />,
-    path: '/dashboard',
-    roles: ['fontainier']
-  },
-  {
-    id: 'nouvelle-vente',
-    label: 'Nouvelle Vente',
-    icon: <FaShoppingCart className="w-5 h-5" />,
-    path: '/nouvelle-vente',
-    roles: ['fontainier']
-  },
-  {
-    id: 'mes-clients',
-    label: 'Mes Clients',
-    icon: <FaUsers className="w-5 h-5" />,
-    path: '/mes-clients',
-    roles: ['fontainier']
-  },
-  {
-    id: 'mes-ventes',
-    label: 'Mes Ventes',
-    icon: <FaChartBar className="w-5 h-5" />,
-    path: '/mes-ventes',
-    roles: ['fontainier']
-  },
-  {
-    id: 'profil-agent',
-    label: 'Mon Profil',
-    icon: <FaUsers className="w-5 h-5" />,
-    path: '/profil',
-    roles: ['agent_commercial']
-  },
-
-  // Commercial Navigation - EXACT MATCH with specification
-  {
-    id: 'commercial-dashboard',
-    label: 'Tableau de bord',
-    icon: <FaHome className="w-5 h-5" />,
-    path: '/dashboard',
-    roles: ['commercial']
-  },
-  {
-    id: 'ventes-commercial',
-    label: 'Ventes',
-    icon: <FaShoppingCart className="w-5 h-5" />,
-    path: '/ventes',
-    roles: ['commercial']
-  },
-  {
-    id: 'clients-commercial',
-    label: 'Clients',
-    icon: <FaUsers className="w-5 h-5" />,
-    path: '/clients',
-    roles: ['commercial']
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: <FaChartBar className="w-5 h-5" />,
-    path: '/analytics',
-    roles: ['commercial']
-  },
-  {
-    id: 'historique',
-    label: 'Historique',
-    icon: <FaChartBar className="w-5 h-5" />,
-    path: '/historique',
-    roles: ['commercial']
-  },
-  {
-    id: 'profil-commercial',
-    label: 'Mon Profil',
-    icon: <FaUsers className="w-5 h-5" />,
-    path: '/profil',
-    roles: ['commercial']
-  },
-
-  // Administrator Navigation - EXACT MATCH with specification
-  {
-    id: 'vue-globale',
-    label: 'Vue Globale',
-    icon: <FaHome className="w-5 h-5" />,
-    path: '/vue-globale',
-    roles: ['administrateur']
-  },
-  {
-    id: 'kiosques-admin',
-    label: 'Kiosques',
-    icon: <FaStore className="w-5 h-5" />,
-    path: '/kiosques',
-    roles: ['administrateur']
-  },
-  {
-    id: 'offres-admin',
-    label: 'Offres',
-    icon: <FaTint className="w-5 h-5" />,
-    path: '/offres',
-    roles: ['administrateur']
-  },
-  {
-    id: 'tarifs',
-    label: 'Tarifs',
-    icon: <FaMoneyBillWave className="w-5 h-5" />,
-    path: '/tarifs',
-    roles: ['administrateur']
-  },
-  {
-    id: 'utilisateurs',
-    label: 'Utilisateurs',
-    icon: <FaUsers className="w-5 h-5" />,
-    path: '/utilisateurs',
-    roles: ['administrateur']
-  },
-  {
-    id: 'donnees-globales',
-    label: 'Données Globales',
-    icon: <FaChartBar className="w-5 h-5" />,
-    path: '/donnees-globales',
-    roles: ['administrateur']
-  },
-  {
-    id: 'profil-admin',
-    label: 'Mon Profil',
-    icon: <FaUsers className="w-5 h-5" />,
-    path: '/profil',
-    roles: ['administrateur']
-  },
+  { id: 'dashboard', label: 'Tableau de bord', icon: <Home className="h-4 w-4" />, path: '/admin/dashboard', roles: ['administrateur'] },
+  { id: 'kiosques', label: 'Kiosques', icon: <Store className="h-4 w-4" />, path: '/admin/kiosques', roles: ['administrateur'] },
+  { id: 'offres', label: 'Offres & Prix', icon: <Droplets className="h-4 w-4" />, path: '/admin/offres', roles: ['administrateur'] },
+  { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-4 w-4" />, path: '/admin/utilisateurs', roles: ['administrateur'] },
+  { id: 'analyses-admin', label: 'Analyses', icon: <BarChart3 className="h-4 w-4" />, path: '/analyses', roles: ['administrateur'] },
+  { id: 'exports', label: 'Exports', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['administrateur'] },
+  { id: 'parametres', label: 'Paramètres', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['administrateur'] },
+  { id: 'analyses', label: 'Analyses', icon: <BarChart3 className="h-4 w-4" />, path: '/analyses', roles: ['commercial'] },
+  { id: 'mes-clients-comm', label: 'Mes Clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['commercial'] },
+  { id: 'historique', label: 'Historique ventes', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/historique', roles: ['commercial'] },
+  { id: 'export-csv', label: 'Exporter CSV', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['commercial'] },
+  { id: 'nouvelle', label: 'Nouvelle vente', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/nouvelle', roles: ['fontainier'] },
+  { id: 'mes-ventes', label: 'Mes ventes', icon: <BarChart3 className="h-4 w-4" />, path: '/ventes/historique', roles: ['fontainier'] },
+  { id: 'mes-clients', label: 'Mes clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['fontainier'] },
 ]
+
+function capitalizeFirst(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+}
 
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  const handleLogout = async () => {
-    await signOut()
-    navigate('/login')
-  }
-
-  const handleNavigation = (path: string) => {
-    navigate(path)
-  }
-
-  const filteredNavItems = navigationItems.filter(item =>
-    profile?.role && item.roles.includes(profile.role)
+  const handleNavigation = useCallback(
+    (path: string) => {
+      navigate(path)
+    },
+    [navigate]
   )
 
-  // Memoize filtered nav items to prevent unnecessary recalculations
-  const memoizedNavItems = useMemo(() => filteredNavItems, [profile?.role])
+  const handleLogout = useCallback(async () => {
+    await signOut()
+    navigate('/login')
+  }, [navigate, signOut])
 
-  const currentDate = new Date().toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  const role = profile?.role
 
-  const capitalizeFirst = (str: string) => {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
-  }
+  const isActivePath = useCallback(
+    (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`),
+    [location.pathname]
+  )
+
+  const filteredNavItems = useMemo(
+    () => navigationItems.filter((item) => profile?.role && item.roles.includes(profile.role)),
+    [profile?.role]
+  )
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setMobileMenuOpen(false)} style={{ backgroundColor: 'rgba(28, 126, 214, 0.5)' }} />
-      )}
-
-      {/* Sidebar */}
-      <div className={`w-64 bg-surface shadow-xl border-r border-border fixed h-full z-40 transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
-        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
-            <h1 className="text-xl font-bold" style={{ color: 'var(--color-primary)' }}>Diam'o</h1>
-            {/* Close button for mobile */}
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              <FaBars className="w-5 h-5 transform rotate-45 text-blue-600" />
-            </button>
+    <div className="diamo-shell">
+      <aside className="diamo-sidebar hidden lg:flex">
+          <div className="logo">
+            <div className="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.5 5.5a4.5 4.5 0 01-6.36 6.36L12 21.5l-6.5-6.5a4.5 4.5 0 016.36-6.36L12 2.69z" /></svg>
+            </div>
+            <span className="text">Diam'o</span>
           </div>
+          <div className="nav">
+            {role === 'administrateur' && (
+              <>
+                <div className="nav-section">
+                  <div className="nav-section-header">Principal</div>
+                  {filteredNavItems.filter(i => ['dashboard','kiosques','offres','utilisateurs'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="nav-section">
+                  <div className="nav-section-header">Rapports</div>
+                  {filteredNavItems.filter(i => ['analyses-admin','exports'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="nav-section">
+                  <div className="nav-section-header">Système</div>
+                  {filteredNavItems.filter(i => ['parametres'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {role === 'commercial' && (
+              <>
+                <div className="nav-section">
+                  <div className="nav-section-header">Principal</div>
+                  {filteredNavItems.filter(i => ['analyses','mes-clients-comm'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="nav-section">
+                  <div className="nav-section-header">Ventes</div>
+                  {filteredNavItems.filter(i => ['historique','export-csv'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {role === 'fontainier' && (
+              <>
+                <div className="nav-section">
+                  <div className="nav-section-header">Ventes</div>
+                  {filteredNavItems.filter(i => ['nouvelle','mes-ventes'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="nav-section">
+                  <div className="nav-section-header">Clients</div>
+                  {filteredNavItems.filter(i => ['mes-clients'].includes(i.id)).map(item => (
+                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
+                      <span className="icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          {profile && (
+            <div className="nav-footer" style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className={`avatar ${role === 'administrateur' ? 'admin' : role === 'commercial' ? 'commercial' : 'fontainier'}`}>{profile.username?.slice(0,2).toUpperCase() || 'U'}</div>
+                <div className="info">
+                  <div className="name">{profile.username}</div>
+                  <div className="role">{capitalizeFirst(role || '')}</div>
+                </div>
+              </div>
+              <button type="button" onClick={handleLogout} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-tertiary)' }} aria-label="Déconnexion">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </aside>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {memoizedNavItems.map((item) => {
-              const isActive = location.pathname === item.path
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    handleNavigation(item.path)
-                    setMobileMenuOpen(false)
-                  }}
-                  className={`nav-item w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 shadow-sm hover:shadow-md ${
-                    isActive ? 'active' : ''
-                  }`}
-                  style={{
-                    backgroundColor: isActive ? 'var(--color-primary-dark)' : 'var(--color-primary)',
-                    color: 'white',
-                    border: `1px solid ${isActive ? 'var(--color-primary-dark)' : 'var(--color-primary)'}`,
-                    borderLeft: isActive ? '4px solid var(--color-primary-dark)' : '1px solid var(--color-primary)'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
-                      e.currentTarget.style.borderColor = 'var(--color-primary-dark)'
-                      e.currentTarget.style.borderLeftColor = 'var(--color-primary-dark)'
-                      e.currentTarget.style.transform = 'translateX(2px)'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'var(--color-primary)'
-                      e.currentTarget.style.borderColor = 'var(--color-primary)'
-                      e.currentTarget.style.borderLeftColor = 'var(--color-primary)'
-                      e.currentTarget.style.transform = 'translateX(0)'
-                    }
-                  }}
-                >
-                  <span className="mr-3" style={{ color: 'white' }}>{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              )
-            })}
-          </nav>
-
-          {/* Logout */}
-          <div className="p-4 border-t border-border" style={{ borderColor: 'var(--color-border)' }}>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 shadow-sm hover:shadow font-medium"
-              style={{
-                backgroundColor: 'var(--color-primary)',
-                color: 'white'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--color-primary)'
-              }}
-            >
-              <FaSignOutAlt className="w-5 h-5 mr-3" />
-              <span>Déconnexion</span>
-            </button>
+        <div className="flex-1 flex flex-col min-w-0">
+          <div className="diamo-topbar">
+            <span className="title">
+              {role === 'administrateur' ? 'Tableau de bord' : role === 'commercial' ? 'Analyses — Kiosque Liberté' : 'Nouvelle vente — Kiosque Liberté'}
+            </span>
+            <span className={`role-badge ${role === 'administrateur' ? 'admin' : role === 'commercial' ? 'commercial' : 'fontainier'}`}>{capitalizeFirst(role || '')}</span>
+          </div>
+          <div className="flex-1 overflow-auto p-4" style={{ background: 'var(--bg)' }}>
+            <div className="max-w-[1200px] mx-auto">{children}</div>
           </div>
         </div>
       </div>
-
-      {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
-        {/* Header */}
-        <header className="bg-surface shadow-lg border-b border-border px-4 lg:px-6 py-4 sticky top-0 z-50 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-3 rounded-lg hover:bg-surface-hover border-2 border-border hover:border-primary transition-all duration-200 shadow-sm focus-ring"
-                style={{
-                  borderColor: 'var(--color-border)',
-                  backgroundColor: 'transparent'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-primary)'
-                  e.currentTarget.style.color = 'var(--color-primary)'
-                  e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--color-border)'
-                  e.currentTarget.style.color = 'inherit'
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
-              >
-                <FaBars className="w-5 h-5 icon-enhanced" />
-              </button>
-
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-surface-hover icon-enhanced" style={{ backgroundColor: 'var(--color-surface-hover)' }}>
-                  <FaStore className="w-5 h-5" style={{ color: 'var(--color-primary)' }} />
-                </div>
-                <div>
-                  <span className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-                    {profile?.role === 'administrateur'
-                      ? 'Administration'
-                      : capitalizeFirst(profile?.kiosques?.nom || 'Kiosque')
-                    }
-                  </span>
-                  <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                    {profile?.role === 'administrateur' ? 'Vue globale' : 'Gestion de kiosque'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm hidden sm:block font-medium" style={{ color: 'var(--color-text-secondary)' }}>{currentDate}</p>
-              <p className="text-xs capitalize font-semibold" style={{ color: 'var(--color-primary)' }}>{profile?.role}</p>
-            </div>
-          </div>
-        </header>
-
-        {/* Content */}
-        <main className="p-4 lg:p-6 min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
   )
 }
