@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import DOMPurify from 'dompurify'
 
 export async function generateTicket(data: {
   client: { nom: string; telephone?: string }
@@ -36,7 +37,7 @@ export async function generateTicket(data: {
     `
   }
 
-  container.innerHTML = `
+  container.innerHTML = DOMPurify.sanitize(`
     <div style="text-align:center">
       <h2>${kiosque.nom || 'Diam\'o'}</h2>
       <p>${kiosque.adresse || ''}</p>
@@ -48,7 +49,7 @@ export async function generateTicket(data: {
       <p style="font-size:14px"><strong>Total : ${montant_total} CFA</strong></p>
       <p style="font-size:10px; color:#555">Merci pour votre confiance !</p>
     </div>
-  `
+  `)
 
   // 2. Render to canvas → PDF
   document.body.appendChild(container)
