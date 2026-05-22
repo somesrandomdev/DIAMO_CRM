@@ -233,6 +233,7 @@ export default function AdminObjectivesPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
+                              aria-label="Supprimer l'objectif"
                               onClick={() => deleteObjective(kiosque.id)}
                               disabled={isSaving}
                             >
