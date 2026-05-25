@@ -235,6 +235,8 @@ export default function AdminObjectivesPage() {
                               size="icon"
                               onClick={() => deleteObjective(kiosque.id)}
                               disabled={isSaving}
+                              aria-label={`Supprimer l'objectif pour ${kiosque.nom}`}
+                              title={`Supprimer l'objectif pour ${kiosque.nom}`}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
