@@ -1,0 +1,4 @@
+## 2024-05-18 - DOM-based XSS via innerHTML in Ticket Generation
+**Vulnerability:** User-controlled inputs (`kiosque.nom`, `kiosque.adresse`, `client.nom`, `client.telephone`, `offre.nom`) were being directly interpolated into an HTML string and assigned to `container.innerHTML` without sanitization or HTML entity encoding. This allowed for DOM-based Cross-Site Scripting (XSS).
+**Learning:** `sanitizeString()` which only removes `<` and `>` is insufficient for full XSS protection. Elements injected into the DOM must be properly HTML-encoded to prevent malicious script execution, especially when handling unpredictable user input (like names and addresses).
+**Prevention:** Always use a dedicated HTML encoding function (like `escapeHtml()`) or `DOMPurify.sanitize()` before injecting user-provided data into `innerHTML`.
