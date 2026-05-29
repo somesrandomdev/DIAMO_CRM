@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { supabase } from '../lib/supabase'
+import { supabase, handleSupabaseError } from '../lib/supabase'
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaSave, FaEdit, FaShieldAlt, FaTrashAlt } from 'react-icons/fa'
 
 interface ProfileData {
@@ -44,7 +44,7 @@ export default function ProfilePage() {
       setIsEditing(false)
     } catch (error: any) {
       console.error('Error updating profile:', error)
-      alert('Erreur lors de la mise à jour: ' + error.message)
+      alert('Erreur lors de la mise à jour: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }

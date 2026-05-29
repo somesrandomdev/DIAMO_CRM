@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, handleSupabaseError } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
 
@@ -48,7 +48,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
 
       onDone(data.id)
     } catch (error: any) {
-      alert('Erreur lors de la création du client: ' + error.message)
+      alert('Erreur lors de la création du client: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }

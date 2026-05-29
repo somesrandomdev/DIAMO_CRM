@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { supabase } from '../lib/supabase'
+import { supabase, handleSupabaseError } from '../lib/supabase'
 import { FaPlus, FaUsers, FaTint, FaMoneyBillWave, FaStore, FaChartBar, FaTrophy, FaEdit, FaTrash } from 'react-icons/fa'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { toCFA } from '../utils/price'
@@ -460,7 +460,7 @@ export default function AdminDashboardEnhanced() {
       setEditingItem(null)
     } catch (error: any) {
       console.error('Error saving kiosk:', error)
-      alert('Erreur lors de la sauvegarde: ' + error.message)
+      alert('Erreur lors de la sauvegarde: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -482,7 +482,7 @@ export default function AdminDashboardEnhanced() {
       alert('Kiosque supprimé avec succès!')
     } catch (error: any) {
       console.error('Error deleting kiosk:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -558,7 +558,7 @@ export default function AdminDashboardEnhanced() {
       setEditingItem(null)
     } catch (error: any) {
       console.error('Error saving offer:', error)
-      alert('Erreur lors de la sauvegarde: ' + error.message)
+      alert('Erreur lors de la sauvegarde: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -580,7 +580,7 @@ export default function AdminDashboardEnhanced() {
       alert('Offre supprimée avec succès!')
     } catch (error: any) {
       console.error('Error deleting offer:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -657,7 +657,7 @@ export default function AdminDashboardEnhanced() {
       setEditingItem(null)
     } catch (error: any) {
       console.error('Error saving user:', error)
-      alert('Erreur lors de la sauvegarde: ' + error.message)
+      alert('Erreur lors de la sauvegarde: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -679,7 +679,7 @@ export default function AdminDashboardEnhanced() {
       alert('Utilisateur supprimé avec succès!')
     } catch (error: any) {
       console.error('Error deleting user:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -714,7 +714,7 @@ export default function AdminDashboardEnhanced() {
       alert('Objectifs sauvegardés avec succès!')
     } catch (error: any) {
       console.error('Error saving objectives:', error)
-      alert('Erreur lors de la sauvegarde: ' + error.message)
+      alert('Erreur lors de la sauvegarde: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -734,7 +734,7 @@ export default function AdminDashboardEnhanced() {
       alert('Objectifs supprimés avec succès!')
     } catch (error: any) {
       console.error('Error deleting objectives:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -831,7 +831,7 @@ export default function AdminDashboardEnhanced() {
       alert(`Prix sauvegardés avec succès! (${updates.length} mises à jour)`)
     } catch (error: any) {
       console.error('Error saving pricing matrix:', error)
-      alert('Erreur lors de la sauvegarde: ' + error.message)
+      alert('Erreur lors de la sauvegarde: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -901,7 +901,7 @@ export default function AdminDashboardEnhanced() {
       setBulkPricing({ offerId: '', kioskId: '', price: '', selectedKiosks: [] })
     } catch (error: any) {
       console.error('Error applying bulk pricing:', error)
-      alert('Erreur lors de l\'application: ' + error.message)
+      alert('Erreur lors de l\'application: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }

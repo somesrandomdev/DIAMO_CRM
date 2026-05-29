@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { supabase } from '../lib/supabase'
+import { supabase, handleSupabaseError } from '../lib/supabase'
 import { FaPlus, FaUsers, FaTint, FaMoneyBillWave, FaStore, FaChartBar, FaTrophy, FaEdit, FaTrash } from 'react-icons/fa'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { toCFA } from '../utils/price'
@@ -277,7 +277,7 @@ export default function AdminDashboard() {
       alert('Kiosque supprimé avec succès!')
     } catch (error: any) {
       console.error('Error deleting kiosk:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -307,7 +307,7 @@ export default function AdminDashboard() {
       alert('Offre supprimée avec succès!')
     } catch (error: any) {
       console.error('Error deleting offer:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
@@ -337,7 +337,7 @@ export default function AdminDashboard() {
       alert('Utilisateur supprimé avec succès!')
     } catch (error: any) {
       console.error('Error deleting user:', error)
-      alert('Erreur lors de la suppression: ' + error.message)
+      alert('Erreur lors de la suppression: ' + handleSupabaseError(error))
     } finally {
       setLoading(false)
     }
