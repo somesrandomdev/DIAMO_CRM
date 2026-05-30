@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
+import { useToast } from '../components/Toast'
 
 export default function AddClientUltra({ onDone }: { onDone: (newId: string) => void }) {
   const { profile } = useAuthStore()
+  const { showToast } = useToast()
   const [formData, setFormData] = useState({
     nom_prenom: '',
     telephone: '',
@@ -21,7 +23,11 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!formData.nom_prenom.trim() || !formData.telephone.trim()) {
-      alert('Veuillez remplir les champs obligatoires (Nom et prénom, Téléphone)')
+      showToast({
+        type: 'warning',
+        title: 'Champs obligatoires',
+        message: 'Veuillez remplir les champs obligatoires (Nom et prénom, Téléphone)',
+      })
       return
     }
 
@@ -48,7 +54,11 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
 
       onDone(data.id)
     } catch (error: any) {
-      alert('Erreur lors de la création du client: ' + error.message)
+      showToast({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Erreur lors de la création du client: ' + error.message,
+      })
     } finally {
       setLoading(false)
     }
@@ -325,12 +335,12 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
         <div className="pt-4 space-y-3">
           <button
             type="submit"
-            disabled={loading || !formData.nom_prenom.trim() || !formData.telephone.trim()}
+            disabled={loading}
             className="w-full py-4 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md text-lg"
             style={{
               backgroundColor: 'var(--color-success)',
               color: 'white',
-              opacity: (loading || !formData.nom_prenom.trim() || !formData.telephone.trim()) ? 0.6 : 1
+              opacity: (loading) ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
               if (!loading && formData.nom_prenom.trim() && formData.telephone.trim()) e.currentTarget.style.backgroundColor = 'var(--color-primary)'
