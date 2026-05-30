@@ -1,0 +1,4 @@
+## 2025-02-28 - DOM-based XSS in Ticket Generator
+**Vulnerability:** User-controlled data (client name, kiosk name/address) was inserted directly into `innerHTML` using template literals in `src/lib/ticketGenerator.ts` without any sanitization before rendering it to a PDF using `html2canvas`.
+**Learning:** Transient DOM elements created for canvas/PDF rendering can act as a vector for DOM-based XSS. We cannot assume data is safe simply because it's passed into an off-screen container. Even if it's meant for a PDF, it executes in the user's browser document.
+**Prevention:** Always use HTML entity escaping (e.g. `escapeHtml`) or `DOMPurify.sanitize()` before assigning any user data to `innerHTML`, regardless of whether the element is appended to `document.body` temporarily for rendering or permanently for display.
