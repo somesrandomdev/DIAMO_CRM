@@ -4,6 +4,23 @@
  */
 
 /**
+ * Escapes special characters for HTML to prevent DOM-based XSS when injecting strings into innerHTML
+ * @param input - The string to escape
+ * @returns Escaped HTML string
+ */
+export function escapeHtml(input: string): string {
+  if (typeof input !== 'string') {
+    return ''
+  }
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+/**
  * Sanitizes a string input by removing potentially dangerous characters
  * @param input - The string to sanitize
  * @returns Sanitized string
