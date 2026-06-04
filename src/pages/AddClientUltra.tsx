@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { BackButton, LogoutButton } from '../components/NavControls'
+import { useToast } from '../components/Toast'
 
 export default function AddClientUltra({ onDone }: { onDone: (newId: string) => void }) {
   const { profile } = useAuthStore()
+  const { showToast } = useToast()
   const [formData, setFormData] = useState({
     nom_prenom: '',
     telephone: '',
@@ -21,7 +23,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!formData.nom_prenom.trim() || !formData.telephone.trim()) {
-      alert('Veuillez remplir les champs obligatoires (Nom et prénom, Téléphone)')
+      showToast({ type: 'warning', title: 'Attention', message: 'Veuillez remplir les champs obligatoires (Nom et prénom, Téléphone)' })
       return
     }
 
@@ -48,7 +50,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
 
       onDone(data.id)
     } catch (error: any) {
-      alert('Erreur lors de la création du client: ' + error.message)
+      showToast({ type: 'error', title: 'Erreur', message: 'Erreur lors de la création du client: ' + error.message })
     } finally {
       setLoading(false)
     }

@@ -1,0 +1,3 @@
+## 2024-06-04 - Replace blocking alert dialogs with accessible Toast notifications
+**Learning:** Found that multiple pages in the app (e.g., AddClientUltra.tsx) use native blocking `alert()` calls for user feedback (e.g., form validation and submission results) instead of the accessible, non-blocking `Toast` notification system that is already implemented in `src/components/Toast.tsx`. Using native alerts blocks the main thread, creates poor UX, and is inaccessible to screen readers compared to modern ARIA-enabled toasts.
+**Action:** Replace `alert()` calls with `useToast()` hook and its `showToast` method across the application to improve accessibility and user experience without modifying core logic.
