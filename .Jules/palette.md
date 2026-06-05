@@ -1,0 +1,1 @@
+## 2026-06-05 - Missing ARIA Labels on Icon Buttons\n**Learning:** Icon-only action buttons (Edit, Delete, etc.) across the dashboard pages currently lack aria-labels, which makes them inaccessible to screen readers.\n**Action:** Add aria-label and title attributes to all icon-only buttons (like FaEdit and FaTrash) to ensure full accessibility.
