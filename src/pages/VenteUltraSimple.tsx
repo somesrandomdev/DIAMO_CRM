@@ -589,9 +589,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                         className="w-16 p-1 text-sm border border-border rounded" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)' }}
                       />
                       <button
+                        type="button"
                         onClick={() => removeFromCart(item.offreId)}
                         className="text-error hover:text-error-dark p-1"
                         style={{ color: 'var(--color-error)' }}
+                        aria-label="Supprimer l'article"
+                        title="Supprimer l'article"
                       >
                         ✕
                       </button>
