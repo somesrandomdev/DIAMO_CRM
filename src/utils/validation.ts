@@ -21,6 +21,21 @@ export function sanitizeString(input: string): string {
 }
 
 /**
+ * Escapes HTML characters to prevent XSS attacks when rendering raw strings.
+ * @param input - The string to escape
+ * @returns Escaped string safely formatted for HTML injection
+ */
+export function escapeHtml(input: string): string {
+  if (typeof input !== 'string') return input;
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Validates and sanitizes a phone number
  * @param phone - The phone number to validate
  * @returns Validated phone number or null if invalid
