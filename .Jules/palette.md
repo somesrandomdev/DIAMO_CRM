@@ -1,0 +1,3 @@
+## 2024-06-07 - Add aria-label and title to icon-only action buttons in AdminDashboardEnhanced
+**Learning:** Icon-only action buttons (Edit, Delete) in data tables (like Kiosks, Offers, Users) must include `aria-label` and `title` attributes for screen readers and tooltips. Relying solely on icons makes the interface inaccessible to screen reader users. This issue is pervasive in `AdminDashboardEnhanced.tsx`.
+**Action:** Always add descriptive `aria-label` and `title` attributes to icon-only buttons (e.g., `aria-label="Modifier le kiosque"`). I will fix this in `src/pages/AdminDashboardEnhanced.tsx`.
