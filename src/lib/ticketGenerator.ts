@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { escapeHtml } from '../utils/validation'
 
 export async function generateTicket(data: {
   client: { nom: string; telephone?: string }
@@ -20,32 +21,32 @@ export async function generateTicket(data: {
   let offresHtml = ''
   if (offres && offres.length > 0) {
     offresHtml = offres.map(offre => `
-      <p><strong>Offre :</strong> ${offre.nom}</p>
-      <p><strong>Volume :</strong> ${offre.volume_ml || ''} ml</p>
-      <p><strong>Qté :</strong> ${offre.quantite}</p>
-      <p><strong>Prix unitaire :</strong> ${offre.prix} CFA</p>
-      <p><strong>Sous-total :</strong> ${offre.sous_total} CFA</p>
+      <p><strong>Offre :</strong> ${escapeHtml(offre.nom)}</p>
+      <p><strong>Volume :</strong> ${escapeHtml(offre.volume_ml?.toString() || '')} ml</p>
+      <p><strong>Qté :</strong> ${escapeHtml(offre.quantite?.toString() || '')}</p>
+      <p><strong>Prix unitaire :</strong> ${escapeHtml(offre.prix?.toString() || '')} CFA</p>
+      <p><strong>Sous-total :</strong> ${escapeHtml(offre.sous_total?.toString() || '')} CFA</p>
       <hr style="margin:4px 0" />
     `).join('')
   } else if (offre) {
     offresHtml = `
-      <p><strong>Offre :</strong> ${offre.nom}</p>
-      <p><strong>Volume :</strong> ${offre.volume_ml || ''} ml</p>
-      <p><strong>Qté :</strong> ${quantite || 1}</p>
+      <p><strong>Offre :</strong> ${escapeHtml(offre.nom)}</p>
+      <p><strong>Volume :</strong> ${escapeHtml(offre.volume_ml?.toString() || '')} ml</p>
+      <p><strong>Qté :</strong> ${escapeHtml(quantite?.toString() || '1')}</p>
       <hr style="margin:8px 0" />
     `
   }
 
   container.innerHTML = `
     <div style="text-align:center">
-      <h2>${kiosque.nom || 'Diam\'o'}</h2>
-      <p>${kiosque.adresse || ''}</p>
+      <h2>${escapeHtml(kiosque.nom || 'Diam\'o')}</h2>
+      <p>${escapeHtml(kiosque.adresse || '')}</p>
       <hr style="margin:8px 0" />
-      <p><strong>Client :</strong> ${client.nom}</p>
-      <p><strong>Tél :</strong> ${client.telephone || ''}</p>
+      <p><strong>Client :</strong> ${escapeHtml(client.nom)}</p>
+      <p><strong>Tél :</strong> ${escapeHtml(client.telephone || '')}</p>
       <hr style="margin:8px 0" />
       ${offresHtml}
-      <p style="font-size:14px"><strong>Total : ${montant_total} CFA</strong></p>
+      <p style="font-size:14px"><strong>Total : ${escapeHtml(montant_total?.toString() || '')} CFA</strong></p>
       <p style="font-size:10px; color:#555">Merci pour votre confiance !</p>
     </div>
   `

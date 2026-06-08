@@ -1,0 +1,4 @@
+## 2024-05-15 - Fix DOM-based XSS in ticketGenerator
+**Vulnerability:** Unsanitized user inputs (e.g. client.nom, offre.nom) were being injected directly into the `innerHTML` of a temporary DOM element when generating PDF tickets using html2canvas.
+**Learning:** Even transient, non-visible DOM elements created for utility tasks (like PDF generation) are vulnerable to DOM-based XSS if they evaluate unsanitized input as HTML. The `sanitizeString` utility only removes specific patterns like angle brackets but doesn't properly encode HTML entities, making it insufficient for XSS prevention when explicitly injecting into `innerHTML`.
+**Prevention:** Always use dedicated HTML entity encoding (e.g. `escapeHtml`) or `DOMPurify.sanitize()` before injecting ANY user-controlled string into `innerHTML`, regardless of whether the element is visible or just a temporary container.
