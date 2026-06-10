@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { escapeHtml } from '../utils/validation'
 
 export async function generateTicket(data: {
   client: { nom: string; telephone?: string }
@@ -20,7 +21,7 @@ export async function generateTicket(data: {
   let offresHtml = ''
   if (offres && offres.length > 0) {
     offresHtml = offres.map(offre => `
-      <p><strong>Offre :</strong> ${offre.nom}</p>
+      <p><strong>Offre :</strong> ${escapeHtml(offre.nom)}</p>
       <p><strong>Volume :</strong> ${offre.volume_ml || ''} ml</p>
       <p><strong>Qté :</strong> ${offre.quantite}</p>
       <p><strong>Prix unitaire :</strong> ${offre.prix} CFA</p>
@@ -29,7 +30,7 @@ export async function generateTicket(data: {
     `).join('')
   } else if (offre) {
     offresHtml = `
-      <p><strong>Offre :</strong> ${offre.nom}</p>
+      <p><strong>Offre :</strong> ${escapeHtml(offre.nom)}</p>
       <p><strong>Volume :</strong> ${offre.volume_ml || ''} ml</p>
       <p><strong>Qté :</strong> ${quantite || 1}</p>
       <hr style="margin:8px 0" />
@@ -38,11 +39,11 @@ export async function generateTicket(data: {
 
   container.innerHTML = `
     <div style="text-align:center">
-      <h2>${kiosque.nom || 'Diam\'o'}</h2>
-      <p>${kiosque.adresse || ''}</p>
+      <h2>${escapeHtml(kiosque.nom) || 'Diam\'o'}</h2>
+      <p>${escapeHtml(kiosque.adresse) || ''}</p>
       <hr style="margin:8px 0" />
-      <p><strong>Client :</strong> ${client.nom}</p>
-      <p><strong>Tél :</strong> ${client.telephone || ''}</p>
+      <p><strong>Client :</strong> ${escapeHtml(client.nom)}</p>
+      <p><strong>Tél :</strong> ${escapeHtml(client.telephone) || ''}</p>
       <hr style="margin:8px 0" />
       ${offresHtml}
       <p style="font-size:14px"><strong>Total : ${montant_total} CFA</strong></p>

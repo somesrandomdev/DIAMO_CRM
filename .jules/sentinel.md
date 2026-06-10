@@ -1,0 +1,4 @@
+## 2024-06-10 - DOM-based XSS via HTML Canvas PDF Generation
+**Vulnerability:** A DOM-based XSS vulnerability existed in `src/lib/ticketGenerator.ts` where unescaped user-controlled data (`client.nom`, `kiosque.adresse`, etc.) was assigned to `container.innerHTML` before passing it to `html2canvas` for PDF generation.
+**Learning:** Even transient DOM elements constructed purely for third-party libraries (like PDF/Canvas rendering) and never permanently appended to the document body are susceptible to executing malicious scripts if user input is not sanitized when injected via `innerHTML`.
+**Prevention:** Always apply HTML entity encoding (e.g., using a robust `escapeHtml` utility or `DOMPurify.sanitize`) to all user-controlled string inputs before interpolating them into `innerHTML` strings, regardless of the element's lifecycle or purpose.

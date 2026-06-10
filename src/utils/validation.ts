@@ -331,3 +331,18 @@ export function getValidationErrorMessage(field: string, type: string): string {
 
   return messages[type] || `${field} est invalide`
 }
+
+/**
+ * Escapes HTML entities in a string to prevent XSS
+ * @param input - The string to escape
+ * @returns Escaped string
+ */
+export function escapeHtml(input: string | undefined | null): string {
+  if (input === null || input === undefined || input === '') return ''
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
