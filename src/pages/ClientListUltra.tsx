@@ -114,6 +114,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
               {c.telephone && <span className="ml-2" style={{ color: 'var(--color-text-secondary)' }}>• {c.telephone}</span>}
             </div>
             <button
+              type="button"
               onClick={() => handleSelect(c)}
               className="px-4 py-2 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
               style={{
@@ -203,6 +204,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
             )}
 
             <button
+              type="button"
               onClick={() => { setSelected(null); setVentes([]) }}
               className="mt-6 w-full py-3 rounded-lg font-semibold transition-all shadow-sm hover:shadow-md"
               style={{
