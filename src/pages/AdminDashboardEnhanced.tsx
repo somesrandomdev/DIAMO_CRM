@@ -324,7 +324,7 @@ export default function AdminDashboardEnhanced() {
       }
 
       // Get filtered clients data
-      let clientsQuery = supabase.from('clients').select('*', { count: 'exact', head: true })
+      const clientsQuery = supabase.from('clients').select('*', { count: 'exact', head: true })
 
       // Apply date filter for clients if needed (clients don't have created_at, so we'll use a different approach)
       // For now, we'll get all clients since we don't have a reliable way to filter by creation date
@@ -747,7 +747,7 @@ export default function AdminDashboardEnhanced() {
       return
     }
 
-    let filtered = { ...globalStats }
+    const filtered = { ...globalStats }
 
     // Filter by kiosk
     if (globalFilters.kioskId) {

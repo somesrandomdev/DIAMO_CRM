@@ -1,0 +1,4 @@
+## 2025-05-24 - [DOM-Based XSS in Transient PDF Generation Elements]
+**Vulnerability:** User-controlled data (e.g., client names, kiosk addresses, offer details) was dynamically injected into a temporary, unattached DOM element's `innerHTML` without HTML entity encoding during PDF ticket generation (`html2canvas`). This creates a DOM-based XSS vulnerability.
+**Learning:** Transient or temporary DOM elements created purely for internal operations (like canvas rendering or PDF generation) are just as susceptible to XSS execution when appended to `document.body` as visible UI components. The use of native `innerHTML` bypasses React's inherent XSS protections.
+**Prevention:** Always use `escapeHtml()` (or `DOMPurify.sanitize()`) to sanitize all user-controlled data before assigning it to `innerHTML`, even for off-screen, temporary, or unattached DOM elements.
