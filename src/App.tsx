@@ -2,6 +2,7 @@ import { useEffect, useState, Suspense, lazy, useCallback } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { ToastProvider } from '@/components/Toast'
 import { Loading } from '@/components/Loading'
 import Layout from '@/components/Layout'
@@ -13,9 +14,12 @@ import { AlertTriangle } from 'lucide-react'
 // Lazy load pages for better performance
 const Login = lazy(() => import('@/pages/Login'))
 const CommercialDashboard = lazy(() => import('@/pages/CommercialDashboard'))
-const AdminDashboardEnhanced = lazy(() => import('@/pages/AdminDashboardEnhanced'))
 const AdminDashboardProfessional = lazy(() => import('@/pages/AdminDashboardProfessional'))
+const AdminKiosquesPage = lazy(() => import('@/pages/AdminKiosquesPage'))
+const AdminOffresPage = lazy(() => import('@/pages/AdminOffresPage'))
 const AdminObjectivesPage = lazy(() => import('@/pages/AdminObjectivesPage'))
+const AdminTarifsPage = lazy(() => import('@/pages/AdminTarifsPage'))
+const AdminUsersPage = lazy(() => import('@/pages/AdminUsersPage'))
 const KiosqueDetailPage = lazy(() => import('@/pages/KiosqueDetailPage'))
 const RapportsPage = lazy(() => import('@/pages/RapportsPage'))
 const VenteUltraSimple = lazy(() => import('@/pages/VenteUltraSimple'))
@@ -39,7 +43,7 @@ function ErrorFallback() {
         </div>
         <h2 className="text-2xl font-bold mb-2">Une erreur est survenue</h2>
         <p className="text-muted-foreground mb-4">Veuillez rafraîchir la page</p>
-        <Button onClick={() => window.location.reload()}>Rafraîchir</Button>
+        <Button variant="primary" onClick={() => window.location.reload()}>Rafraîchir</Button>
       </div>
     </div>
   )
@@ -95,6 +99,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </Suspense>
+          <PWAUpdatePrompt />
         </ToastProvider>
       </ErrorBoundary>
     )
@@ -136,11 +141,11 @@ export default function App() {
               <Route element={<RoleGuard allowedRoles={['administrateur']} />}>
                 <Route path="/admin/dashboard" element={<AdminDashboardProfessional />} />
                 <Route path="/admin/kiosques/:id" element={<KiosqueDetailPage />} />
-                <Route path="/admin/kiosques" element={<AdminDashboardEnhanced />} />
-                <Route path="/admin/offres" element={<AdminDashboardEnhanced />} />
-                <Route path="/admin/tarifs" element={<AdminDashboardEnhanced />} />
+                <Route path="/admin/kiosques" element={<AdminKiosquesPage />} />
+                <Route path="/admin/offres" element={<AdminOffresPage />} />
+                <Route path="/admin/tarifs" element={<AdminTarifsPage />} />
                 <Route path="/admin/objectifs" element={<AdminObjectivesPage />} />
-                <Route path="/admin/utilisateurs" element={<AdminDashboardEnhanced />} />
+                <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
                 <Route path="/admin/rapports" element={<RapportsPage />} />
               </Route>
 
@@ -167,6 +172,7 @@ export default function App() {
             </Routes>
           </Suspense>
         </Layout>
+        <PWAUpdatePrompt />
       </ToastProvider>
     </ErrorBoundary>
   )

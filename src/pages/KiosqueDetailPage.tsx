@@ -5,8 +5,10 @@ import { EvolutionLineChart } from '@/components/charts/EvolutionLineChart'
 import type { DailyRevenuePoint } from '@/components/dashboard/useAdminDashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { EmptyState } from '@/components/ui/empty-state'
+import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { StatusBadge } from '@/components/ui/status-badge'
 import { supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
 
@@ -32,9 +34,9 @@ interface VenteRow {
 }
 
 function roleVariant(role: string) {
-  if (role === 'administrateur') return 'destructive'
-  if (role === 'commercial') return 'secondary'
-  return 'success'
+  if (role === 'administrateur') return 'info'
+  if (role === 'commercial') return 'success'
+  return 'warning'
 }
 
 function makeDailyData(sales: VenteRow[]): DailyRevenuePoint[] {
@@ -146,42 +148,42 @@ export default function KiosqueDetailPage() {
   }, [sales])
 
   if (isLoading) {
-    return <Skeleton className="h-[520px] rounded-lg" />
+    return <Skeleton className="h-[520px] rounded-md" />
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="button" variant="outline" className="w-fit" onClick={() => navigate('/admin/dashboard')}>
+        <Button type="button" variant="default" size="sm" className="w-fit" onClick={() => navigate('/admin/dashboard')}>
           <ArrowLeft className="h-4 w-4" />
           Dashboard
         </Button>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="rounded-md border border-red/30 bg-red-light p-4 text-sm text-red">
           {error}
         </div>
       )}
 
       <div>
-        <h1 className="text-3xl font-semibold">{kiosque?.nom ?? 'Kiosque'}</h1>
-        <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+        <h1 className="text-[15px] font-semibold text-text">{kiosque?.nom ?? 'Kiosque'}</h1>
+        <p className="mt-2 flex items-center gap-2 text-[12px] text-text-secondary">
           <MapPin className="h-4 w-4" />
           {kiosque?.adresse || 'Adresse non renseignee'}
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="rounded-lg"><CardContent className="pt-6"><p className="text-sm text-muted-foreground">CA 30 jours</p><p className="text-2xl font-semibold">{toCFA(stats.ca)}</p></CardContent></Card>
-        <Card className="rounded-lg"><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Ventes</p><p className="text-2xl font-semibold">{stats.ventes}</p></CardContent></Card>
-        <Card className="rounded-lg"><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Clients actifs</p><p className="text-2xl font-semibold">{stats.activeClients}</p></CardContent></Card>
-        <Card className="rounded-lg"><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Panier moyen</p><p className="text-2xl font-semibold">{toCFA(stats.panier)}</p></CardContent></Card>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KPICard label="CA 30 jours" value={toCFA(stats.ca)} />
+        <KPICard label="Ventes" value={stats.ventes} />
+        <KPICard label="Clients actifs" value={stats.activeClients} />
+        <KPICard label="Panier moyen" value={toCFA(stats.panier)} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <EvolutionLineChart data={stats.daily} />
-        <Card className="rounded-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -189,17 +191,17 @@ export default function KiosqueDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-lg border p-3">
-              <p className="text-sm text-muted-foreground">Offre la plus vendue</p>
+            <div className="rounded-md border border-border p-3">
+              <p className="text-[12px] text-text-secondary">Offre la plus vendue</p>
               <p className="font-semibold">{stats.bestOffer}</p>
             </div>
             {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between rounded-lg bg-muted/60 p-3">
-                <span className="font-medium">{user.username}</span>
-                <Badge variant={roleVariant(user.role)}>{user.role}</Badge>
+              <div key={user.id} className="flex items-center justify-between rounded-md bg-muted p-3">
+                <span className="font-medium text-text">{user.username}</span>
+                <StatusBadge variant={roleVariant(user.role)}>{user.role}</StatusBadge>
               </div>
             ))}
-            {users.length === 0 && <p className="text-sm text-muted-foreground">Aucun utilisateur assigne.</p>}
+            {users.length === 0 && <EmptyState title="Aucun utilisateur assigne" className="border-0 bg-muted p-4" />}
           </CardContent>
         </Card>
       </div>

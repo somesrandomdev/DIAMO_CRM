@@ -4,33 +4,35 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]',
+  'inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]',
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground shadow hover:bg-primary-hover focus:bg-primary-hover active:bg-primary-active',
+          'border border-border bg-transparent text-foreground shadow-none hover:bg-muted focus:bg-muted active:bg-muted/80',
+        primary:
+          'border border-primary bg-primary text-primary-foreground shadow-none hover:bg-primary-hover focus:bg-primary-hover active:bg-primary-active',
         destructive:
-          'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive-hover focus:bg-destructive-hover active:bg-destructive-active',
+          'border border-destructive bg-destructive text-destructive-foreground shadow-none hover:bg-destructive-hover focus:bg-destructive-hover active:bg-destructive-active',
         outline:
-          'border-2 border-input bg-background text-foreground shadow-sm hover:bg-muted hover:border-primary hover:text-primary focus:bg-muted focus:border-primary active:bg-muted/80',
+          'border border-border bg-transparent text-foreground shadow-none hover:border-primary hover:bg-muted hover:text-primary focus:bg-muted focus:border-primary active:bg-muted/80',
         secondary:
-          'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary-hover focus:bg-secondary-hover active:bg-secondary-active',
+          'border border-teal bg-teal text-secondary-foreground shadow-none hover:bg-secondary-hover focus:bg-secondary-hover active:bg-secondary-active',
         ghost: 'text-foreground hover:bg-muted hover:text-primary focus:bg-muted active:bg-muted/80',
         link: 'text-primary underline-offset-4 hover:underline focus:underline',
         success:
-          'bg-success text-success-foreground shadow hover:bg-success-hover focus:bg-success-hover active:bg-success-active',
+          'border border-success bg-success text-success-foreground shadow-none hover:bg-success-hover focus:bg-success-hover active:bg-success-active',
         warning:
-          'bg-warning text-warning-foreground shadow hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
+          'border border-warning bg-warning text-warning-foreground shadow-none hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
       },
       size: {
-        default: 'h-9 px-4 py-2',
-        sm: 'h-8 rounded-md px-3 text-xs',
-        lg: 'h-10 rounded-md px-8',
+        default: 'h-11 px-4 py-2',
+        sm: 'h-9 min-h-9 rounded-md px-3 text-xs sm:h-8 sm:min-h-8',
+        lg: 'h-12 rounded-md px-8',
         xl: 'h-12 rounded-lg px-10 text-base',
-        icon: 'h-9 w-9',
-        'icon-sm': 'h-8 w-8',
-        'icon-lg': 'h-10 w-10',
+        icon: 'h-11 w-11',
+        'icon-sm': 'h-10 min-h-10 w-10 min-w-10 sm:h-8 sm:min-h-8 sm:w-8 sm:min-w-8',
+        'icon-lg': 'h-12 w-12',
       },
     },
     defaultVariants: {

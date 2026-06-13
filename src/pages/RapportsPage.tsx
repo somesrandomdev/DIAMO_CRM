@@ -3,6 +3,9 @@ import jsPDF from 'jspdf'
 import { Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
+import { EmptyState } from '@/components/ui/empty-state'
+import { ProgressBar } from '@/components/ui/progress-bar'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
@@ -136,14 +139,48 @@ export default function RapportsPage() {
     pdf.save(`rapport-${row.kiosque.nom.toLowerCase().replaceAll(' ', '-')}.pdf`)
   }
 
+  const columns: DataTableColumn<ReportRow>[] = [
+    { key: 'kiosque', header: 'Kiosque', render: (row) => <span className="font-medium">{row.kiosque.nom}</span>, sortValue: (row) => row.kiosque.nom },
+    { key: 'ca', header: 'CA', align: 'right', render: (row) => <span className="font-mono">{toCFA(row.ca)}</span>, sortValue: (row) => row.ca },
+    { key: 'target', header: 'Objectif', align: 'right', render: (row) => row.target > 0 ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non defini</span>, sortValue: (row) => row.target },
+    {
+      key: 'progress',
+      header: '%',
+      align: 'right',
+      render: (row) => (
+        <div className="ml-auto w-24">
+          <ProgressBar value={row.progress} />
+          <p className="mt-1 text-right text-[10.5px] text-text-secondary">
+            {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'}
+          </p>
+        </div>
+      ),
+      sortValue: (row) => row.progress,
+    },
+    { key: 'ventes', header: 'Ventes', align: 'right', render: (row) => row.ventes, sortValue: (row) => row.ventes },
+    { key: 'topClient', header: 'Top client', render: (row) => row.topClient, sortValue: (row) => row.topClient },
+    { key: 'bestOffer', header: 'Meilleure offre', render: (row) => row.bestOffer, sortValue: (row) => row.bestOffer },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (row) => (
+        <Button type="button" variant="default" size="sm" onClick={() => exportPdf(row)}>
+          <Download className="h-4 w-4" />
+          PDF
+        </Button>
+      ),
+    },
+  ]
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Rapports</h1>
-        <p className="text-sm text-muted-foreground">Exports mensuels par kiosque.</p>
+        <h1 className="text-[15px] font-semibold text-text">Rapports</h1>
+        <p className="text-[12px] text-text-secondary">Exports mensuels par kiosque.</p>
       </div>
 
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -155,42 +192,10 @@ export default function RapportsPage() {
             <div className="space-y-3">
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-16 rounded-lg" />)}
             </div>
+          ) : rows.length === 0 ? (
+            <EmptyState title="Aucun rapport" description="Les rapports apparaitront apres les premieres ventes du mois." />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                    <th className="px-3 py-2">Kiosque</th>
-                    <th className="px-3 py-2 text-right">CA</th>
-                    <th className="px-3 py-2 text-right">Objectif</th>
-                    <th className="px-3 py-2 text-right">%</th>
-                    <th className="px-3 py-2 text-right">Ventes</th>
-                    <th className="px-3 py-2">Top client</th>
-                    <th className="px-3 py-2">Meilleure offre</th>
-                    <th className="px-3 py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr key={row.kiosque.id} className="border-b last:border-0">
-                      <td className="px-3 py-3 font-medium">{row.kiosque.nom}</td>
-                      <td className="px-3 py-3 text-right">{toCFA(row.ca)}</td>
-                      <td className="px-3 py-3 text-right">{row.target > 0 ? toCFA(row.target) : 'Non defini'}</td>
-                      <td className="px-3 py-3 text-right">{row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'}</td>
-                      <td className="px-3 py-3 text-right">{row.ventes}</td>
-                      <td className="px-3 py-3">{row.topClient}</td>
-                      <td className="px-3 py-3">{row.bestOffer}</td>
-                      <td className="px-3 py-3 text-right">
-                        <Button type="button" variant="outline" size="sm" onClick={() => exportPdf(row)}>
-                          <Download className="h-4 w-4" />
-                          PDF
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable columns={columns} data={rows} getRowKey={(row) => row.kiosque.id} />
           )}
         </CardContent>
       </Card>

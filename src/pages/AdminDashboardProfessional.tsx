@@ -11,6 +11,7 @@ import { HeurePointe } from '@/components/charts/HeurePointe'
 import { OffreDonut } from '@/components/charts/OffreDonut'
 import { SlideOverDrawer } from '@/components/layout/SlideOverDrawer'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toCFA } from '@/utils/price'
 
@@ -76,13 +77,13 @@ export default function AdminDashboardProfessional() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Dashboard administrateur</h1>
-          <p className="text-sm text-muted-foreground">Vue reseau mensuelle et signaux operationnels.</p>
+          <h1 className="text-[15px] font-semibold text-text">Dashboard administrateur</h1>
+          <p className="text-[12px] text-text-secondary">Vue reseau mensuelle et signaux operationnels.</p>
         </div>
-        <Button type="button" variant="outline" className="w-fit" onClick={refresh} loading={isLoading}>
+        <Button type="button" variant="default" size="sm" className="w-fit" onClick={refresh} loading={isLoading}>
           <RefreshCw className="h-4 w-4" />
           Actualiser
         </Button>
@@ -94,7 +95,7 @@ export default function AdminDashboardProfessional() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {isLoading ? (
           [1, 2, 3, 4, 5].map((item) => <Skeleton key={item} className="h-32 rounded-lg" />)
         ) : (
@@ -135,24 +136,24 @@ export default function AdminDashboardProfessional() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3 rounded-lg border bg-card p-3">
-        <Button type="button" onClick={() => setActiveAction('kiosque')}>
+      <Card padding="sm" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <Button type="button" variant="primary" size="sm" onClick={() => setActiveAction('kiosque')}>
           <Plus className="h-4 w-4" />
           Nouveau kiosque
         </Button>
-        <Button type="button" variant="secondary" onClick={() => setActiveAction('offre')}>
+        <Button type="button" variant="default" size="sm" onClick={() => setActiveAction('offre')}>
           <Plus className="h-4 w-4" />
           Nouvelle offre
         </Button>
-        <Button type="button" variant="outline" onClick={() => setActiveAction('utilisateur')}>
+        <Button type="button" variant="default" size="sm" onClick={() => setActiveAction('utilisateur')}>
           <Plus className="h-4 w-4" />
           Nouvel utilisateur
         </Button>
-        <Button type="button" variant="outline" onClick={() => setActiveAction('export')}>
+        <Button type="button" variant="default" size="sm" onClick={() => setActiveAction('export')}>
           <Download className="h-4 w-4" />
           Exporter CSV
         </Button>
-      </div>
+      </Card>
 
       <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <div className="space-y-4">
@@ -180,7 +181,7 @@ export default function AdminDashboardProfessional() {
       >
         {activeAction === 'export' ? (
           <div className="space-y-4">
-            <Button type="button" className="w-full" onClick={exportKiosques}>
+                <Button type="button" variant="primary" className="w-full" onClick={exportKiosques}>
               <Download className="h-4 w-4" />
               Telecharger le classement
             </Button>
@@ -189,6 +190,7 @@ export default function AdminDashboardProfessional() {
           <div className="space-y-4">
             <Button
               type="button"
+              variant="primary"
               className="w-full"
               onClick={() => {
                 if (activeAction === 'kiosque') navigate('/admin/kiosques')

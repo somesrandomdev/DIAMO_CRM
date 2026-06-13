@@ -10,19 +10,19 @@ export default function UnauthorizedPage() {
   const { profile } = useAuthStore()
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <Card className="w-full max-w-md rounded-lg">
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <Card className="w-full max-w-md">
         <CardContent className="pt-6 text-center space-y-5">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-            <LockKeyhole className="h-7 w-7 text-destructive" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-light">
+            <LockKeyhole className="h-7 w-7 text-red" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold">Acces non autorise</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="text-[15px] font-semibold text-text">Acces non autorise</h1>
+            <p className="mt-2 text-[12px] text-text-secondary">
               Votre role ne permet pas d'ouvrir cette page.
             </p>
           </div>
-          <Button onClick={() => navigate(getRoleHome(profile?.role), { replace: true })}>
+          <Button variant="primary" onClick={() => navigate(getRoleHome(profile?.role), { replace: true })}>
             Retour a mon espace
           </Button>
         </CardContent>

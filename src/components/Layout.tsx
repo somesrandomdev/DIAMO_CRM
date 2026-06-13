@@ -1,7 +1,21 @@
-import { type ReactNode, useCallback, useMemo } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Droplets, FileText, Home, LogOut, ShoppingCart, Store, Target, Users } from 'lucide-react'
+import {
+  BarChart3,
+  Droplets,
+  FileText,
+  Home,
+  LogOut,
+  Menu,
+  ShoppingCart,
+  Store,
+  Target,
+  Users,
+  X,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useAuthStore, type UserRole } from '@/stores/authStore'
+import { cn } from '@/lib/utils'
 
 interface LayoutProps {
   children: ReactNode
@@ -13,33 +27,74 @@ interface NavItem {
   icon: ReactNode
   path: string
   roles: UserRole[]
+  section: string
 }
 
 const navigationItems: NavItem[] = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: <Home className="h-4 w-4" />, path: '/admin/dashboard', roles: ['administrateur'] },
-  { id: 'kiosques', label: 'Kiosques', icon: <Store className="h-4 w-4" />, path: '/admin/kiosques', roles: ['administrateur'] },
-  { id: 'offres', label: 'Offres & Prix', icon: <Droplets className="h-4 w-4" />, path: '/admin/offres', roles: ['administrateur'] },
-  { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-4 w-4" />, path: '/admin/utilisateurs', roles: ['administrateur'] },
-  { id: 'analyses-admin', label: 'Analyses', icon: <BarChart3 className="h-4 w-4" />, path: '/analyses', roles: ['administrateur'] },
-  { id: 'exports', label: 'Exports', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['administrateur'] },
-  { id: 'parametres', label: 'Paramètres', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['administrateur'] },
-  { id: 'analyses', label: 'Analyses', icon: <BarChart3 className="h-4 w-4" />, path: '/analyses', roles: ['commercial'] },
-  { id: 'mes-clients-comm', label: 'Mes Clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['commercial'] },
-  { id: 'historique', label: 'Historique ventes', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/historique', roles: ['commercial'] },
-  { id: 'export-csv', label: 'Exporter CSV', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['commercial'] },
-  { id: 'nouvelle', label: 'Nouvelle vente', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/nouvelle', roles: ['fontainier'] },
-  { id: 'mes-ventes', label: 'Mes ventes', icon: <BarChart3 className="h-4 w-4" />, path: '/ventes/historique', roles: ['fontainier'] },
-  { id: 'mes-clients', label: 'Mes clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['fontainier'] },
+  { id: 'dashboard', label: 'Dashboard', icon: <Home className="h-4 w-4" />, path: '/admin/dashboard', roles: ['administrateur'], section: 'Principal' },
+  { id: 'kiosques', label: 'Kiosques', icon: <Store className="h-4 w-4" />, path: '/admin/kiosques', roles: ['administrateur'], section: 'Principal' },
+  { id: 'offres', label: 'Offres', icon: <Droplets className="h-4 w-4" />, path: '/admin/offres', roles: ['administrateur'], section: 'Principal' },
+  { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-4 w-4" />, path: '/admin/utilisateurs', roles: ['administrateur'], section: 'Principal' },
+  { id: 'objectifs', label: 'Objectifs', icon: <Target className="h-4 w-4" />, path: '/admin/objectifs', roles: ['administrateur'], section: 'Rapports' },
+  { id: 'rapports', label: 'Rapports', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['administrateur'], section: 'Rapports' },
+  { id: 'profil-admin', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['administrateur'], section: 'Systeme' },
+
+  { id: 'analyses', label: 'Analyses', icon: <BarChart3 className="h-4 w-4" />, path: '/analyses', roles: ['commercial'], section: 'Principal' },
+  { id: 'clients-commercial', label: 'Clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['commercial'], section: 'Principal' },
+  { id: 'ventes-commercial', label: 'Ventes', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/historique', roles: ['commercial'], section: 'Ventes' },
+  { id: 'profil-commercial', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['commercial'], section: 'Systeme' },
+
+  { id: 'nouvelle', label: 'Nouvelle vente', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/nouvelle', roles: ['fontainier'], section: 'Ventes' },
+  { id: 'ventes-fontainier', label: 'Mes ventes', icon: <BarChart3 className="h-4 w-4" />, path: '/ventes/historique', roles: ['fontainier'], section: 'Ventes' },
+  { id: 'clients-fontainier', label: 'Mes clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['fontainier'], section: 'Clients' },
+  { id: 'profil-fontainier', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['fontainier'], section: 'Systeme' },
 ]
 
-function capitalizeFirst(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+const roleLabels: Record<UserRole, string> = {
+  administrateur: 'Administrateur',
+  commercial: 'Commercial',
+  fontainier: 'Fontainier',
+}
+
+const roleClasses: Record<UserRole, string> = {
+  administrateur: 'bg-purple-light text-purple',
+  commercial: 'bg-blue-light text-blue',
+  fontainier: 'bg-teal-light text-teal',
+}
+
+function Logo() {
+  return (
+    <div className="flex h-[var(--topbar-height)] items-center gap-2 border-b border-border px-4">
+      <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-blue text-white">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-4 w-4"
+          aria-hidden="true"
+        >
+          <path d="M12 2.69l5.5 5.5a4.5 4.5 0 0 1-6.36 6.36L12 21.5l-6.5-6.5a4.5 4.5 0 0 1 6.36-6.36L12 2.69z" />
+        </svg>
+      </div>
+      <span className="text-[15px] font-semibold text-text">Diam'o</span>
+    </div>
+  )
 }
 
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const role = profile?.role
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [location.pathname])
+
   const handleNavigation = useCallback(
     (path: string) => {
       navigate(path)
@@ -52,131 +107,129 @@ export default function Layout({ children }: LayoutProps) {
     navigate('/login')
   }, [navigate, signOut])
 
-  const role = profile?.role
-
   const isActivePath = useCallback(
     (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`),
     [location.pathname]
   )
 
   const filteredNavItems = useMemo(
-    () => navigationItems.filter((item) => profile?.role && item.roles.includes(profile.role)),
-    [profile?.role]
+    () => navigationItems.filter((item) => role && item.roles.includes(role)),
+    [role]
+  )
+
+  const groupedNavItems = useMemo(() => {
+    return filteredNavItems.reduce<Record<string, NavItem[]>>((groups, item) => {
+      groups[item.section] = groups[item.section] ?? []
+      groups[item.section].push(item)
+      return groups
+    }, {})
+  }, [filteredNavItems])
+
+  const pageTitle = useMemo(() => {
+    if (location.pathname.startsWith('/admin/kiosques/') && location.pathname !== '/admin/kiosques') {
+      return 'Detail kiosque'
+    }
+
+    return filteredNavItems.find((item) => isActivePath(item.path))?.label ?? 'Diam-o'
+  }, [filteredNavItems, isActivePath, location.pathname])
+
+  const kioskName = profile?.kiosques?.nom
+
+  const sidebar = (
+    <aside className="flex h-full w-[var(--sidebar-width)] shrink-0 flex-col border-r border-border bg-surface">
+      <Logo />
+      <nav className="flex-1 overflow-y-auto p-2">
+        {Object.entries(groupedNavItems).map(([section, items]) => (
+          <div key={section} className="mb-3">
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
+              {section}
+            </p>
+            <div className="space-y-1">
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={cn(
+                    'flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-[12.5px] font-medium text-text transition-colors lg:min-h-9',
+                    isActivePath(item.path)
+                      ? 'bg-blue-light text-blue'
+                      : 'hover:bg-muted hover:text-blue'
+                  )}
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <span className="flex w-5 items-center justify-center">{item.icon}</span>
+                  <span className="truncate">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {profile && role && (
+        <div className="flex items-center justify-between gap-2 border-t border-border p-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold', roleClasses[role])}>
+              {profile.username?.slice(0, 2).toUpperCase() || 'U'}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[12px] font-semibold text-text">{profile.username}</p>
+              <p className="truncate text-[10.5px] text-text-tertiary">{roleLabels[role]}</p>
+            </div>
+          </div>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={handleLogout} aria-label="Deconnexion">
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </aside>
   )
 
   return (
-    <div className="diamo-shell">
-      <aside className="diamo-sidebar hidden lg:flex">
-          <div className="logo">
-            <div className="icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.5 5.5a4.5 4.5 0 01-6.36 6.36L12 21.5l-6.5-6.5a4.5 4.5 0 016.36-6.36L12 2.69z" /></svg>
-            </div>
-            <span className="text">Diam'o</span>
-          </div>
-          <div className="nav">
-            {role === 'administrateur' && (
-              <>
-                <div className="nav-section">
-                  <div className="nav-section-header">Principal</div>
-                  {filteredNavItems.filter(i => ['dashboard','kiosques','offres','utilisateurs'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="nav-section">
-                  <div className="nav-section-header">Rapports</div>
-                  {filteredNavItems.filter(i => ['analyses-admin','exports'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="nav-section">
-                  <div className="nav-section-header">Système</div>
-                  {filteredNavItems.filter(i => ['parametres'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-            {role === 'commercial' && (
-              <>
-                <div className="nav-section">
-                  <div className="nav-section-header">Principal</div>
-                  {filteredNavItems.filter(i => ['analyses','mes-clients-comm'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="nav-section">
-                  <div className="nav-section-header">Ventes</div>
-                  {filteredNavItems.filter(i => ['historique','export-csv'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-            {role === 'fontainier' && (
-              <>
-                <div className="nav-section">
-                  <div className="nav-section-header">Ventes</div>
-                  {filteredNavItems.filter(i => ['nouvelle','mes-ventes'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="nav-section">
-                  <div className="nav-section-header">Clients</div>
-                  {filteredNavItems.filter(i => ['mes-clients'].includes(i.id)).map(item => (
-                    <div key={item.id} className={`nav-item ${isActivePath(item.path) ? 'active' : ''}`} onClick={() => handleNavigation(item.path)}>
-                      <span className="icon">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          {profile && (
-            <div className="nav-footer" style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div className={`avatar ${role === 'administrateur' ? 'admin' : role === 'commercial' ? 'commercial' : 'fontainier'}`}>{profile.username?.slice(0,2).toUpperCase() || 'U'}</div>
-                <div className="info">
-                  <div className="name">{profile.username}</div>
-                  <div className="role">{capitalizeFirst(role || '')}</div>
-                </div>
-              </div>
-              <button type="button" onClick={handleLogout} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-tertiary)' }} aria-label="Déconnexion">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </aside>
+    <div className="flex h-screen overflow-hidden bg-bg text-text">
+      <div className="hidden lg:block">{sidebar}</div>
 
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="diamo-topbar">
-            <span className="title">
-              {role === 'administrateur' ? 'Tableau de bord' : role === 'commercial' ? 'Analyses — Kiosque Liberté' : 'Nouvelle vente — Kiosque Liberté'}
-            </span>
-            <span className={`role-badge ${role === 'administrateur' ? 'admin' : role === 'commercial' ? 'commercial' : 'fontainier'}`}>{capitalizeFirst(role || '')}</span>
-          </div>
-          <div className="flex-1 overflow-auto p-4" style={{ background: 'var(--bg)' }}>
-            <div className="max-w-[1200px] mx-auto">{children}</div>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/35"
+            aria-label="Fermer le menu"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 w-[var(--sidebar-width)] max-w-[86vw] shadow-xl">
+            {sidebar}
           </div>
         </div>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="lg:hidden"
+            onClick={() => setMobileOpen((current) => !current)}
+            aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          >
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </Button>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold text-text">{pageTitle}</p>
+            {kioskName && <p className="truncate text-[10.5px] text-text-tertiary">{kioskName}</p>}
+          </div>
+          {role && (
+            <span className={cn('hidden rounded-full px-2 py-0.5 text-[10px] font-semibold sm:inline-flex', roleClasses[role])}>
+              {roleLabels[role]}
+            </span>
+          )}
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-auto bg-bg p-3 sm:p-4">
+          <div className="mx-auto w-full max-w-[1200px]">{children}</div>
+        </main>
       </div>
+    </div>
   )
 }

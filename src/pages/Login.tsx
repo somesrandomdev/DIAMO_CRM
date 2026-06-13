@@ -93,19 +93,19 @@ export default function Login() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Droplets className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold text-primary">Diam'o</h1>
+        <div className="mb-6 text-center">
+          <div className="mb-2 flex items-center justify-center gap-2">
+            <Droplets className="h-8 w-8 text-blue" />
+            <h1 className="text-[24px] font-bold text-blue">Diam'o</h1>
           </div>
-          <p className="text-muted-foreground">Client Retention Management</p>
+          <p className="text-[12px] text-text-secondary">Client Retention Management</p>
         </div>
 
         {/* Form Card */}
-        <Card className="shadow-lg">
+        <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">
               {isRegister ? 'Créer un compte' : 'Connexion'}
@@ -163,7 +163,7 @@ export default function Login() {
                 </Alert>
               )}
 
-              <Button type="submit" className="w-full" loading={loading}>
+              <Button type="submit" variant="primary" className="w-full" loading={loading}>
                 {loading
                   ? 'Chargement...'
                   : isRegister
@@ -174,7 +174,7 @@ export default function Login() {
               <div className="text-center">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   onClick={toggleMode}
                 >
                   {isRegister ? "J'ai déjà un compte" : 'Créer un compte'}

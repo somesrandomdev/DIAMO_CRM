@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { DailyRevenuePoint } from '@/components/dashboard/useAdminDashboard'
+import { chartTheme } from '@/lib/chartTheme'
 import { toCFA } from '@/utils/price'
 
 interface EvolutionLineChartProps {
@@ -18,22 +19,22 @@ interface EvolutionLineChartProps {
 
 export function EvolutionLineChart({ data }: EvolutionLineChartProps) {
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Evolution quotidienne du reseau</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={data} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="label" minTickGap={18} />
-            <YAxis tickFormatter={(value) => toCFA(Number(value))} width={82} />
-            <Tooltip formatter={(value) => [toCFA(Number(value)), 'CA']} />
-            <Bar dataKey="ca" fill="var(--color-secondary)" radius={[6, 6, 0, 0]} />
+            <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" minTickGap={18} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+            <YAxis tickFormatter={(value) => toCFA(Number(value))} width={82} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+            <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [toCFA(Number(value)), 'CA']} />
+            <Bar dataKey="ca" fill={chartTheme.teal} radius={[6, 6, 0, 0]} />
             <Line
               type="monotone"
               dataKey="moyenne7j"
-              stroke="var(--color-primary)"
+              stroke={chartTheme.blue}
               strokeDasharray="6 4"
               strokeWidth={3}
               dot={false}

@@ -1,27 +1,15 @@
-import { AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { AlertCard } from '@/components/ui/alert-card'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useAlerts, type AdminAlertSeverity } from '@/components/dashboard/useAlerts'
-import { cn } from '@/lib/utils'
-
-function severityIcon(severity: AdminAlertSeverity) {
-  if (severity === 'danger') return <AlertCircle className="h-4 w-4" />
-  if (severity === 'warning') return <AlertTriangle className="h-4 w-4" />
-  return <Info className="h-4 w-4" />
-}
-
-function severityClasses(severity: AdminAlertSeverity) {
-  if (severity === 'danger') return 'border-destructive/30 bg-destructive/10 text-destructive'
-  if (severity === 'warning') return 'border-warning/40 bg-warning/15 text-foreground'
-  return 'border-primary/25 bg-primary/10 text-primary'
-}
+import { useAlerts } from '@/components/dashboard/useAlerts'
 
 export function AlertsPanel() {
   const { alerts, isLoading, error } = useAlerts()
 
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Alertes</CardTitle>
@@ -33,23 +21,17 @@ export function AlertsPanel() {
           [1, 2, 3].map((item) => <Skeleton key={item} className="h-16 w-full rounded-lg" />)
         ) : alerts.length > 0 ? (
           alerts.map((alert, index) => (
-            <div
+            <AlertCard
               key={`${alert.type}-${alert.kiosque_nom}-${index}`}
-              className={cn('rounded-lg border p-3', severityClasses(alert.severity))}
-            >
-              <div className="flex items-start gap-2">
-                <div className="mt-0.5">{severityIcon(alert.severity)}</div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{alert.kiosque_nom}</p>
-                  <p className="text-sm opacity-85">{alert.message}</p>
-                </div>
-              </div>
-            </div>
+              severity={alert.severity}
+              title={alert.kiosque_nom}
+              subtitle={alert.message}
+            />
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">Aucune alerte active.</p>
+          <EmptyState title="Aucune alerte active" className="border-0 bg-muted p-4" />
         )}
-        {error && <p className="text-xs text-muted-foreground">{error}</p>}
+        {error && <p className="text-xs text-text-secondary">{error}</p>}
       </CardContent>
     </Card>
   )

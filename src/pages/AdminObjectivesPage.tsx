@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Save, Target, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
+import { EmptyState } from '@/components/ui/empty-state'
+import { FormInput, FormSelect } from '@/components/ui/form-input'
+import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -117,37 +121,81 @@ export default function AdminObjectivesPage() {
     setIsSaving(false)
   }
 
+  const objectiveColumns: DataTableColumn<KiosqueRow>[] = [
+    {
+      key: 'kiosque',
+      header: 'Kiosque',
+      render: (kiosque) => (
+        <div>
+          <p className="font-medium">{kiosque.nom}</p>
+          {kiosque.adresse && <p className="text-[11px] text-text-secondary">{kiosque.adresse}</p>}
+        </div>
+      ),
+      sortValue: (kiosque) => kiosque.nom,
+    },
+    {
+      key: 'mensuel',
+      header: 'Objectif mensuel',
+      align: 'right',
+      render: (kiosque) => {
+        const objective = objectives[kiosque.id]
+        return objective ? <span className="font-mono">{toCFA(objective.ca_cible)}</span> : <span className="text-text-tertiary">Non defini</span>
+      },
+      sortValue: (kiosque) => objectives[kiosque.id]?.ca_cible ?? 0,
+    },
+    {
+      key: 'journalier',
+      header: 'Objectif journalier',
+      align: 'right',
+      render: (kiosque) => {
+        const objective = objectives[kiosque.id]
+        return objective ? <span className="font-mono">{toCFA(Math.round(objective.ca_cible / daysInMonth()))}</span> : <span className="text-text-tertiary">Non defini</span>
+      },
+      sortValue: (kiosque) => objectives[kiosque.id]?.ca_cible ?? 0,
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (kiosque) => {
+        const objective = objectives[kiosque.id]
+        if (!objective) return null
+
+        return (
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon-sm"
+            aria-label="Supprimer"
+            onClick={(event) => {
+              event.stopPropagation()
+              deleteObjective(kiosque.id)
+            }}
+            disabled={isSaving}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )
+      },
+    },
+  ]
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Objectifs mensuels</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-[15px] font-semibold text-text">Objectifs mensuels</h1>
+        <p className="text-[12px] text-text-secondary">
           Cibles de chiffre d'affaires par kiosque pour le mois courant.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-lg">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Objectif reseau</p>
-            <p className="text-2xl font-semibold">{toCFA(monthlyTotal)}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-lg">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Kiosques cibles</p>
-            <p className="text-2xl font-semibold">{Object.keys(objectives).length}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-lg">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Moyenne journaliere reseau</p>
-            <p className="text-2xl font-semibold">{toCFA(Math.round(monthlyTotal / daysInMonth()))}</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <KPICard label="Objectif reseau" value={toCFA(monthlyTotal)} />
+        <KPICard label="Kiosques cibles" value={Object.keys(objectives).length} />
+        <KPICard label="Moyenne journaliere" value={toCFA(Math.round(monthlyTotal / daysInMonth()))} />
       </div>
 
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -155,8 +203,8 @@ export default function AdminObjectivesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-[1fr_220px_auto]">
-            <select
+          <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+            <FormSelect
               value={form.kiosqueId}
               onChange={(event) =>
                 setForm({
@@ -164,23 +212,22 @@ export default function AdminObjectivesPage() {
                   caCible: objectives[event.target.value]?.ca_cible?.toString() ?? '',
                 })
               }
-              className="h-10 rounded-md border bg-background px-3 text-sm"
             >
               <option value="">Selectionner un kiosque</option>
               {kiosques.map((kiosque) => (
                 <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
               ))}
-            </select>
-            <input
+            </FormSelect>
+            <FormInput
               type="number"
               min={0}
               value={form.caCible}
               onChange={(event) => setForm((current) => ({ ...current, caCible: event.target.value }))}
-              className="h-10 rounded-md border bg-background px-3 text-sm"
               placeholder="CA cible CFA"
             />
             <Button
               type="button"
+              variant="primary"
               onClick={saveObjective}
               loading={isSaving}
               disabled={!form.kiosqueId || !form.caCible}
@@ -192,7 +239,7 @@ export default function AdminObjectivesPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg">
+      <Card>
         <CardHeader>
           <CardTitle>Objectifs actifs</CardTitle>
         </CardHeader>
@@ -201,51 +248,10 @@ export default function AdminObjectivesPage() {
             <div className="space-y-3">
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-14 rounded-lg" />)}
             </div>
+          ) : kiosques.length === 0 ? (
+            <EmptyState title="Aucun kiosque" />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-                    <th className="px-3 py-2">Kiosque</th>
-                    <th className="px-3 py-2 text-right">Objectif mensuel</th>
-                    <th className="px-3 py-2 text-right">Objectif journalier</th>
-                    <th className="px-3 py-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {kiosques.map((kiosque) => {
-                    const objective = objectives[kiosque.id]
-                    return (
-                      <tr key={kiosque.id} className="border-b last:border-0">
-                        <td className="px-3 py-3">
-                          <p className="font-medium">{kiosque.nom}</p>
-                          {kiosque.adresse && <p className="text-xs text-muted-foreground">{kiosque.adresse}</p>}
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          {objective ? toCFA(objective.ca_cible) : <span className="text-muted-foreground">Non defini</span>}
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          {objective ? toCFA(Math.round(objective.ca_cible / daysInMonth())) : <span className="text-muted-foreground">Non defini</span>}
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          {objective && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteObjective(kiosque.id)}
-                              disabled={isSaving}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable columns={objectiveColumns} data={kiosques} getRowKey={(row) => row.id} />
           )}
         </CardContent>
       </Card>

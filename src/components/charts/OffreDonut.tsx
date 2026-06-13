@@ -1,19 +1,27 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { OfferBreakdownPoint } from '@/components/dashboard/useAdminDashboard'
+import { chartTheme } from '@/lib/chartTheme'
 import { toCFA } from '@/utils/price'
 
 interface OffreDonutProps {
   data: OfferBreakdownPoint[]
 }
 
-const COLORS = ['#1C7ED6', '#40C057', '#FFD43B', '#FA5252', '#74C0FC', '#845EF7']
+const COLORS = [
+  chartTheme.blue,
+  chartTheme.teal,
+  chartTheme.amber,
+  chartTheme.red,
+  chartTheme.green,
+  chartTheme.purple,
+]
 
 export function OffreDonut({ data }: OffreDonutProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   return (
-    <Card className="rounded-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Repartition des ventes par offre</CardTitle>
       </CardHeader>
@@ -35,6 +43,7 @@ export function OffreDonut({ data }: OffreDonutProps) {
               ))}
             </Pie>
             <Tooltip
+              contentStyle={chartTheme.tooltip}
               formatter={(value, _name, item) => {
                 const amount = Number(value)
                 const share = total > 0 ? (amount / total) * 100 : 0
