@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, Droplets } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 export default function Login() {
   const [isRegister, setIsRegister] = useState(false)
@@ -97,10 +97,11 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-6 text-center">
-          <div className="mb-2 flex items-center justify-center gap-2">
-            <Droplets className="h-8 w-8 text-blue" />
-            <h1 className="text-[24px] font-bold text-blue">Diam'o</h1>
-          </div>
+          <img
+            src="/logo-principal.png"
+            alt="Diam'o"
+            className="mx-auto mb-2 h-20 w-auto object-contain"
+          />
           <p className="text-[12px] text-text-secondary">Client Retention Management</p>
         </div>
 

@@ -65,21 +65,11 @@ const roleClasses: Record<UserRole, string> = {
 function Logo() {
   return (
     <div className="flex h-[var(--topbar-height)] items-center gap-2 border-b border-border px-4">
-      <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-blue text-white">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-          aria-hidden="true"
-        >
-          <path d="M12 2.69l5.5 5.5a4.5 4.5 0 0 1-6.36 6.36L12 21.5l-6.5-6.5a4.5 4.5 0 0 1 6.36-6.36L12 2.69z" />
-        </svg>
-      </div>
-      <span className="text-[15px] font-semibold text-text">Diam'o</span>
+      <img
+        src="/logo-principal.png"
+        alt="Diam'o"
+        className="h-10 max-w-[170px] object-contain"
+      />
     </div>
   )
 }
