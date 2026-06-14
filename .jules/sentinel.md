@@ -1,0 +1,4 @@
+## 2025-06-14 - DOM-based XSS in Ticket Generator
+**Vulnerability:** The `generateTicket` function in `src/lib/ticketGenerator.ts` directly interpolates user input (such as `client.nom`, `client.telephone`, `kiosque.nom`, `kiosque.adresse`, and `offre.nom`) into the `innerHTML` of a temporary DOM container.
+**Learning:** This occurs because the application generates PDFs on the client side using `html2canvas`, and creates transient DOM elements to render the ticket. The `innerHTML` assignment lacks input sanitization.
+**Prevention:** Always apply HTML entity encoding (using `escapeHtml`) or `DOMPurify.sanitize()` when injecting user-controlled data into `innerHTML`, even for transient elements not appended directly to the document body or those removed quickly. The native `sanitizeString` function is insufficient for full XSS protection.
