@@ -485,14 +485,14 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleEditKiosk(kiosk)}
                           disabled={loading}
-                          className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
+                          aria-label="Modifier" title="Modifier" className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteKiosk(kiosk.id)}
                           disabled={loading}
-                          className="text-red-600 hover:text-red-900 disabled:text-red-400"
+                          aria-label="Supprimer" title="Supprimer" className="text-red-600 hover:text-red-900 disabled:text-red-400"
                         >
                           <FaTrash className="w-4 h-4" />
                         </button>
@@ -542,14 +542,14 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleEditOffer(offer)}
                           disabled={loading}
-                          className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
+                          aria-label="Modifier" title="Modifier" className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteOffer(offer.id)}
                           disabled={loading}
-                          className="text-red-600 hover:text-red-900 disabled:text-red-400"
+                          aria-label="Supprimer" title="Supprimer" className="text-red-600 hover:text-red-900 disabled:text-red-400"
                         >
                           <FaTrash className="w-4 h-4" />
                         </button>
@@ -628,14 +628,14 @@ export default function AdminDashboard() {
                         <button
                           onClick={() => handleEditUser(profile)}
                           disabled={loading}
-                          className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
+                          aria-label="Modifier" title="Modifier" className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteUser(profile.id)}
                           disabled={loading}
-                          className="text-red-600 hover:text-red-900 disabled:text-red-400"
+                          aria-label="Supprimer" title="Supprimer" className="text-red-600 hover:text-red-900 disabled:text-red-400"
                         >
                           <FaTrash className="w-4 h-4" />
                         </button>
