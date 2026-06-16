@@ -1,0 +1,4 @@
+## 2024-06-16 - DOM-based XSS in Temporary DOM Elements
+**Vulnerability:** DOM-based XSS was found in `src/lib/ticketGenerator.ts` where unsanitized user inputs (`client.nom`, `kiosque.adresse`, `offre.nom`, etc.) were directly injected into `innerHTML` to build a temporary HTML document for PDF generation.
+**Learning:** Even if an element is not directly appended to the visible document stream, assigning user-controlled input to `innerHTML` in transient DOM elements (like those created for `html2canvas`) evaluates and executes inline scripts, causing XSS vulnerabilities.
+**Prevention:** Always apply HTML entity encoding (using `escapeHtml`) or use DOMPurify to sanitize untrusted input before inserting it into `innerHTML`, regardless of whether the element is visible, appended, or temporary.
