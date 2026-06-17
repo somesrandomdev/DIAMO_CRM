@@ -4,6 +4,24 @@
  */
 
 /**
+ * Escapes HTML characters in a string to prevent XSS attacks when rendering HTML.
+ * @param input - The value to escape
+ * @returns Escaped string
+ */
+export function escapeHtml(input: unknown): string {
+  if (input === null || input === undefined || input === '') {
+    return ''
+  }
+
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
  * Sanitizes a string input by removing potentially dangerous characters
  * @param input - The string to sanitize
  * @returns Sanitized string

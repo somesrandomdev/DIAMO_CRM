@@ -1,0 +1,4 @@
+## 2025-02-24 - Fix DOM XSS in ticket generation via html2canvas
+**Vulnerability:** Transient DOM elements created for PDF rendering via `html2canvas` in `src/lib/ticketGenerator.ts` directly injected user-controlled input (names, addresses, phone numbers) into `innerHTML` without sanitization.
+**Learning:** Even hidden or transient DOM elements constructed dynamically for utilities like PDF generation are susceptible to DOM-based XSS when `innerHTML` is used with unsanitized user inputs. This bypasses standard React protections.
+**Prevention:** Always apply HTML entity encoding (using `escapeHtml`) or use `DOMPurify.sanitize()` before injecting dynamic user data into `innerHTML`, regardless of whether the element is visually rendered on screen or only used temporarily in background processes.
