@@ -20,6 +20,21 @@ interface Sale {
   offre: { nom: string } | null
 }
 
+function formatSaleDate(value: string) {
+  return new Date(value).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
+function formatSaleTime(value: string) {
+  return new Date(value).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
   const [sales, setSales] = useState<Sale[]>([])
@@ -106,13 +121,12 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     {
       key: 'date',
       header: 'Date',
-      render: (sale) => new Date(sale.created_at).toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      render: (sale) => (
+        <div>
+          <p className="font-medium">{formatSaleDate(sale.created_at)}</p>
+          <p className="text-[11px] text-text-secondary">{formatSaleTime(sale.created_at)}</p>
+        </div>
+      ),
       sortValue: (sale) => new Date(sale.created_at),
     },
     { key: 'client', header: 'Client', render: (sale) => <span className="font-medium">{sale.client?.nom || 'Client anonyme'}</span>, sortValue: (sale) => sale.client?.nom ?? '' },
@@ -189,7 +203,26 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
             <EmptyState title="Aucune vente" description="Aucune vente ne correspond aux filtres actuels." />
           ) : (
             <>
-              <DataTable columns={columns} data={paginatedSales} getRowKey={(sale) => sale.id} />
+              <div className="space-y-2 sm:hidden">
+                {paginatedSales.map((sale) => (
+                  <div key={sale.id} className="rounded-md border border-border bg-surface p-3">
+                    <div className="mb-3 rounded-md bg-blue-light px-3 py-2">
+                      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-blue">Date de vente</p>
+                      <p className="mt-1 text-[14px] font-semibold text-text">{formatSaleDate(sale.created_at)}</p>
+                      <p className="text-[12px] text-text-secondary">{formatSaleTime(sale.created_at)}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[12px]">
+                      <span className="text-text-secondary">Client</span>
+                      <span className="text-right font-medium text-text">{sale.client?.nom || 'Client anonyme'}</span>
+                      <span className="text-text-secondary">Offre</span>
+                      <span className="text-right text-text">{sale.offre?.nom || 'Offre inconnue'}</span>
+                      <span className="text-text-secondary">Montant</span>
+                      <span className="text-right font-mono font-semibold text-blue">{toCFA(sale.montant_total)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <DataTable className="hidden sm:block" columns={columns} data={paginatedSales} getRowKey={(sale) => sale.id} />
               {totalPages > 1 && (
                 <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-[12px] text-text-secondary">

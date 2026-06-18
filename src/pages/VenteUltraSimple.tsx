@@ -54,7 +54,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
   const [showClientSuggestions, setShowClientSuggestions] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState('')
   const [selectedOfferId, setSelectedOfferId] = useState('')
-  const [quantity, setQuantity] = useState(1)
+  const [quantity, setQuantity] = useState('')
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
   const [queuedCount, setQueuedCount] = useState(0)
   const [isSyncingQueue, setIsSyncingQueue] = useState(false)
@@ -75,7 +75,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
     setShowClientSuggestions(false)
     setCartItems([])
     setSelectedOfferId('')
-    setQuantity(1)
+    setQuantity('')
   }, [])
 
   const loadVenteSummary = useCallback(async (kiosqueId: string) => {
@@ -262,6 +262,11 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
     setClientSearchQuery('')
     setClientSearchResults([])
     setShowClientSuggestions(false)
+  }
+
+  const getQuantityValue = () => {
+    const parsed = Number(quantity)
+    return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : 1
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -537,9 +542,15 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
               <FormInput
                 type="number"
                 min={1}
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={quantity}
-                onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
-                placeholder="Qte"
+                onChange={(event) => {
+                  const nextValue = event.target.value
+                  if (/^\d*$/.test(nextValue)) setQuantity(nextValue)
+                }}
+                onFocus={(event) => event.currentTarget.select()}
+                placeholder="1"
               />
 
               <Button
@@ -547,9 +558,9 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                 variant="default"
                 onClick={() => {
                   if (!selectedOfferId) return
-                  addToCart(selectedOfferId, quantity)
+                  addToCart(selectedOfferId, getQuantityValue())
                   setSelectedOfferId('')
-                  setQuantity(1)
+                  setQuantity('')
                 }}
                 disabled={!selectedOfferId}
               >
@@ -572,8 +583,11 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                         <FormInput
                           type="number"
                           min={1}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           value={item.qty}
                           onChange={(event) => updateCartQuantity(item.offreId, Math.max(1, Number(event.target.value)))}
+                          onFocus={(event) => event.currentTarget.select()}
                           className="w-20"
                         />
                         <Button type="button" variant="destructive" size="icon-sm" onClick={() => removeFromCart(item.offreId)} aria-label="Supprimer">
@@ -623,7 +637,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-medium text-text">{sale.client_nom}</p>
                     <p className="truncate text-[12px] text-text-secondary">
-                      {sale.offre_nom} - {new Date(sale.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      {sale.offre_nom} - {new Date(sale.created_at).toLocaleDateString('fr-FR')} {new Date(sale.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                   <p className="shrink-0 font-mono text-[13px] font-semibold text-blue">{toCFA(sale.montant_total)}</p>
