@@ -483,6 +483,9 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-500">{kiosk.adresse || 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
+                          type="button"
+                          aria-label="Modifier le kiosque"
+                          title="Modifier le kiosque"
                           onClick={() => handleEditKiosk(kiosk)}
                           disabled={loading}
                           className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
@@ -490,6 +493,9 @@ export default function AdminDashboard() {
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
+                          aria-label="Supprimer le kiosque"
+                          title="Supprimer le kiosque"
                           onClick={() => handleDeleteKiosk(kiosk.id)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 disabled:text-red-400"
@@ -540,6 +546,9 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 text-gray-500">{offer.description}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
+                          type="button"
+                          aria-label="Modifier l'offre"
+                          title="Modifier l'offre"
                           onClick={() => handleEditOffer(offer)}
                           disabled={loading}
                           className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
@@ -547,6 +556,9 @@ export default function AdminDashboard() {
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
+                          aria-label="Supprimer l'offre"
+                          title="Supprimer l'offre"
                           onClick={() => handleDeleteOffer(offer.id)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 disabled:text-red-400"
@@ -626,6 +638,9 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
+                          type="button"
+                          aria-label="Modifier l'utilisateur"
+                          title="Modifier l'utilisateur"
                           onClick={() => handleEditUser(profile)}
                           disabled={loading}
                           className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
@@ -633,6 +648,9 @@ export default function AdminDashboard() {
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
+                          aria-label="Supprimer l'utilisateur"
+                          title="Supprimer l'utilisateur"
                           onClick={() => handleDeleteUser(profile.id)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 disabled:text-red-400"
