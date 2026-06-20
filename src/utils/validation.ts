@@ -21,6 +21,24 @@ export function sanitizeString(input: string): string {
 }
 
 /**
+ * Encodes potentially dangerous characters to HTML entities
+ * @param input - The value to encode
+ * @returns HTML encoded string
+ */
+export function escapeHtml(input: unknown): string {
+  if (input === null || input === undefined || input === '') {
+    return ''
+  }
+
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
  * Validates and sanitizes a phone number
  * @param phone - The phone number to validate
  * @returns Validated phone number or null if invalid
