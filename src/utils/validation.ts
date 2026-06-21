@@ -8,6 +8,24 @@
  * @param input - The string to sanitize
  * @returns Sanitized string
  */
+
+/**
+ * Escapes HTML entities in a string to prevent XSS attacks when interpolating into innerHTML.
+ * @param input - The input to escape
+ * @returns Escaped string
+ */
+export function escapeHtml(input: unknown): string {
+  if (input === null || input === undefined || input === '') {
+    return '';
+  }
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function sanitizeString(input: string): string {
   if (typeof input !== 'string') {
     throw new TypeError('Input must be a string')
