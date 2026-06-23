@@ -1,0 +1,3 @@
+## 2024-06-23 - Accessibility of Icon-Only Action Buttons
+**Learning:** Icon-only action buttons (such as edit and delete buttons in data tables) in this application's components frequently lack descriptive accessibility attributes, making them unusable for screen reader users and confusing without tooltips.
+**Action:** Always add descriptive `aria-label` and `title` attributes (e.g., `aria-label="Modifier le kiosque"`) to any non-text button element to provide context for assistive technologies and mouse hover actions. Ensure these descriptions are localized in French as per the project context.
