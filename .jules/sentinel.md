@@ -1,0 +1,4 @@
+## 2024-06-24 - Custom XSS Sanitizer Flaw
+**Vulnerability:** The custom `sanitizeHTML` function in `src/utils/security.ts` was implemented incorrectly. It mapped dangerous HTML characters (`<`, `>`, `"`, `&`) to themselves instead of HTML entities, providing zero XSS protection despite its name.
+**Learning:** Never write custom replacement maps for security functions without writing tests that verify malicious input is actually transformed. Naming a function `sanitize...` creates a false sense of security for other developers who trust it.
+**Prevention:** Rely on well-tested standard libraries like `DOMPurify` for HTML sanitization, or strictly implement entity encoding replacing `&` first to prevent double-encoding. Added a proper `escapeHtml` utility in validation and fixed the `sanitizeHTML` map.

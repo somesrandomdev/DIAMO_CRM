@@ -4,6 +4,26 @@
  */
 
 /**
+ * Escapes HTML characters to prevent XSS.
+ * Replaces & first to prevent double encoding, then <, >, ", '.
+ * @param input - The value to escape
+ * @returns Escaped HTML string
+ */
+export function escapeHtml(input: unknown): string {
+  if (input === null || input === undefined || input === '') {
+    return ''
+  }
+
+  const str = String(input)
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
+/**
  * Sanitizes a string input by removing potentially dangerous characters
  * @param input - The string to sanitize
  * @returns Sanitized string
@@ -291,11 +311,11 @@ export function validateRole(role: string): string | null {
  * @param schema - Validation schema mapping field names to validation functions
  * @returns Validated object or null if any field is invalid
  */
-export function validateObject<T extends Record<string, any>>(
+export function validateObject<T extends Record<string, unknown>>(
   data: T,
-  schema: Partial<Record<keyof T, (value: any) => any>>
+  schema: Partial<Record<keyof T, (value: unknown) => unknown>>
 ): T | null {
-  const result: any = {}
+  const result: Record<string, unknown> = {}
   
   for (const [key, validator] of Object.entries(schema)) {
     const value = data[key]
