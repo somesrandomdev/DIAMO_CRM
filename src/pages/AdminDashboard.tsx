@@ -486,6 +486,8 @@ export default function AdminDashboard() {
                           onClick={() => handleEditKiosk(kiosk)}
                           disabled={loading}
                           className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
+                          title="Modifier le kiosque"
+                          aria-label="Modifier le kiosque"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
@@ -493,6 +495,8 @@ export default function AdminDashboard() {
                           onClick={() => handleDeleteKiosk(kiosk.id)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 disabled:text-red-400"
+                          title="Supprimer le kiosque"
+                          aria-label="Supprimer le kiosque"
                         >
                           <FaTrash className="w-4 h-4" />
                         </button>
@@ -543,6 +547,8 @@ export default function AdminDashboard() {
                           onClick={() => handleEditOffer(offer)}
                           disabled={loading}
                           className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
+                          title="Modifier l'offre"
+                          aria-label="Modifier l'offre"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
@@ -550,6 +556,8 @@ export default function AdminDashboard() {
                           onClick={() => handleDeleteOffer(offer.id)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 disabled:text-red-400"
+                          title="Supprimer l'offre"
+                          aria-label="Supprimer l'offre"
                         >
                           <FaTrash className="w-4 h-4" />
                         </button>
@@ -629,6 +637,8 @@ export default function AdminDashboard() {
                           onClick={() => handleEditUser(profile)}
                           disabled={loading}
                           className="text-blue-600 hover:text-blue-900 mr-4 disabled:text-blue-400"
+                          title="Modifier l'utilisateur"
+                          aria-label="Modifier l'utilisateur"
                         >
                           <FaEdit className="w-4 h-4" />
                         </button>
@@ -636,6 +646,8 @@ export default function AdminDashboard() {
                           onClick={() => handleDeleteUser(profile.id)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 disabled:text-red-400"
+                          title="Supprimer l'utilisateur"
+                          aria-label="Supprimer l'utilisateur"
                         >
                           <FaTrash className="w-4 h-4" />
                         </button>
