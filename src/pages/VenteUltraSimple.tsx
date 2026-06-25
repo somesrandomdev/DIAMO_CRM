@@ -469,6 +469,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
             <div className="client-search-container relative">
               <FormInput
                 type="text"
+                aria-label="Rechercher un client"
                 value={clientSearchQuery}
                 onChange={(event) => {
                   if (selectedClientId) clearClientSelection()
@@ -530,7 +531,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-3 md:grid-cols-[1fr_100px_auto]">
-              <FormSelect value={selectedOfferId} onChange={(event) => setSelectedOfferId(event.target.value)}>
+              <FormSelect aria-label="Choisir une offre" value={selectedOfferId} onChange={(event) => setSelectedOfferId(event.target.value)}>
                 <option value="">Choisir une offre</option>
                 {safeOffers.map((offer) => (
                   <option key={offer.offre_id} value={offer.offre_id}>
@@ -541,6 +542,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
 
               <FormInput
                 type="number"
+                aria-label="Quantité de l'offre sélectionnée"
                 min={1}
                 inputMode="numeric"
                 pattern="[0-9]*"
@@ -582,6 +584,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                       <div className="flex items-center gap-2">
                         <FormInput
                           type="number"
+                          aria-label="Quantité dans le panier"
                           min={1}
                           inputMode="numeric"
                           pattern="[0-9]*"
