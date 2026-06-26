@@ -1,0 +1,6 @@
+## 2024-06-26 - XSS Vulnerability in HTML Ticket Generation
+**Vulnerability:** The `generateTicket` function in `src/lib/ticketGenerator.ts` directly uses user inputs (client name, phone number, kiosk name, address, and offer names) within string interpolations passed to `container.innerHTML` without sanitization. This allows malicious users to inject arbitrary HTML or JavaScript, leading to a Cross-Site Scripting (XSS) vulnerability. Since the generated DOM is appended to `document.body` for `html2canvas` processing, injected scripts can be executed in the application's context.
+
+**Learning:** When generating HTML dynamically from user input, especially for libraries like `html2canvas` or `jsPDF` that require a DOM tree, it's crucial to always sanitize user-provided data before injecting it into `innerHTML`.  Even if the element is temporary, appending it to the DOM (even temporarily) makes it vulnerable to DOM-based XSS.
+
+**Prevention:** Always use the `sanitizeHTML` function (or a robust library like DOMPurify) on any user-controlled input before constructing HTML strings intended for `innerHTML` injection, or use DOM APIs (like `textContent` or `createElement`) which automatically escape content.
