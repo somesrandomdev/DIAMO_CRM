@@ -1,0 +1,4 @@
+## 2024-06-27 - DOM-based XSS via html2canvas and innerHTML
+**Vulnerability:** DOM-based Cross-Site Scripting (XSS) vulnerability found in `src/lib/ticketGenerator.ts`. User input (such as `client.nom`, `kiosque.nom`, etc.) was being directly interpolated into an HTML string and assigned to `container.innerHTML` to be rendered as a PDF ticket via `html2canvas`.
+**Learning:** Transient DOM elements created for utility purposes like canvas/PDF rendering (e.g., using `html2canvas`) and appended to the document body are susceptible to DOM-based XSS if user data is unsanitized when assigned to `innerHTML`.
+**Prevention:** Always apply HTML entity encoding (using `sanitizeHTML` from `src/utils/security.ts` or `DOMPurify.sanitize()`) before injecting user-controlled data into `innerHTML`, even for transient or off-screen elements.
