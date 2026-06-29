@@ -8,21 +8,20 @@
  * @param html - The HTML string to sanitize
  * @returns Sanitized HTML string
  */
-export function sanitizeHTML(html: string): string {
-  if (typeof html !== 'string') {
+export function sanitizeHTML(html: unknown): string {
+  if (html === null || html === undefined || html === '') {
     return ''
   }
 
-  const map: Record<string, string> = {
-    '&': '&',
-    '<': '<',
-    '>': '>',
-    '"': '"',
-    "'": '&#x27;',
-    '/': '&#x2F;',
-  }
+  const htmlStr = typeof html !== 'string' ? String(html) : html
 
-  return html.replace(/[&<>"'/]/g, (char) => map[char])
+  return htmlStr
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
 }
 
 /**
