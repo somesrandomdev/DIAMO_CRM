@@ -74,7 +74,8 @@ export default function AdminKiosquesPage() {
             type="button"
             variant="default"
             size="icon-sm"
-            aria-label="Modifier"
+            aria-label="Modifier le kiosque"
+            title="Modifier le kiosque"
             onClick={(event) => {
               event.stopPropagation()
               setForm({ id: row.id, nom: row.nom, adresse: row.adresse ?? '' })
@@ -86,7 +87,8 @@ export default function AdminKiosquesPage() {
             type="button"
             variant="destructive"
             size="icon-sm"
-            aria-label="Supprimer"
+            aria-label="Supprimer le kiosque"
+            title="Supprimer le kiosque"
             onClick={(event) => {
               event.stopPropagation()
               remove(row.id)

@@ -29,7 +29,7 @@ export function SlideOverDrawer({ title, isOpen, onClose, children }: SlideOverD
       >
         <div className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-semibold">{title}</h2>
-          <Button type="button" variant="ghost" size="icon" onClick={onClose}>
+          <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Fermer le tiroir" title="Fermer le tiroir">
             <X className="h-5 w-5" />
           </Button>
         </div>
