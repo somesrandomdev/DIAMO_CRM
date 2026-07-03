@@ -1,0 +1,4 @@
+## 2024-07-03 - Prevent DOM-based XSS in Transient Canvas Rendering
+**Vulnerability:** DOM-based XSS vulnerability via unsanitized user inputs assigned to `innerHTML` when creating a transient DOM element for PDF rendering.
+**Learning:** Even transient DOM elements appended to the document body (e.g., those created for `html2canvas` rendering) are fully evaluated by the browser. If unsanitized user inputs are injected into their `innerHTML`, any embedded malicious scripts will be executed, making this a critical DOM-based XSS vector.
+**Prevention:** Always sanitize user-controlled data before assigning it to `innerHTML`, even for transient or off-screen elements. Utilize robust sanitization functions (like `sanitizeHTML` which properly escapes HTML entities) or libraries (like `DOMPurify`) to neutralize malicious payloads.
