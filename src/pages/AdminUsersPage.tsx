@@ -97,7 +97,8 @@ export default function AdminUsersPage() {
           type="button"
           variant="default"
           size="icon-sm"
-          aria-label="Modifier"
+            aria-label="Modifier l'utilisateur"
+            title="Modifier l'utilisateur"
           onClick={(event) => {
             event.stopPropagation()
             setForm({
