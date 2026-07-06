@@ -8,16 +8,18 @@
  * @param html - The HTML string to sanitize
  * @returns Sanitized HTML string
  */
-export function sanitizeHTML(html: string): string {
-  if (typeof html !== 'string') {
+export function sanitizeHTML(input: unknown): string {
+  if (input === null || input === undefined || input === '') {
     return ''
   }
 
+  const html = String(input)
+
   const map: Record<string, string> = {
-    '&': '&',
-    '<': '<',
-    '>': '>',
-    '"': '"',
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
     "'": '&#x27;',
     '/': '&#x2F;',
   }
@@ -30,12 +32,12 @@ export function sanitizeHTML(html: string): string {
  * @param html - The HTML string to strip
  * @returns Plain text string
  */
-export function stripHTML(html: string): string {
-  if (typeof html !== 'string') {
+export function stripHTML(html: unknown): string {
+  if (html === null || html === undefined || html === '') {
     return ''
   }
 
-  return html.replace(/<[^>]*>/g, '')
+  return String(html).replace(/<[^>]*>/g, '')
 }
 
 /**
@@ -43,12 +45,12 @@ export function stripHTML(html: string): string {
  * @param input - The input string to sanitize
  * @returns Safe string for display
  */
-export function sanitizeForDisplay(input: string): string {
-  if (typeof input !== 'string') {
+export function sanitizeForDisplay(input: unknown): string {
+  if (input === null || input === undefined || input === '') {
     return ''
   }
 
-  return sanitizeHTML(input.trim())
+  return sanitizeHTML(String(input).trim())
 }
 
 /**
