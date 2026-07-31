@@ -1,34 +1,48 @@
+```gitignore
+# Dependencies
+node_modules/
+.jest/
+
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# ── Secrets & env files ──────────────────────────
+# Environment variables
 .env
 .env.local
-.env.example
-.env.development.local
-.env.test.local
-.env.production.local
-coverage
+.env.*
+!.env.example
+
+# Coverage directory used by tools like istanbul
 coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+out/
+public/build/
+*.bundle.js
+*.chunk.js
+
+# Testing
+.jest/
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+```

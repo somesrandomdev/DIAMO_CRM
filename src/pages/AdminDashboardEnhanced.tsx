@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { FaPlus, FaUsers, FaTint, FaMoneyBillWave, FaStore, FaChartBar, FaTrophy, FaEdit, FaTrash } from 'react-icons/fa'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { toCFA } from '../utils/price'
+import { ObjectifService, type ObjectifRow } from '../services/objectif.service'
 
 interface Kiosk {
   id: string
@@ -91,9 +92,10 @@ export default function AdminDashboardEnhanced() {
   const [pricingMatrix, setPricingMatrix] = useState<Record<string, Record<string, number>>>({})
   const [bulkPricing, setBulkPricing] = useState({ offerId: '', kioskId: '', price: '', selectedKiosks: [] as string[] })
 
-  // Objectives state
-  const [objectives, setObjectives] = useState<Record<string, { monthly: number; daily: number }>>({})
-  const [objectivesForm, setObjectivesForm] = useState({ kioskId: '', monthly: '', daily: '' })
+  // Objectives state - now using database format
+  const [objectifs, setObjectifs] = useState<ObjectifRow[]>([])
+  const [loadingObjectifs, setLoadingObjectifs] = useState(false)
+  const [objectivesForm, setObjectivesForm] = useState({ kioskId: '', month: '', ca_cible: '' })
 
   // Filtering state for global data
    const [globalFilters, setGlobalFilters] = useState({
@@ -103,7 +105,7 @@ export default function AdminDashboardEnhanced() {
    const [filteredGlobalStats, setFilteredGlobalStats] = useState<GlobalStats>(globalStats)
 
 
-  const { signOut } = useAuthStore()
+  const { signOut, user } = useAuthStore()
 
   const tabs = [
     { id: 'global' as TabType, label: 'Vue Globale CEO', icon: <FaChartBar className="w-5 h-5" /> },
@@ -148,6 +150,7 @@ export default function AdminDashboardEnhanced() {
       await loadKiosks()
       await loadOffers()
       await loadPricingMatrix()
+      await loadObjectives()
     } catch (error) {
       console.error('Error loading initial data:', error)
     }
@@ -255,15 +258,19 @@ export default function AdminDashboardEnhanced() {
 
 
   const loadObjectives = async () => {
+    setLoadingObjectifs(true);
     try {
-      // For now, we'll use localStorage to store objectives
-      // In a real app, this would be stored in the database
-      const storedObjectives = localStorage.getItem('kiosk_objectives')
-      if (storedObjectives) {
-        setObjectives(JSON.parse(storedObjectives))
+      // Fetch all objectives from database (admin view)
+      const result = await ObjectifService.getObjectifs(null);
+      if (result.success && result.data) {
+        setObjectifs(result.data);
+      } else if (result.error) {
+        console.error('Failed to load objectives:', result.error);
       }
-    } catch (error) {
-      console.error('Error loading objectives:', error)
+    } catch (error: any) {
+      console.error('Error loading objectives:', error);
+    } finally {
+      setLoadingObjectifs(false);
     }
   }
 
@@ -703,31 +710,41 @@ export default function AdminDashboardEnhanced() {
 
   // Objectives Management Functions
   const handleSaveObjectives = async () => {
-    if (!objectivesForm.kioskId || !objectivesForm.monthly || !objectivesForm.daily) {
+    if (!objectivesForm.kioskId || !objectivesForm.month || !objectivesForm.ca_cible) {
       alert('Veuillez remplir tous les champs')
       return
     }
 
     setLoading(true)
     try {
-      const monthly = parseFloat(objectivesForm.monthly)
-      const daily = parseFloat(objectivesForm.daily)
-
-      if (monthly <= 0 || daily <= 0) {
-        alert('Les objectifs doivent être positifs')
+      const caCible = parseInt(objectivesForm.ca_cible)
+      const monthDate = new Date(objectivesForm.month)
+      
+      if (caCible <= 0) {
+        alert("L'objectif doit être positif")
         return
       }
 
-      const newObjectives = {
-        ...objectives,
-        [objectivesForm.kioskId]: { monthly, daily }
+      // Format month as first day of month in ISO format
+      const moisStr = ObjectifService.getMonthStart(monthDate)
+
+      const payload = {
+        kiosque_id: objectivesForm.kioskId,
+        mois: moisStr,
+        ca_cible: caCible,
+        created_by: user?.id
       }
 
-      setObjectives(newObjectives)
-      localStorage.setItem('kiosk_objectives', JSON.stringify(newObjectives))
-
-      setObjectivesForm({ kioskId: '', monthly: '', daily: '' })
-      alert('Objectifs sauvegardés avec succès!')
+      const result = await ObjectifService.upsertObjectif(payload)
+      
+      if (result.success) {
+        alert('Objectifs sauvegardés avec succès!')
+        setObjectivesForm({ kioskId: '', month: '', ca_cible: '' })
+        // Refresh the list
+        await loadObjectives()
+      } else {
+        alert('Erreur lors de la sauvegarde: ' + result.error)
+      }
     } catch (error: any) {
       console.error('Error saving objectives:', error)
       alert('Erreur lors de la sauvegarde: ' + error.message)
@@ -736,18 +753,20 @@ export default function AdminDashboardEnhanced() {
     }
   }
 
-  const handleDeleteObjectives = async (kioskId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer les objectifs de ce kiosque?')) return
+  const handleDeleteObjectives = async (objectifId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet objectif?')) return
 
     setLoading(true)
     try {
-      const newObjectives = { ...objectives }
-      delete newObjectives[kioskId]
-
-      setObjectives(newObjectives)
-      localStorage.setItem('kiosk_objectives', JSON.stringify(newObjectives))
-
-      alert('Objectifs supprimés avec succès!')
+      const result = await ObjectifService.deleteObjectif(objectifId)
+      
+      if (result.success) {
+        alert('Objectif supprimé avec succès!')
+        // Refresh the list
+        await loadObjectives()
+      } else {
+        alert('Erreur lors de la suppression: ' + result.error)
+      }
     } catch (error: any) {
       console.error('Error deleting objectives:', error)
       alert('Erreur lors de la suppression: ' + error.message)
@@ -1502,7 +1521,7 @@ export default function AdminDashboardEnhanced() {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Gestion des Objectifs</h2>
               <button
-                onClick={() => setObjectivesForm({ kioskId: '', monthly: '', daily: '' })}
+                onClick={() => setObjectivesForm({ kioskId: '', month: '', ca_cible: '' })}
                 disabled={loading}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2"
               >
@@ -1532,26 +1551,24 @@ export default function AdminDashboardEnhanced() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Objectif Mensuel (CFA) *
+                    Mois *
                   </label>
                   <input
-                    type="number"
-                    value={objectivesForm.monthly}
-                    onChange={(e) => setObjectivesForm({ ...objectivesForm, monthly: e.target.value })}
-                    placeholder="Ex: 500000"
+                    type="month"
+                    value={objectivesForm.month}
+                    onChange={(e) => setObjectivesForm({ ...objectivesForm, month: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="0"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Objectif Journalier (CFA) *
+                    CA Cible (CFA) *
                   </label>
                   <input
                     type="number"
-                    value={objectivesForm.daily}
-                    onChange={(e) => setObjectivesForm({ ...objectivesForm, daily: e.target.value })}
-                    placeholder="Ex: 25000"
+                    value={objectivesForm.ca_cible}
+                    onChange={(e) => setObjectivesForm({ ...objectivesForm, ca_cible: e.target.value })}
+                    placeholder="Ex: 500000"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="0"
                   />
@@ -1560,7 +1577,7 @@ export default function AdminDashboardEnhanced() {
               <div className="flex justify-end mt-4">
                 <button
                   onClick={handleSaveObjectives}
-                  disabled={loading || !objectivesForm.kioskId || !objectivesForm.monthly || !objectivesForm.daily}
+                  disabled={loading || !objectivesForm.kioskId || !objectivesForm.month || !objectivesForm.ca_cible}
                   className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   {loading ? 'Sauvegarde...' : 'Sauvegarder Objectif'}
@@ -1573,65 +1590,61 @@ export default function AdminDashboardEnhanced() {
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold">Objectifs Actuels par Kiosque</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  Objectifs mensuels et journaliers définis pour chaque kiosque
+                  Objectifs mensuels définis pour chaque kiosque
                 </p>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kiosque</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objectif Mensuel</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Objectif Journalier</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {kiosks.map(kiosk => {
-                      const kioskObjectives = objectives[kiosk.id]
-                      return (
-                        <tr key={kiosk.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{kiosk.nom}</div>
-                            {kiosk.adresse && (
-                              <div className="text-sm text-gray-500">{kiosk.adresse}</div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {kioskObjectives ? (
+                {loadingObjectifs ? (
+                  <div className="p-8 text-center text-gray-500">Chargement des objectifs...</div>
+                ) : objectifs.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">Aucun objectif défini</div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kiosque</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mois</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CA Cible</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {objectifs.map((objectif) => {
+                        const kiosk = kiosks.find(k => k.id === objectif.kiosque_id);
+                        const monthDate = new Date(objectif.mois);
+                        const monthLabel = monthDate.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
+                        return (
+                          <tr key={objectif.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="font-medium text-gray-900">{kiosk?.nom || 'Kiosque inconnu'}</div>
+                              {kiosk?.adresse && (
+                                <div className="text-sm text-gray-500">{kiosk.adresse}</div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-gray-900 capitalize">{monthLabel}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <span className="text-green-600 font-semibold">
-                                {toCFA(kioskObjectives.monthly)}
+                                {toCFA(objectif.ca_cible)}
                               </span>
-                            ) : (
-                              <span className="text-gray-400">Non défini</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {kioskObjectives ? (
-                              <span className="text-blue-600 font-semibold">
-                                {toCFA(kioskObjectives.daily)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">Non défini</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {kioskObjectives && (
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button
-                                onClick={() => handleDeleteObjectives(kiosk.id)}
+                                onClick={() => handleDeleteObjectives(objectif.id)}
                                 disabled={loading}
                                 className="text-red-600 hover:text-red-900 disabled:text-red-400"
                                 aria-label="Supprimer"
                               >
                                 <FaTrash className="w-4 h-4" />
                               </button>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>
