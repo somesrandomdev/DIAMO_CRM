@@ -1,4 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+// ✅ CORRECT
+import { render } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/dom'
 import { BrowserRouter } from 'react-router-dom'
 import { BackButton, LogoutButton } from '../NavControls'
 import { useAuthStore } from '@/stores/authStore'
