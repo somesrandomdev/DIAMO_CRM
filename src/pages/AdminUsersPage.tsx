@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit, Save } from 'lucide-react'
+import { Edit, Save, UserPlus } from 'lucide-react'
+import { AddEmployeeDialog } from '@/components/admin/AddEmployeeDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
@@ -42,6 +43,7 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState({ id: '', username: '', role: 'fontainier' as UserRole, kiosque_id: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isAddOpen, setIsAddOpen] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -166,10 +168,34 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-[15px] font-semibold text-text">Utilisateurs</h1>
-        <p className="text-[12px] text-text-secondary">Affectation des roles et kiosques. La creation des comptes Auth reste cote Supabase.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[15px] font-semibold text-text">Utilisateurs</h1>
+          <p className="text-[12px] text-text-secondary">
+            Créez les accès des employés et gérez leurs rôles et kiosques.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="primary"
+          size="lg"
+          className="w-full sm:w-auto"
+          onClick={() => setIsAddOpen(true)}
+        >
+          <UserPlus className="h-5 w-5" />
+          Ajouter un employé
+        </Button>
       </div>
+
+      <AddEmployeeDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        kiosques={kiosques}
+        onCreated={(message) => {
+          showToast({ type: 'success', title: 'Employé ajouté', message })
+          load()
+        }}
+      />
 
       {form.id && (
         <Card>
