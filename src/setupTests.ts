@@ -1,81 +1,43 @@
 import '@testing-library/jest-dom'
+import { TextDecoder, TextEncoder } from 'node:util'
 
-// Extend Jest matchers for TypeScript
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeInTheDocument(): R
-    }
-  }
+/**
+ * Global test setup.
+ *
+ * Deliberately minimal: module mocks belong in the individual test files that
+ * need them. A global `jest.mock('zustand')` / `jest.mock('react-router-dom')`
+ * (as this file previously had) breaks every suite that wants the real
+ * implementations — including the NavControls render tests.
+ */
+
+// jsdom omits these Web APIs; react-router v7 touches TextEncoder at import time.
+global.TextEncoder ??= TextEncoder as unknown as typeof global.TextEncoder
+global.TextDecoder ??= TextDecoder as unknown as typeof global.TextDecoder
+
+// jsdom implements neither of these, and Radix/recharts call them on mount.
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver
+
+if (!window.matchMedia) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  })
 }
 
-// Mock Supabase
-const mockSupabase = {
-  supabase: {
-    auth: {
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      getUser: jest.fn(),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(),
-          order: jest.fn(),
-        })),
-      })),
-      insert: jest.fn(() => ({
-        select: jest.fn(() => ({
-          single: jest.fn(),
-        })),
-      })),
-      update: jest.fn(() => ({
-        eq: jest.fn(),
-      })),
-      delete: jest.fn(() => ({
-        eq: jest.fn(),
-      })),
-    })),
-    storage: {
-      from: jest.fn(() => ({
-        upload: jest.fn(),
-        createSignedUrl: jest.fn(),
-      })),
-    },
-  },
-}
-
-jest.mock('./lib/supabase', () => mockSupabase)
-
-// Mock react-router-dom
-const mockReactRouterDom = {
-  useNavigate: () => jest.fn(),
-  useLocation: () => ({ pathname: '/' }),
-  Link: ({ children, ...props }: any) => {
-    const React = require('react')
-    return React.createElement('a', props, children)
-  },
-  BrowserRouter: ({ children }: any) => {
-    const React = require('react')
-    return React.createElement('div', null, children)
-  },
-}
-
-jest.mock('react-router-dom', () => mockReactRouterDom)
-
-// Mock Zustand
-const mockZustand = {
-  create: jest.fn((fn: any) => fn),
-}
-
-jest.mock('zustand', () => mockZustand)
-
-// Global test utilities
-global.fetch = jest.fn()
-global.console = {
-  ...console,
-  error: jest.fn(),
-  warn: jest.fn(),
-  log: jest.fn(),
-}
+// Supabase's client reads env vars at import time; provide inert defaults so
+// importing a module that pulls in the client doesn't throw during tests.
+process.env.VITE_SUPABASE_URL ??= 'http://localhost:54321'
+process.env.VITE_SUPABASE_ANON_KEY ??= 'test-anon-key'

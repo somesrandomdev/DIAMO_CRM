@@ -1,5 +1,15 @@
 import { useState, type ReactNode } from 'react'
-import { Edit, Mail, MapPin, Phone, Save, Shield, User } from 'lucide-react'
+import {
+  CheckCircle2,
+  Edit,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  Shield,
+  User,
+  XCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormInput } from '@/components/ui/form-input'
@@ -30,7 +40,12 @@ export default function ProfilePage() {
   const { profile, loadProfile } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  /**
+   * Feedback carries its own kind so success and failure are visually distinct.
+   * The previous single `message` string rendered both in the same neutral grey
+   * box, which made a failed save look identical to a successful one.
+   */
+  const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const [formData, setFormData] = useState<ProfileData>({
     username: profile?.username || '',
     email: profile?.email || '',
@@ -39,13 +54,18 @@ export default function ProfilePage() {
   })
 
   const handleSave = async () => {
+    if (!formData.username.trim()) {
+      setFeedback({ kind: 'error', text: "Le nom d'utilisateur ne peut pas être vide." })
+      return
+    }
+
     setLoading(true)
-    setMessage('')
+    setFeedback(null)
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          username: formData.username,
+          username: formData.username.trim(),
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
@@ -55,10 +75,14 @@ export default function ProfilePage() {
       if (error) throw error
 
       await loadProfile()
-      setMessage('Profil mis a jour.')
+      setFeedback({ kind: 'success', text: 'Profil mis à jour avec succès' })
       setIsEditing(false)
-    } catch (caught: unknown) {
-      setMessage(caught instanceof Error ? caught.message : 'Erreur lors de la mise a jour.')
+    } catch (caught) {
+      console.error('Profile update failed:', caught)
+      setFeedback({
+        kind: 'error',
+        text: 'Une erreur est survenue lors de la sauvegarde',
+      })
     } finally {
       setLoading(false)
     }
@@ -77,9 +101,29 @@ export default function ProfilePage() {
         </Button>
       </div>
 
-      {message && (
-        <div className="rounded-md border border-border bg-surface p-3 text-[12px] text-text-secondary">
-          {message}
+      {feedback && (
+        <div
+          role="status"
+          className={
+            feedback.kind === 'success'
+              ? 'flex items-start gap-3 rounded-md border-2 border-green bg-green-light p-4'
+              : 'flex items-start gap-3 rounded-md border-2 border-red bg-red-light p-4'
+          }
+        >
+          {feedback.kind === 'success' ? (
+            <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-green" aria-hidden="true" />
+          ) : (
+            <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-red" aria-hidden="true" />
+          )}
+          <p
+            className={
+              feedback.kind === 'success'
+                ? 'text-[14px] font-semibold leading-snug text-green'
+                : 'text-[14px] font-semibold leading-snug text-red'
+            }
+          >
+            {feedback.text}
+          </p>
         </div>
       )}
 

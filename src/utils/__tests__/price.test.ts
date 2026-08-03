@@ -1,73 +1,62 @@
-import { toCFA } from '../price'
+import { formatCFACompact, formatCount, toCFA } from '../price'
 
-describe('Price Utility Functions', () => {
-  describe('toCFA', () => {
-    it('should format numbers as CFA currency', () => {
-      expect(toCFA(100)).toBe('100 CFA')
-      expect(toCFA(2500)).toBe('2500 CFA')
-      expect(toCFA(0)).toBe('0 CFA')
-    })
+// U+202F narrow no-break space — the French thousands separator used by toCFA.
+const NBSP = ' '
 
-    it('should handle decimal numbers', () => {
-      expect(toCFA(100.5)).toBe('100.5 CFA')
-      expect(toCFA(99.99)).toBe('99.99 CFA')
-    })
+describe('toCFA', () => {
+  it('formats whole amounts with the CFA suffix', () => {
+    expect(toCFA(100)).toBe('100 CFA')
+    expect(toCFA(0)).toBe('0 CFA')
+  })
 
-    it('should handle negative numbers', () => {
-      expect(toCFA(-100)).toBe('-100 CFA')
-      expect(toCFA(-50.5)).toBe('-50.5 CFA')
-    })
+  it('groups thousands with a narrow no-break space', () => {
+    expect(toCFA(2500)).toBe(`2${NBSP}500 CFA`)
+    expect(toCFA(1000000)).toBe(`1${NBSP}000${NBSP}000 CFA`)
+  })
 
-    it('should handle very large numbers', () => {
-      expect(toCFA(1000000)).toBe('1000000 CFA')
-      expect(toCFA(999999.99)).toBe('999999.99 CFA')
-    })
+  it('rounds to whole francs (CFA has no subunit)', () => {
+    expect(toCFA(100.5)).toBe('101 CFA')
+    expect(toCFA(99.99)).toBe('100 CFA')
+    expect(toCFA(999999.99)).toBe(`1${NBSP}000${NBSP}000 CFA`)
+  })
+
+  it('keeps the sign on negative amounts', () => {
+    expect(toCFA(-100)).toBe('-100 CFA')
+    expect(toCFA(-2500)).toBe(`-2${NBSP}500 CFA`)
+  })
+
+  it('falls back to 0 for non-finite input', () => {
+    expect(toCFA(Number.NaN)).toBe('0 CFA')
+    expect(toCFA(Number.POSITIVE_INFINITY)).toBe('0 CFA')
   })
 })
 
-// Example of testing with different scenarios
-describe('Business Logic Tests', () => {
-  it('should calculate average basket correctly', () => {
-    const totalSales = 100000 // 100,000 CFA
-    const numberOfSales = 50
-    const averageBasket = totalSales / numberOfSales
-
-    expect(averageBasket).toBe(2000)
-    expect(toCFA(averageBasket)).toBe('2000 CFA')
+describe('formatCFACompact', () => {
+  it('abbreviates millions and thousands to one decimal', () => {
+    expect(formatCFACompact(1_250_000)).toBe('1,3 M')
+    expect(formatCFACompact(1_240_000)).toBe('1,2 M')
+    expect(formatCFACompact(12_500)).toBe('12,5 k')
+    expect(formatCFACompact(840)).toBe('840')
   })
 
-  it('should calculate growth rate', () => {
-    const previousPeriod = 50000 // 50,000 CFA
-    const currentPeriod = 75000  // 75,000 CFA
-
-    const growthRate = ((currentPeriod - previousPeriod) / previousPeriod) * 100
-
-    expect(growthRate).toBe(50)
+  it('drops a trailing zero decimal', () => {
+    expect(formatCFACompact(1_000_000)).toBe('1 M')
+    expect(formatCFACompact(2_000)).toBe('2 k')
   })
 
-  it('should validate email format', () => {
-    const validEmails = [
-      'user@example.com',
-      'test.email+tag@domain.co.uk',
-      'user123@test-domain.com'
-    ]
+  it('handles zero and negatives', () => {
+    expect(formatCFACompact(0)).toBe('0')
+    expect(formatCFACompact(-12_500)).toBe('-12,5 k')
+  })
+})
 
-    const invalidEmails = [
-      'invalid-email',
-      '@example.com',
-      'user@',
-      'user..double@example.com'
-    ]
+describe('formatCount', () => {
+  it('groups thousands', () => {
+    expect(formatCount(12_480)).toBe(`12${NBSP}480`)
+    expect(formatCount(7)).toBe('7')
+  })
 
-    // More strict email regex that doesn't allow consecutive dots
-    const emailRegex = /^(?!.*\.\.)[a-zA-Z0-9](?:[a-zA-Z0-9._+-]*[a-zA-Z0-9])?@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/
-
-    validEmails.forEach(email => {
-      expect(email).toMatch(emailRegex)
-    })
-
-    invalidEmails.forEach(email => {
-      expect(email).not.toMatch(emailRegex)
-    })
+  it('falls back to 0 for non-finite input', () => {
+    expect(formatCount(Number.NaN)).toBe('0')
   })
 })

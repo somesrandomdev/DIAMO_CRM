@@ -33,6 +33,12 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
+            // Auth must never be cached: a replayed /token or /user response
+            // can resurrect a session the user has already signed out of.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
             handler: 'NetworkFirst',
             options: {
@@ -43,13 +49,26 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
+            // Public storage objects are stable and safe to cache.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/public\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'supabase-storage-cache',
+              cacheName: 'supabase-public-storage',
               expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 7 },
               cacheableResponse: { statuses: [0, 200] },
             },
+          },
+          {
+            // Signed URLs (private_tickets) expire after 60s. Caching them
+            // would serve a dead link for days, so they always hit the network.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/object\/sign\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            // Any other storage route (uploads, signed-URL creation) must not
+            // be served from cache either.
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
+            handler: 'NetworkOnly',
           },
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,

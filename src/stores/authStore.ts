@@ -46,6 +46,36 @@ interface AuthStore {
 // Rate limiter for login attempts (5 attempts per minute)
 const loginRateLimiter = new RateLimiter(5, 60000)
 
+/**
+ * Creates a new profile row for a freshly-registered internal staff member.
+ * Returns the created profile, or null if the insert fails.
+ *
+ * Kept as a module-level helper so loadProfile stays readable.
+ */
+async function createProfileForUser(user: { id: string; email?: string }): Promise<Profile | null> {
+  const username = user.email?.split('@')[0] || 'nouveau'
+
+  const { error } = await supabase.from('profiles').insert({
+    id: user.id,
+    username,
+    role: 'fontainier',
+    kiosque_id: null,
+  })
+
+  if (error) {
+    console.error('Auto-profile creation failed:', error)
+    return null
+  }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  return (data as Profile | null) ?? null
+}
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   profile: null,
@@ -123,85 +153,49 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const {
         data: { user },
       } = await supabase.auth.getUser()
+
       if (!user) {
         set({ user: null, profile: null })
         return
       }
 
-      let { data: profile, error } = await supabase
+      // maybeSingle() returns { data: null, error: null } for "no row", so a
+      // missing profile is not reported as an error. Only real failures
+      // (network, RLS rejection) land in `error`.
+      const { data: existing, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (error || !profile) {
-        // Fallback: create profile manually
-        const { error: insertError } = await supabase.from('profiles').insert({
-          id: user.id,
-          username: user.email?.split('@')[0] || 'nouveau',
-          role: 'fontainier',
-          kiosque_id: null,
-        })
-
-        if (insertError) {
-          console.error('Profile creation error:', insertError)
-          set({ user: null, profile: null })
-          return
-        }
-
-        // Re-fetch profile
-        const { data: fresh } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-
-        if (fresh) {
-          // Load kiosk information for new profile
-          if (fresh.kiosque_id) {
-            try {
-              const { data: kioskData } = await supabase
-                .from('kiosques')
-                .select('nom')
-                .eq('id', fresh.kiosque_id)
-                .single()
-
-              if (kioskData) {
-                fresh.kiosques = { nom: kioskData.nom }
-              }
-            } catch (kioskError) {
-              console.error('Error loading kiosk data:', kioskError)
-            }
-          }
-
-          set({ user, profile: fresh })
-        } else {
-          set({ user: null, profile: null })
-        }
+      if (error) {
+        console.error('Error loading profile:', error)
+        set({ user: null, profile: null })
         return
       }
 
-      // Load kiosk information separately if needed
-      if (profile.kiosque_id) {
-        try {
-          const { data: kioskData } = await supabase
-            .from('kiosques')
-            .select('nom')
-            .eq('id', profile.kiosque_id)
-            .single()
+      // ── Frictionless onboarding ──────────────────────────────────────
+      // New internal staff have an Auth account but no profile row yet. We
+      // create one on first sign-in so an admin never has to pre-provision.
+      // Kept deliberately silent: no toast, no intermediate state — the user
+      // just lands on their dashboard.
+      const profile = existing ?? (await createProfileForUser(user))
 
-          if (kioskData) {
-            profile.kiosques = { nom: kioskData.nom }
-          }
-        } catch (kioskError) {
-          console.error('Error loading kiosk data:', kioskError)
-          // Continue without kiosk data
-        }
+      if (!profile) {
+        set({ user: null, profile: null })
+        return
       }
 
-      // For admin users, we don't enforce kiosk_id requirement
-      if (profile.role === 'administrateur' && !profile.kiosque_id) {
-        console.log('Admin user loaded with global access (no kiosk restriction)')
+      // Resolve the kiosk name for the header/profile page. A failure here is
+      // non-fatal: the app is fully usable without the label.
+      if (profile.kiosque_id) {
+        const { data: kiosk } = await supabase
+          .from('kiosques')
+          .select('nom')
+          .eq('id', profile.kiosque_id)
+          .maybeSingle()
+
+        if (kiosk) profile.kiosques = { nom: kiosk.nom }
       }
 
       set({ user, profile })

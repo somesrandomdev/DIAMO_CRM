@@ -49,7 +49,13 @@ export interface Vente {
 interface VenteStore {
   clients: Client[]
   offres: OfferRow[]
-  isLoading: boolean
+  /**
+   * Separate flags per resource. A single shared `isLoading` caused flicker:
+   * loadClients and loadOffres run concurrently, and whichever finished first
+   * flipped the flag to false while the other was still in flight.
+   */
+  clientsLoading: boolean
+  offresLoading: boolean
   error: string | null
   loadClients: (kiosqueId: string) => Promise<{ success: boolean; error?: string }>
   loadOffres: (kiosqueId: string) => Promise<{ success: boolean; error?: string }>
@@ -59,18 +65,19 @@ interface VenteStore {
 export const useVenteStore = create<VenteStore>((set) => ({
   clients: [],
   offres: [],
-  isLoading: false,
+  clientsLoading: false,
+  offresLoading: false,
   error: null,
 
   /**
    * Load clients for a specific kiosk
    */
   loadClients: async (kiosqueId: string) => {
-    set({ isLoading: true, error: null })
+    set({ clientsLoading: true, error: null })
 
     try {
       if (!kiosqueId) {
-        set({ isLoading: false, error: 'ID de kiosque invalide' })
+        set({ clientsLoading: false, error: 'ID de kiosque invalide' })
         return { success: false, error: 'ID de kiosque invalide' }
       }
 
@@ -82,15 +89,16 @@ export const useVenteStore = create<VenteStore>((set) => ({
 
       if (error) {
         const errorMessage = handleSupabaseError(error)
-        set({ isLoading: false, error: errorMessage })
+        set({ clientsLoading: false, error: errorMessage })
         return { success: false, error: errorMessage }
       }
 
-      set({ clients: data || [], isLoading: false })
+      set({ clients: data || [], clientsLoading: false })
       return { success: true }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Erreur lors du chargement des clients'
-      set({ isLoading: false, error: errorMessage })
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erreur lors du chargement des clients'
+      set({ clientsLoading: false, error: errorMessage })
       return { success: false, error: errorMessage }
     }
   },
@@ -99,11 +107,11 @@ export const useVenteStore = create<VenteStore>((set) => ({
    * Load active offers for a specific kiosk
    */
   loadOffres: async (kiosqueId: string) => {
-    set({ isLoading: true, error: null })
+    set({ offresLoading: true, error: null })
 
     try {
       if (!kiosqueId) {
-        set({ isLoading: false, error: 'ID de kiosque invalide' })
+        set({ offresLoading: false, error: 'ID de kiosque invalide' })
         return { success: false, error: 'ID de kiosque invalide' }
       }
 
@@ -126,22 +134,38 @@ export const useVenteStore = create<VenteStore>((set) => ({
 
       if (error) {
         const errorMessage = handleSupabaseError(error)
-        set({ isLoading: false, error: errorMessage })
+        set({ offresLoading: false, error: errorMessage })
         return { success: false, error: errorMessage }
       }
 
-      const rows: OfferRow[] = (data || []).map((row: any) => ({
-        offre_id: row.offre_id,
-        prix: row.prix,
-        est_actif: row.est_actif,
-        offre: row.offres,
-      }))
+      // PostgREST types an embedded relation as an array even when the FK
+      // guarantees a single row, so `offres` is narrowed back to one Offer here.
+      type JoinedOffreRow = {
+        offre_id: string
+        prix: number
+        est_actif: boolean
+        offres: Offer | Offer[] | null
+      }
 
-      set({ offres: rows, isLoading: false })
+      const rows: OfferRow[] = ((data ?? []) as unknown as JoinedOffreRow[])
+        .map((row) => {
+          const offre = Array.isArray(row.offres) ? row.offres[0] : row.offres
+          if (!offre) return null
+          return {
+            offre_id: row.offre_id,
+            prix: row.prix,
+            est_actif: row.est_actif,
+            offre,
+          }
+        })
+        .filter((row): row is OfferRow => row !== null)
+
+      set({ offres: rows, offresLoading: false })
       return { success: true }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Erreur lors du chargement des offres'
-      set({ isLoading: false, error: errorMessage })
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erreur lors du chargement des offres'
+      set({ offresLoading: false, error: errorMessage })
       return { success: false, error: errorMessage }
     }
   },

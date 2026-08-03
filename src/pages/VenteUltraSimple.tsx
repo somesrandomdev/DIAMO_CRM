@@ -15,6 +15,7 @@ import {
   getQueuedSalesCount,
   queueOfflineSale,
 } from '@/utils/offlineSalesQueue'
+import { Skeleton } from '@/components/ui/skeleton'
 import { toCFA } from '@/utils/price'
 
 interface RecentSale {
@@ -39,7 +40,8 @@ function joinedName(value: { nom?: string } | { nom?: string }[] | null | undefi
 
 export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
-  const { clients, offres, loadClients, loadOffres } = useVenteStore()
+  const { clients, offres, clientsLoading, offresLoading, loadClients, loadOffres } =
+    useVenteStore()
   const { showToast } = useToast()
 
   const [showAddClient, setShowAddClient] = useState(false)
@@ -336,24 +338,32 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
       })
 
       const pdfBlob = await (await fetch(ticket)).blob()
-      const fileName = `ticket-multi-${sales[0].id}.pdf`
+
+      // The storage RLS policy checks that the FIRST path segment equals the
+      // uploader's kiosque_id: (storage.foldername(name))[1] = kiosque_id.
+      // A root-level file has no folder segment, so the upload is rejected —
+      // the file MUST be nested under the kiosque folder.
+      const kiosqueFolder = profile.kiosque_id
+      const fileName = `${kiosqueFolder}/ticket-multi-${sales[0].id}.pdf`
 
       const { error: uploadError } = await supabase.storage
         .from('private_tickets')
-        .upload(fileName, pdfBlob, { upsert: false })
+        .upload(fileName, pdfBlob, { upsert: false, contentType: 'application/pdf' })
 
       if (uploadError) {
         showToast({
           type: 'error',
-          title: 'Upload ticket echoue',
-          message: uploadError.message,
+          title: 'Vente enregistrée, ticket non disponible',
+          message: "La vente est bien enregistrée. Le ticket n'a pas pu être créé.",
         })
         setLoading(false)
         return
       }
 
-      const privatePath = `private_tickets/${fileName}`
-      await supabase.from('ventes').update({ lien_ticket: privatePath }).eq('id', sales[0].id)
+      // Store the storage key (bucket-relative) so signed URLs can be
+      // regenerated later; the previous value included the bucket name, which
+      // is not a valid key for createSignedUrl().
+      await supabase.from('ventes').update({ lien_ticket: fileName }).eq('id', sales[0].id)
 
       const { data: signedData } = await supabase.storage
         .from('private_tickets')
@@ -363,7 +373,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
         showToast({
           type: 'error',
           title: 'Lien ticket indisponible',
-          message: 'La vente est enregistree, mais le lien de telechargement a echoue.',
+          message: 'La vente est enregistrée, mais le téléchargement a échoué.',
         })
         setLoading(false)
         return
@@ -371,7 +381,9 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
 
       const link = document.createElement('a')
       link.href = signedData.signedUrl
-      link.download = fileName
+      // A nested key would make the browser save a file literally named
+      // "<uuid>/ticket-...pdf"; use only the last segment for the filename.
+      link.download = `ticket-${sales[0].id}.pdf`
       link.style.display = 'none'
       document.body.appendChild(link)
       link.click()
@@ -385,14 +397,12 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
         message: `${cartItems.length} offre(s) - ticket telecharge.`,
       })
 
-      window.setTimeout(async () => {
+      window.setTimeout(() => {
         resetForm()
         setSaleSaved(false)
-        if (profile.kiosque_id) {
-          await loadClients(profile.kiosque_id)
-          await loadOffres(profile.kiosque_id)
-          await loadVenteSummary(profile.kiosque_id)
-        }
+        // Only the summary changes after a sale. Re-fetching clients and offers
+        // would blank the dropdowns for a moment for no benefit.
+        if (profile.kiosque_id) loadVenteSummary(profile.kiosque_id)
       }, 2000)
     } catch (error: unknown) {
       showToast({
@@ -467,18 +477,30 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="client-search-container relative">
-              <FormInput
-                type="text"
-                value={clientSearchQuery}
-                onChange={(event) => {
-                  if (selectedClientId) clearClientSelection()
-                  handleClientSearch(event.target.value)
-                }}
-                onFocus={() => clientSearchQuery && setShowClientSuggestions(true)}
-                placeholder="Nom ou telephone du client"
-                readOnly={selectedClientId !== ''}
-                className={selectedClientId ? 'bg-muted' : ''}
-              />
+              {clientsLoading ? (
+                // Explicit "loading" affordance rather than an empty input:
+                // a non-technical user typing into a field whose data hasn't
+                // arrived gets "no results" and concludes the client is missing.
+                <div className="space-y-2" aria-live="polite">
+                  <Skeleton className="h-11 w-full sm:h-9" />
+                  <p className="text-[12px] text-text-secondary">
+                    Chargement de la liste des clients...
+                  </p>
+                </div>
+              ) : (
+                <FormInput
+                  type="text"
+                  value={clientSearchQuery}
+                  onChange={(event) => {
+                    if (selectedClientId) clearClientSelection()
+                    handleClientSearch(event.target.value)
+                  }}
+                  onFocus={() => clientSearchQuery && setShowClientSuggestions(true)}
+                  placeholder="Nom ou telephone du client"
+                  readOnly={selectedClientId !== ''}
+                  className={selectedClientId ? 'bg-muted' : ''}
+                />
+              )}
 
               {showClientSuggestions && clientSearchResults.length > 0 && (
                 <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-border bg-surface shadow-lg">
@@ -529,6 +551,14 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
             <CardTitle>Panier de vente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {offresLoading ? (
+              <div className="space-y-2" aria-live="polite">
+                <Skeleton className="h-11 w-full sm:h-9" />
+                <p className="text-[12px] text-text-secondary">
+                  Chargement des offres disponibles...
+                </p>
+              </div>
+            ) : (
             <div className="grid gap-3 md:grid-cols-[1fr_100px_auto]">
               <FormSelect value={selectedOfferId} onChange={(event) => setSelectedOfferId(event.target.value)}>
                 <option value="">Choisir une offre</option>
@@ -567,6 +597,7 @@ export default function VenteUltraSimple({ onBack }: { onBack: () => void }) {
                 Ajouter
               </Button>
             </div>
+            )}
 
             {cartItems.length > 0 ? (
               <div className="space-y-2">

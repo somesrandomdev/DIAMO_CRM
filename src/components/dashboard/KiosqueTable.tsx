@@ -40,13 +40,6 @@ export function KiosqueTable({ rows }: KiosqueTableProps) {
       align: 'right',
     },
     {
-      key: 'clientsActifs',
-      header: 'Clients',
-      render: (row) => row.clientsActifs,
-      sortValue: (row) => row.clientsActifs,
-      align: 'right',
-    },
-    {
       key: 'panierMoyen',
       header: 'Panier',
       render: (row) => <span className="font-mono">{toCFA(row.panierMoyen)}</span>,
@@ -96,8 +89,6 @@ export function KiosqueTable({ rows }: KiosqueTableProps) {
                 <span className="text-right font-mono text-text">{toCFA(row.caMois)}</span>
                 <span>Ventes</span>
                 <span className="text-right">{row.nbVentes}</span>
-                <span>Clients</span>
-                <span className="text-right">{row.clientsActifs}</span>
                 <span>Panier</span>
                 <span className="text-right font-mono text-text">{toCFA(row.panierMoyen)}</span>
               </div>

@@ -1,7 +1,11 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { HourlySalesPoint } from '@/components/dashboard/useAdminDashboard'
 import { chartTheme } from '@/lib/chartTheme'
+
+interface HourlySalesPoint {
+  hour: string
+  ventes: number
+}
 
 interface HeurePointeProps {
   data: HourlySalesPoint[]

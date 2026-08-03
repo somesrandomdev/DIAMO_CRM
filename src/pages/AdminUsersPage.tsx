@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { useToast } from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import type { UserRole } from '@/stores/authStore'
 
@@ -35,6 +36,7 @@ function roleVariant(role: UserRole) {
 }
 
 export default function AdminUsersPage() {
+  const { showToast } = useToast()
   const [profiles, setProfiles] = useState<ProfileRow[]>([])
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
   const [form, setForm] = useState({ id: '', username: '', role: 'fontainier' as UserRole, kiosque_id: '' })
@@ -48,13 +50,21 @@ export default function AdminUsersPage() {
       supabase.from('kiosques').select('id, nom').order('nom'),
     ])
 
-    if (profilesResult.error) console.error('Error loading profiles:', profilesResult.error)
-    if (kiosquesResult.error) console.error('Error loading kiosques:', kiosquesResult.error)
+    if (profilesResult.error || kiosquesResult.error) {
+      // Raw Postgres/RLS text is meaningless to an admin who isn't a developer,
+      // so it stays in the console and the user gets a plain-French summary.
+      console.error('Error loading users page:', profilesResult.error ?? kiosquesResult.error)
+      showToast({
+        type: 'error',
+        title: 'Chargement impossible',
+        message: 'La liste des utilisateurs n\'a pas pu être chargée. Veuillez réessayer.',
+      })
+    }
 
     setProfiles((profilesResult.data ?? []) as ProfileRow[])
     setKiosques((kiosquesResult.data ?? []) as KiosqueRow[])
     setIsLoading(false)
-  }, [])
+  }, [showToast])
 
   useEffect(() => {
     load()
@@ -68,17 +78,57 @@ export default function AdminUsersPage() {
 
   const save = async () => {
     if (!form.id) return
+
+    const trimmedUsername = form.username.trim()
+    if (!trimmedUsername) {
+      showToast({
+        type: 'warning',
+        title: 'Nom manquant',
+        message: "Veuillez saisir un nom d'utilisateur avant d'enregistrer.",
+      })
+      return
+    }
+
+    // A non-admin role without a kiosk leaves the user unable to record sales,
+    // so this is caught here rather than surfacing later as a confusing
+    // "aucun kiosque" bounce on the sale page.
+    if (form.role !== 'administrateur' && !form.kiosque_id) {
+      showToast({
+        type: 'warning',
+        title: 'Kiosque requis',
+        message: 'Choisissez un kiosque pour ce rôle, ou passez le rôle en Administrateur.',
+      })
+      return
+    }
+
     setIsSaving(true)
     const { error } = await supabase
       .from('profiles')
       .update({
-        username: form.username.trim(),
+        username: trimmedUsername,
         role: form.role,
         kiosque_id: form.role === 'administrateur' ? null : form.kiosque_id || null,
       })
       .eq('id', form.id)
 
-    if (error) console.error('Error updating profile:', error)
+    if (error) {
+      console.error('Error updating profile:', error)
+      showToast({
+        type: 'error',
+        title: 'Modification impossible',
+        message:
+          'Impossible de mettre à jour cet utilisateur. Vérifiez que les informations sont correctes.',
+      })
+      setIsSaving(false)
+      return
+    }
+
+    showToast({
+      type: 'success',
+      title: 'Utilisateur mis à jour',
+      message: `Les informations de ${trimmedUsername} ont été enregistrées.`,
+    })
+
     await load()
     resetForm()
     setIsSaving(false)
