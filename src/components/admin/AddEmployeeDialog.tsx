@@ -38,7 +38,7 @@ const roleOptions: { value: UserRole; label: string; help: string }[] = [
   {
     value: 'commercial',
     label: 'Commercial',
-    help: 'Accès aux analyses en plus des ventes et des clients.',
+    help: "Supervise les kiosques que l'administrateur lui assigne après la création (aucun kiosque attitré).",
   },
   {
     value: 'administrateur',
@@ -71,7 +71,9 @@ export function AddEmployeeDialog({
   const [isSaving, setIsSaving] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const needsKiosque = role !== 'administrateur'
+  // profiles.kiosque_id is fontainier-only: commercials get their kiosques
+  // from the commercials_kiosques junction, assigned by an admin after creation.
+  const needsKiosque = role === 'fontainier'
   const selectedRoleHelp = useMemo(
     () => roleOptions.find((option) => option.value === role)?.help ?? '',
     [role]
@@ -272,9 +274,9 @@ export function AddEmployeeDialog({
               onChange={(event) => {
                 const nextRole = event.target.value as UserRole
                 setRole(nextRole)
-                // An administrator is global by design, so clear any kiosk the
+                // Only fontainiers carry a kiosque_id; clear any kiosk the
                 // admin had already picked to avoid sending a stale value.
-                if (nextRole === 'administrateur') setKiosqueId('')
+                if (nextRole !== 'fontainier') setKiosqueId('')
                 setErrors((current) => ({ ...current, kiosqueId: undefined }))
               }}
             >
@@ -287,45 +289,39 @@ export function AddEmployeeDialog({
             <p className="text-[12px] text-text-secondary">{selectedRoleHelp}</p>
           </div>
 
-          {/* Kiosque */}
-          <div className="space-y-1.5">
-            <Label htmlFor={`${fieldId}-kiosque`} className="text-[13px]">
-              Kiosque assigné
-            </Label>
-            <FormSelect
-              id={`${fieldId}-kiosque`}
-              value={kiosqueId}
-              disabled={!needsKiosque}
-              onChange={(event) => setKiosqueId(event.target.value)}
-              error={!!errors.kiosqueId}
-              aria-invalid={!!errors.kiosqueId}
-              aria-describedby={
-                errors.kiosqueId ? `${fieldId}-kiosque-error` : undefined
-              }
-            >
-              <option value="">
-                {needsKiosque ? 'Choisir un kiosque...' : 'Aucun (accès global)'}
-              </option>
-              {kiosques.map((kiosque) => (
-                <option key={kiosque.id} value={kiosque.id}>
-                  {kiosque.nom}
-                </option>
-              ))}
-            </FormSelect>
-            {!needsKiosque && (
-              <p className="text-[12px] text-text-secondary">
-                Un administrateur voit tous les kiosques.
-              </p>
-            )}
-            {needsKiosque && kiosques.length === 0 && (
-              <p className="text-[12px] text-amber">
-                Aucun kiosque n'existe encore. Créez d'abord un kiosque.
-              </p>
-            )}
-            {errors.kiosqueId && (
-              <FieldError id={`${fieldId}-kiosque-error`}>{errors.kiosqueId}</FieldError>
-            )}
-          </div>
+          {/* Kiosque — fontainier only */}
+          {needsKiosque && (
+            <div className="space-y-1.5">
+              <Label htmlFor={`${fieldId}-kiosque`} className="text-[13px]">
+                Kiosque assigné
+              </Label>
+              <FormSelect
+                id={`${fieldId}-kiosque`}
+                value={kiosqueId}
+                onChange={(event) => setKiosqueId(event.target.value)}
+                error={!!errors.kiosqueId}
+                aria-invalid={!!errors.kiosqueId}
+                aria-describedby={
+                  errors.kiosqueId ? `${fieldId}-kiosque-error` : undefined
+                }
+              >
+                <option value="">Choisir un kiosque...</option>
+                {kiosques.map((kiosque) => (
+                  <option key={kiosque.id} value={kiosque.id}>
+                    {kiosque.nom}
+                  </option>
+                ))}
+              </FormSelect>
+              {kiosques.length === 0 && (
+                <p className="text-[12px] text-amber">
+                  Aucun kiosque n'existe encore. Créez d'abord un kiosque.
+                </p>
+              )}
+              {errors.kiosqueId && (
+                <FieldError id={`${fieldId}-kiosque-error`}>{errors.kiosqueId}</FieldError>
+              )}
+            </div>
+          )}
 
           {/* Server-side failure */}
           {formError && (

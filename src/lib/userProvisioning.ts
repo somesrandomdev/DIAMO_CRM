@@ -113,7 +113,9 @@ export async function provisionEmployee(
       username: input.fullName,
       email: input.email,
       role: input.role,
-      kiosque_id: input.role === 'administrateur' ? null : input.kiosqueId,
+      // profiles.kiosque_id is fontainier-only; commercials are supervised
+      // via commercials_kiosques, assigned separately by an admin.
+      kiosque_id: input.role === 'fontainier' ? input.kiosqueId : null,
     },
     { onConflict: 'id' }
   )

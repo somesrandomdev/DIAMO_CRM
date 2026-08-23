@@ -135,14 +135,14 @@ export default function AdminUsersPage() {
       return
     }
 
-    // A non-admin role without a kiosk leaves the user unable to record sales,
-    // so this is caught here rather than surfacing later as a confusing
-    // "aucun kiosque" bounce on the sale page.
-    if (form.role !== 'administrateur' && !form.kiosque_id) {
+    // Only fontainiers carry profiles.kiosque_id: a fontainier without a
+    // kiosk cannot record sales, so this is caught here rather than
+    // surfacing later as a confusing "aucun kiosque" bounce on the sale page.
+    if (form.role === 'fontainier' && !form.kiosque_id) {
       showToast({
         type: 'warning',
         title: 'Kiosque requis',
-        message: 'Choisissez un kiosque pour ce rôle, ou passez le rôle en Administrateur.',
+        message: "Choisissez le kiosque de ce fontainier avant d'enregistrer.",
       })
       return
     }
@@ -153,7 +153,9 @@ export default function AdminUsersPage() {
       .update({
         username: trimmedUsername,
         role: form.role,
-        kiosque_id: form.role === 'administrateur' ? null : form.kiosque_id || null,
+        // profiles.kiosque_id is fontainier-only: commercials get their
+        // kiosques exclusively from the commercials_kiosques junction table.
+        kiosque_id: form.role === 'fontainier' ? form.kiosque_id : null,
       })
       .eq('id', form.id)
 
@@ -316,28 +318,38 @@ export default function AdminUsersPage() {
             <CardTitle>Modifier un utilisateur</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 lg:grid-cols-[1fr_180px_1fr_auto]">
+            <div className="grid gap-3 lg:grid-cols-[1fr_180px_auto]">
               <FormInput value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Nom utilisateur" />
               <FormSelect value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as UserRole }))}>
                 <option value="fontainier">Fontainier</option>
                 <option value="commercial">Commercial</option>
                 <option value="administrateur">Administrateur</option>
               </FormSelect>
-              <FormSelect
-                value={form.kiosque_id}
-                disabled={form.role === 'administrateur'}
-                onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}
-              >
-                <option value="">Aucun kiosque</option>
-                {kiosques.map((kiosque) => (
-                  <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
-                ))}
-              </FormSelect>
               <Button type="button" variant="primary" onClick={save} loading={isSaving}>
                 <Save className="h-4 w-4" />
                 Enregistrer
               </Button>
             </div>
+            {form.role === 'fontainier' && (
+              <div className="mt-3 max-w-md space-y-1.5">
+                <label
+                  htmlFor="edit-kiosque"
+                  className="text-xs font-semibold uppercase tracking-wider text-zinc-500"
+                >
+                  Kiosque assigné *
+                </label>
+                <FormSelect
+                  id="edit-kiosque"
+                  value={form.kiosque_id}
+                  onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}
+                >
+                  <option value="">Choisir un kiosque...</option>
+                  {kiosques.map((kiosque) => (
+                    <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
+                  ))}
+                </FormSelect>
+              </div>
+            )}
             {form.role === 'commercial' && (
               <div className="mt-4 space-y-2">
                 <PosLabel>Kiosques supervisés</PosLabel>
@@ -359,8 +371,9 @@ export default function AdminUsersPage() {
                   ))}
                 </div>
                 <p className="text-xs text-zinc-500">
-                  Le commercial supervise les kiosques sélectionnés : lecture et correction des
-                  ventes, clients et objectifs. Enregistrer pour appliquer.
+                  Un commercial n'a pas de kiosque attitré : il supervise uniquement les kiosques
+                  sélectionnés ci-dessus (lecture et correction des ventes, clients et objectifs).
+                  Enregistrer pour appliquer.
                 </p>
               </div>
             )}
