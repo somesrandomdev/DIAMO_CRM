@@ -36,7 +36,7 @@ export function SaleCart({
       {isLoading ? (
         <div className="space-y-2" aria-live="polite">
           <Skeleton className="h-12 w-full" />
-          <p className="text-xs text-zinc-500">Chargement des offres disponibles...</p>
+          <p className="text-xs text-[#1C5376]">Chargement des offres disponibles...</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -48,12 +48,12 @@ export function SaleCart({
               aria-label={`Ajouter ${offer.offre.nom}`}
               className={
                 inCart(offer.offre_id)
-                  ? 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-emerald-600 bg-emerald-50 px-3 py-2 text-left transition-colors active:scale-[0.98]'
-                  : 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-zinc-300 bg-white px-3 py-2 text-left transition-colors hover:border-zinc-900 active:scale-[0.98]'
+                  ? 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] px-3 py-2 text-left transition-colors active:scale-[0.98]'
+                  : 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#DCE1E5] bg-white px-3 py-2 text-left transition-colors hover:border-[#12364D] active:scale-[0.98]'
               }
             >
-              <span className="text-sm font-semibold text-zinc-900">{offer.offre.nom}</span>
-              <span className="text-xs font-semibold text-zinc-600 [font-variant-numeric:tabular-nums]">
+              <span className="text-sm font-semibold text-[#12364D]">{offer.offre.nom}</span>
+              <span className="text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
                 {toCFA(offer.prix)}
               </span>
             </button>
@@ -64,11 +64,11 @@ export function SaleCart({
       {cartItems.length > 0 ? (
         <div className="space-y-2">
           {cartItems.map((item) => (
-            <div key={item.offreId} className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+            <div key={item.offreId} className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-zinc-900">{item.offre.nom}</p>
-                  <p className="text-xs text-zinc-500 [font-variant-numeric:tabular-nums]">
+                  <p className="text-sm font-semibold text-[#12364D]">{item.offre.nom}</p>
+                  <p className="text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
                     {toCFA(item.prix)} x {item.qty} = {toCFA(item.prix * item.qty)}
                   </p>
                 </div>
@@ -86,7 +86,7 @@ export function SaleCart({
                   </Button>
                   <span
                     aria-live="polite"
-                    className="w-10 text-center text-base font-bold text-zinc-900 [font-variant-numeric:tabular-nums]"
+                    className="w-10 text-center text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]"
                   >
                     {item.qty}
                   </span>
@@ -115,9 +115,9 @@ export function SaleCart({
             </div>
           ))}
 
-          <div className="flex items-center justify-between border-t-2 border-zinc-200 pt-3">
+          <div className="flex items-center justify-between border-t-2 border-[#DCE1E5] pt-3">
             <PosLabel>Total</PosLabel>
-            <span className="font-mono text-xl font-bold text-emerald-700 [font-variant-numeric:tabular-nums]">
+            <span className="font-mono text-xl font-bold text-[#007EC8] [font-variant-numeric:tabular-nums]">
               {toCFA(total)}
             </span>
           </div>
@@ -126,7 +126,7 @@ export function SaleCart({
         <EmptyState
           title="Panier vide"
           description="Ajoutez au moins une offre pour enregistrer la vente."
-          className="border-0 bg-zinc-50 p-4"
+          className="border-0 bg-[#F6F9FB] p-4"
         />
       )}
     </PosCard>

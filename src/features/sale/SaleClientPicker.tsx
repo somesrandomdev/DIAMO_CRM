@@ -53,7 +53,7 @@ export function SaleClientPicker({
           // gets "no results" and concludes the client is missing.
           <div className="space-y-2" aria-live="polite">
             <Skeleton className="h-12 w-full" />
-            <p className="text-xs text-zinc-500">Chargement de la liste des clients...</p>
+            <p className="text-xs text-[#1C5376]">Chargement de la liste des clients...</p>
           </div>
         ) : (
           <PosInput
@@ -66,22 +66,22 @@ export function SaleClientPicker({
             onFocus={search.reopenSuggestions}
             placeholder="Nom ou telephone du client"
             readOnly={selectedClient !== null}
-            className={selectedClient ? 'bg-zinc-100' : ''}
+            className={selectedClient ? 'bg-[#F6F9FB]' : ''}
             aria-label="Rechercher un client"
           />
         )}
 
         {search.showSuggestions && search.results.length > 0 && (
-          <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border-2 border-zinc-300 bg-white shadow-lg">
+          <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border-2 border-[#DCE1E5] bg-white shadow-lg">
             {search.results.map((client) => (
               <button
                 key={client.id}
                 type="button"
                 onClick={() => select(client)}
-                className="block min-h-12 w-full border-b border-zinc-200 px-3 py-2 text-left last:border-b-0 hover:bg-zinc-100"
+                className="block min-h-12 w-full border-b border-[#DCE1E5] px-3 py-2 text-left last:border-b-0 hover:bg-[#F6F9FB]"
               >
-                <p className="text-sm font-semibold text-zinc-900">{client.nom}</p>
-                {client.telephone && <p className="text-xs text-zinc-500">{client.telephone}</p>}
+                <p className="text-sm font-semibold text-[#12364D]">{client.nom}</p>
+                {client.telephone && <p className="text-xs text-[#1C5376]">{client.telephone}</p>}
               </button>
             ))}
           </div>
@@ -95,12 +95,12 @@ export function SaleClientPicker({
       )}
 
       {selectedClient && (
-        <div className="rounded-md border-2 border-emerald-600 bg-emerald-50 p-3">
+        <div className="rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <PosLabel className="text-emerald-700">Client selectionne</PosLabel>
-              <p className="mt-1 text-sm font-bold text-zinc-900">{selectedClient.nom}</p>
-              <p className="text-xs text-zinc-500">
+              <PosLabel className="text-[#007EC8]">Client selectionne</PosLabel>
+              <p className="mt-1 text-sm font-bold text-[#12364D]">{selectedClient.nom}</p>
+              <p className="text-xs text-[#1C5376]">
                 {selectedClient.telephone || 'Telephone non renseigne'}
               </p>
             </div>

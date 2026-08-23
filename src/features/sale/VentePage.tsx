@@ -100,8 +100,8 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
     <div className="mx-auto max-w-2xl space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Nouvelle vente</h1>
-          <p className="text-sm text-zinc-500">Enregistrer une vente et generer le ticket.</p>
+          <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Nouvelle vente</h1>
+          <p className="text-sm text-[#1C5376]">Enregistrer une vente et generer le ticket.</p>
         </div>
         <Button type="button" variant="pos-secondary" onClick={onBack}>Retour</Button>
       </div>

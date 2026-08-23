@@ -344,8 +344,8 @@ export default function CommercialDashboard() {
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Supervision</h1>
-          <p className="text-sm text-zinc-500">Performance des kiosques que vous supervisez.</p>
+          <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Supervision</h1>
+          <p className="text-sm text-[#1C5376]">Performance des kiosques que vous supervisez.</p>
         </div>
         <EmptyState
           icon={<Store className="h-5 w-5" />}
@@ -359,8 +359,8 @@ export default function CommercialDashboard() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-zinc-900">Supervision</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Supervision</h1>
+        <p className="text-sm text-[#1C5376]">
           Performance de vos {kiosques.length} kiosque{kiosques.length > 1 ? 's' : ''} — cumul du mois.
         </p>
       </div>
@@ -392,7 +392,7 @@ export default function CommercialDashboard() {
               contentStyle={chartTheme.tooltip}
               formatter={(value) => [toCFA(Number(value)), 'CA']}
             />
-            <Bar dataKey="revenue" fill="#059669" radius={[0, 4, 4, 0]} barSize={18} />
+            <Bar dataKey="revenue" fill="#009EFB" radius={[0, 4, 4, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </PosCard>
@@ -427,12 +427,12 @@ export default function CommercialDashboard() {
                 {kioskObjectif ? (
                   <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
                     {toCFA(kioskRevenue)}{' '}
-                    <span className="text-sm font-medium text-zinc-500">
+                    <span className="text-sm font-medium text-[#1C5376]">
                       / {toCFA(kioskObjectif.ca_cible)}
                     </span>
                   </p>
                 ) : (
-                  <p className="mt-1 text-sm text-zinc-500">Aucun objectif défini pour ce mois.</p>
+                  <p className="mt-1 text-sm text-[#1C5376]">Aucun objectif défini pour ce mois.</p>
                 )}
               </div>
               {kioskObjectif ? (
@@ -459,13 +459,13 @@ export default function CommercialDashboard() {
             </div>
             {kioskObjectif && (
               <div className="mt-3">
-                <div className="h-3 w-full overflow-hidden rounded-md bg-zinc-100">
+                <div className="h-3 w-full overflow-hidden rounded-md bg-[#F6F9FB]">
                   <div
-                    className="h-full rounded-md bg-emerald-600 transition-all"
+                    className="h-full rounded-md bg-[#009EFB] transition-all"
                     style={{ width: `${Math.min(100, objectifProgress)}%` }}
                   />
                 </div>
-                <p className="mt-1 text-right text-xs font-semibold text-zinc-500 [font-variant-numeric:tabular-nums]">
+                <p className="mt-1 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
                   {objectifProgress.toFixed(1)} %
                 </p>
               </div>
@@ -500,7 +500,7 @@ export default function CommercialDashboard() {
         </div>
       ) : (
         <PosCard>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[#1C5376]">
             Sélectionnez un kiosque ci-dessus pour voir ses clients, ses ventes récentes et son objectif.
           </p>
         </PosCard>

@@ -24,13 +24,13 @@ const buttonVariants = cva(
           'border border-success bg-success text-success-foreground shadow-none hover:bg-success-hover focus:bg-success-hover active:bg-success-active',
         warning:
           'border border-warning bg-warning text-warning-foreground shadow-none hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
-        // POS design system: high-visibility utilitarian variants
+        // POS design system: Diam'o brand variants (water blue / deep blue / soft red)
         'pos-primary':
-          'min-h-12 bg-emerald-600 text-white hover:bg-emerald-700 focus:bg-emerald-700',
+          'min-h-12 bg-[#009EFB] text-white hover:bg-[#007EC8] focus:bg-[#007EC8]',
         'pos-destructive':
-          'min-h-12 bg-red-600 text-white hover:bg-red-700 focus:bg-red-700',
+          'min-h-12 bg-[#FF4949] text-white hover:bg-[#dc2626] focus:bg-[#dc2626]',
         'pos-secondary':
-          'min-h-12 border-2 border-zinc-300 bg-white text-zinc-700 hover:border-zinc-900',
+          'min-h-12 border-2 border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#12364D]',
       },
       size: {
         default: 'h-11 px-4 py-2',

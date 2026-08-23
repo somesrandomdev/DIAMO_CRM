@@ -334,7 +334,7 @@ export default function AdminUsersPage() {
               <div className="mt-3 max-w-md space-y-1.5">
                 <label
                   htmlFor="edit-kiosque"
-                  className="text-xs font-semibold uppercase tracking-wider text-zinc-500"
+                  className="text-xs font-semibold uppercase tracking-wider text-[#1C5376]"
                 >
                   Kiosque assigné *
                 </label>
@@ -370,7 +370,7 @@ export default function AdminUsersPage() {
                     </PosChip>
                   ))}
                 </div>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-[#1C5376]">
                   Un commercial n'a pas de kiosque attitré : il supervise uniquement les kiosques
                   sélectionnés ci-dessus (lecture et correction des ventes, clients et objectifs).
                   Enregistrer pour appliquer.

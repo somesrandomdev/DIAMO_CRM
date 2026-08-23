@@ -24,8 +24,8 @@ export function SaleCheckout({
   itemCount,
 }: SaleCheckoutProps) {
   return (
-    <div className="sticky bottom-3 z-10 rounded-lg border-2 border-zinc-300 bg-white p-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+    <div className="sticky bottom-3 z-10 rounded-lg border-2 border-[#DCE1E5] bg-white p-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#1C5376]">
         {clientSelected ? 'Client selectionne' : 'Client requis'} -{' '}
         {itemCount > 0 ? `${itemCount} article(s)` : 'Panier vide'}
       </p>

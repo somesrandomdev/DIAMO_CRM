@@ -140,7 +140,7 @@ export function EditClientDialog({ open, onOpenChange, client, onSaved }: EditCl
               onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
             />
           </div>
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
               Annuler
@@ -295,7 +295,7 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
               />
             </div>
           </div>
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
               Annuler
@@ -385,7 +385,7 @@ export function EditObjectifDialog({ open, onOpenChange, objectif, kiosqueNom, o
               onChange={(event) => setCaCible(event.target.value)}
             />
           </div>
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
               Annuler
@@ -491,7 +491,7 @@ export function CreateObjectifDialog({ open, onOpenChange, kiosqueId, kiosqueNom
               autoFocus
             />
           </div>
-          {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
               Annuler

@@ -251,8 +251,8 @@ export default function ClientsByKiosk() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-zinc-900">Clients par kiosque</h1>
-        <p className="text-sm text-zinc-500">Répartition et activité des clients à travers le réseau.</p>
+        <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Clients par kiosque</h1>
+        <p className="text-sm text-[#1C5376]">Répartition et activité des clients à travers le réseau.</p>
       </div>
 
       {selectedKiosque ? (
@@ -263,7 +263,7 @@ export default function ClientsByKiosk() {
               Tous les kiosques
             </Button>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8AA3B5]" />
               <PosInput
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -312,11 +312,11 @@ export default function ClientsByKiosk() {
                     key={kiosque.id}
                     type="button"
                     onClick={() => setSelectedKiosqueId(kiosque.id)}
-                    className="rounded-lg border border-zinc-200 bg-white p-4 text-left transition-colors hover:border-zinc-900 active:scale-[0.98]"
+                    className="rounded-lg border border-[#DCE1E5] bg-white p-4 text-left transition-colors hover:border-[#12364D] active:scale-[0.98]"
                     aria-label={`Voir les clients de ${kiosque.nom}`}
                   >
-                    <p className="text-lg font-bold tracking-tight text-zinc-900">{kiosque.nom}</p>
-                    <dl className="mt-3 space-y-1 text-sm text-zinc-600">
+                    <p className="text-lg font-bold tracking-tight text-[#12364D]">{kiosque.nom}</p>
+                    <dl className="mt-3 space-y-1 text-sm text-[#1C5376]">
                       <div className="flex justify-between gap-2">
                         <dt>Clients</dt>
                         <dd className="font-semibold [font-variant-numeric:tabular-nums]">{clientCount}</dd>

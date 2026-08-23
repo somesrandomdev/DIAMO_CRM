@@ -20,11 +20,11 @@ export function SaleRecentList({ sales }: { sales: RecentSale[] }) {
           {sales.map((sale) => (
             <div
               key={sale.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-zinc-200 bg-zinc-50 p-3"
+              className="flex items-center justify-between gap-3 rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-zinc-900">{sale.client_nom}</p>
-                <p className="truncate text-xs text-zinc-500">
+                <p className="truncate text-sm font-semibold text-[#12364D]">{sale.client_nom}</p>
+                <p className="truncate text-xs text-[#1C5376]">
                   {sale.offre_nom} - {new Date(sale.created_at).toLocaleDateString('fr-FR')}{' '}
                   {new Date(sale.created_at).toLocaleTimeString('fr-FR', {
                     hour: '2-digit',
@@ -32,14 +32,14 @@ export function SaleRecentList({ sales }: { sales: RecentSale[] }) {
                   })}
                 </p>
               </div>
-              <p className="shrink-0 font-mono text-sm font-bold text-zinc-900 [font-variant-numeric:tabular-nums]">
+              <p className="shrink-0 font-mono text-sm font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
                 {toCFA(sale.montant_total)}
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <EmptyState title="Aucune vente recente" className="border-0 bg-zinc-50 p-4" />
+        <EmptyState title="Aucune vente recente" className="border-0 bg-[#F6F9FB] p-4" />
       )}
     </PosCard>
   )
