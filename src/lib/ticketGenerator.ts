@@ -1,37 +1,24 @@
 import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
+
+type Row =
+  | { t: 'title'; text: string }
+  | { t: 'center'; text: string; small?: boolean }
+  | { t: 'kv'; label: string; value: string }
+  | { t: 'hr' }
+  | { t: 'total'; text: string }
+
+const ROW_HEIGHT: Record<Row['t'], number> = {
+  title: 6,
+  center: 4.5,
+  kv: 4.5,
+  hr: 2.5,
+  total: 5.5,
+}
 
 /**
- * Creates a DOM element with text content set via textContent (never innerHTML),
- * which prevents XSS regardless of what the text contains.
+ * Draws the receipt as text straight into the PDF — nothing user-controlled
+ * ever touches the DOM or innerHTML, so it is XSS-safe by construction.
  */
-function el(
-  tag: string,
-  opts: { text?: string; style?: string; bold?: boolean } = {}
-): HTMLElement {
-  const node = document.createElement(tag)
-  if (opts.text !== undefined) node.textContent = opts.text
-  if (opts.style) node.style.cssText = opts.style
-  if (opts.bold && node instanceof HTMLElement) node.style.fontWeight = 'bold'
-  return node
-}
-
-function hr(): HTMLHRElement {
-  const node = document.createElement('hr')
-  node.style.cssText = 'margin:8px 0; border:none; border-top:1px solid #ccc'
-  return node
-}
-
-function labelLine(label: string, value: string): HTMLParagraphElement {
-  const p = document.createElement('p')
-  p.style.cssText = 'margin:2px 0'
-  const strong = document.createElement('strong')
-  strong.textContent = `${label} : `
-  p.appendChild(strong)
-  p.appendChild(document.createTextNode(value))
-  return p
-}
-
 export async function generateTicket(data: {
   client: { nom: string; telephone?: string }
   offres?: Array<{
@@ -48,74 +35,84 @@ export async function generateTicket(data: {
 }) {
   const { client, offres, offre, quantite, montant_total, kiosque } = data
 
-  const container = document.createElement('div')
-  container.style.cssText =
-    'width:300px; padding:16px; font-family:Arial,sans-serif; font-size:12px; background:#fff; color:#000'
+  const rows: Row[] = [{ t: 'title', text: kiosque.nom || "Diam'o" }]
+  if (kiosque.adresse) rows.push({ t: 'center', text: kiosque.adresse })
+  rows.push({ t: 'hr' })
 
-  const wrap = document.createElement('div')
-  wrap.style.textAlign = 'center'
+  rows.push({ t: 'kv', label: 'Client', value: client.nom })
+  if (client.telephone) rows.push({ t: 'kv', label: 'Tél', value: client.telephone })
+  rows.push({ t: 'hr' })
 
-  // Header
-  wrap.appendChild(el('h2', { text: kiosque.nom || "Diam'o", style: 'margin:0 0 4px' }))
-  if (kiosque.adresse) {
-    wrap.appendChild(el('p', { text: kiosque.adresse, style: 'margin:0 0 4px' }))
-  }
-  wrap.appendChild(hr())
-
-  // Client
-  wrap.appendChild(labelLine('Client', client.nom))
-  if (client.telephone) {
-    wrap.appendChild(labelLine('Tél', client.telephone))
-  }
-  wrap.appendChild(hr())
-
-  // Offer lines
   if (offres && offres.length > 0) {
     for (const item of offres) {
-      wrap.appendChild(labelLine('Offre', item.nom))
-      if (item.volume_ml) {
-        wrap.appendChild(labelLine('Volume', `${item.volume_ml} ml`))
-      }
-      wrap.appendChild(labelLine('Qté', String(item.quantite)))
-      wrap.appendChild(labelLine('Prix unitaire', `${item.prix} CFA`))
-      wrap.appendChild(labelLine('Sous-total', `${item.sous_total} CFA`))
-      wrap.appendChild(hr())
+      rows.push({ t: 'kv', label: 'Offre', value: item.nom })
+      if (item.volume_ml) rows.push({ t: 'kv', label: 'Volume', value: `${item.volume_ml} ml` })
+      rows.push({ t: 'kv', label: 'Qté', value: String(item.quantite) })
+      rows.push({ t: 'kv', label: 'Prix unitaire', value: `${item.prix} CFA` })
+      rows.push({ t: 'kv', label: 'Sous-total', value: `${item.sous_total} CFA` })
+      rows.push({ t: 'hr' })
     }
   } else if (offre) {
-    wrap.appendChild(labelLine('Offre', offre.nom))
-    if (offre.volume_ml) {
-      wrap.appendChild(labelLine('Volume', `${offre.volume_ml} ml`))
-    }
-    wrap.appendChild(labelLine('Qté', String(quantite ?? 1)))
-    wrap.appendChild(hr())
+    rows.push({ t: 'kv', label: 'Offre', value: offre.nom })
+    if (offre.volume_ml) rows.push({ t: 'kv', label: 'Volume', value: `${offre.volume_ml} ml` })
+    rows.push({ t: 'kv', label: 'Qté', value: String(quantite ?? 1) })
+    rows.push({ t: 'hr' })
   }
 
-  // Total
-  const totalP = el('p', { style: 'font-size:14px; margin:4px 0' })
-  const totalStrong = document.createElement('strong')
-  totalStrong.textContent = `Total : ${montant_total} CFA`
-  totalP.appendChild(totalStrong)
-  wrap.appendChild(totalP)
+  rows.push({ t: 'total', text: `Total : ${montant_total} CFA` })
+  rows.push({ t: 'center', text: 'Merci pour votre confiance !', small: true })
 
-  wrap.appendChild(
-    el('p', {
-      text: 'Merci pour votre confiance !',
-      style: 'font-size:10px; color:#555; margin-top:6px',
-    })
-  )
+  const width = 80
+  const margin = 6
+  const height = 8 + rows.reduce((h, r) => h + ROW_HEIGHT[r.t], 0) + 2
 
-  container.appendChild(wrap)
-  document.body.appendChild(container)
-
-  const canvas = await html2canvas(container, { scale: 2 })
-  document.body.removeChild(container)
-
+  // jsPDF normalizes portrait/landscape by swapping dimensions, so pick the
+  // orientation that already matches to keep the page exactly [width, height].
   const pdf = new jsPDF({
-    orientation: 'p',
+    orientation: height >= width ? 'p' : 'l',
     unit: 'mm',
-    format: [canvas.height / 4, canvas.width / 4],
+    format: [width, height],
   })
-  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width / 4, canvas.height / 4)
+
+  let y = 8
+  for (const row of rows) {
+    switch (row.t) {
+      case 'title':
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(13)
+        pdf.setTextColor(0)
+        pdf.text(row.text, width / 2, y, { align: 'center' })
+        break
+      case 'center':
+        pdf.setFont('helvetica', 'normal')
+        pdf.setFontSize(row.small ? 8 : 9)
+        pdf.setTextColor(row.small ? 85 : 0)
+        pdf.text(row.text, width / 2, y, { align: 'center' })
+        break
+      case 'kv': {
+        const label = `${row.label} :`
+        pdf.setFontSize(9)
+        pdf.setTextColor(0)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text(label, margin, y)
+        pdf.setFont('helvetica', 'normal')
+        pdf.text(row.value, margin + pdf.getTextWidth(label) + 2, y)
+        break
+      }
+      case 'hr':
+        pdf.setDrawColor(170)
+        pdf.setLineWidth(0.2)
+        pdf.line(margin, y - 1.5, width - margin, y - 1.5)
+        break
+      case 'total':
+        pdf.setFont('helvetica', 'bold')
+        pdf.setFontSize(11)
+        pdf.setTextColor(0)
+        pdf.text(row.text, margin, y)
+        break
+    }
+    y += ROW_HEIGHT[row.t]
+  }
 
   return pdf.output('datauristring')
 }
