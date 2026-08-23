@@ -205,11 +205,14 @@ export default function CommercialDashboard() {
     : 0
 
   const venteOffreOptions = useMemo(() => {
-    if (!editingVente) return drillOffres
+    // A vente can reference an inactive (or missing) offre that isn't in the
+    // active-offres list; add it as a fallback option so the select can still
+    // display it. ventes.offre_id is nullable — skip the fallback then.
+    if (!editingVente?.offre_id) return drillOffres
     if (drillOffres.some((offre) => offre.id === editingVente.offre_id)) return drillOffres
     const sale = sales.find((row) => row.id === editingVente.id)
     const nom = firstJoined(sale?.offres)?.nom ?? 'Offre actuelle'
-    return [...drillOffres, { id: editingVente.offre_id as string, nom }]
+    return [...drillOffres, { id: editingVente.offre_id, nom }]
   }, [drillOffres, editingVente, sales])
 
   const clientColumns: DataTableColumn<ClientRow>[] = [

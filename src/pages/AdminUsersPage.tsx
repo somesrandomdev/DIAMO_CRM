@@ -95,7 +95,24 @@ export default function AdminUsersPage() {
       .select('kiosque_id')
       .eq('commercial_id', form.id)
       .then(({ data, error }) => {
-        if (cancelled || error) return
+        if (cancelled) return
+        if (error) {
+          // Never swallow this: unreadable assignments mean the save diff
+          // would run against an empty baseline and insert duplicates.
+          console.error('Failed to load kiosk assignments:', {
+            code: error.code,
+            message: error.message,
+            hint: error.hint,
+          })
+          showToast({
+            type: 'error',
+            title: 'Affectations illisibles',
+            message:
+              "Les kiosques actuels de ce commercial n'ont pas pu être chargés " +
+              '(erreur ci-dessus dans la console). Réessayez.',
+          })
+          return
+        }
         const ids = (data ?? []).map((row) => row.kiosque_id as string)
         setAssignedKiosqueIds(ids)
         setInitialAssignedIds(ids)
@@ -103,7 +120,7 @@ export default function AdminUsersPage() {
     return () => {
       cancelled = true
     }
-  }, [form.id, form.role])
+  }, [form.id, form.role, showToast])
 
   const save = async () => {
     if (!form.id) return
@@ -170,37 +187,61 @@ export default function AdminUsersPage() {
         : initialAssignedIds
 
     if (added.length > 0 || removed.length > 0) {
-      const operations = []
+      // Delete is awaited BEFORE the insert: running them concurrently can
+      // race inside PostgREST, and a sequential failure is debuggable (you
+      // know exactly which half died).
+      let syncError: { code?: string; message: string; details?: unknown; hint?: string } | null =
+        null
+
       if (removed.length > 0) {
-        operations.push(
-          supabase
-            .from('commercials_kiosques')
-            .delete()
-            .eq('commercial_id', form.id)
-            .in('kiosque_id', removed)
-        )
-      }
-      if (added.length > 0) {
-        operations.push(
-          supabase
-            .from('commercials_kiosques')
-            .insert(added.map((kiosqueId) => ({ commercial_id: form.id, kiosque_id: kiosqueId })))
-        )
+        const { error } = await supabase
+          .from('commercials_kiosques')
+          .delete()
+          .eq('commercial_id', form.id)
+          .in('kiosque_id', removed)
+        if (error) syncError = error
       }
 
-      const results = await Promise.all(operations)
-      const failure = results.find((result) => result.error)?.error
-      if (failure) {
-        console.error('Kiosk assignment sync failed:', failure)
+      if (!syncError && added.length > 0) {
+        // id and assigned_at are omitted on purpose: both are auto-generated
+        // (gen_random_uuid / default) on the table.
+        const { error } = await supabase
+          .from('commercials_kiosques')
+          .insert(
+            added.map((kiosqueId) => ({ commercial_id: form.id, kiosque_id: kiosqueId }))
+          )
+        if (error) syncError = error
+      }
+
+      if (syncError) {
+        console.error('Kiosk assignment sync failed:', {
+          code: syncError.code,
+          message: syncError.message,
+          details: syncError.details,
+          hint: syncError.hint,
+          added,
+          removed,
+        })
         showToast({
           type: 'error',
           title: 'Affectation impossible',
-          message: "Les kiosques supervisés n'ont pas pu être enregistrés. Veuillez réessayer.",
+          message:
+            syncError.code === '23505'
+              ? 'Ce commercial supervise déjà un de ces kiosques (doublon).'
+              : syncError.code === '42501'
+                ? "Permission refusée : la politique RLS sur commercials_kiosques bloque l'écriture admin."
+                : "Les kiosques supervisés n'ont pas pu être enregistrés. Veuillez réessayer.",
         })
-      } else {
-        showToast({ type: 'success', title: 'Kiosques assignés', message: 'Kiosques assignés avec succès' })
-        setInitialAssignedIds(form.role === 'commercial' ? assignedKiosqueIds : [])
+        // Keep the edit form and its chip selections open so the admin can
+        // retry once the cause is fixed; the diff still recomputes from the
+        // pre-save baseline.
+        await load()
+        setIsSaving(false)
+        return
       }
+
+      showToast({ type: 'success', title: 'Kiosques assignés', message: 'Kiosques assignés avec succès' })
+      setInitialAssignedIds(form.role === 'commercial' ? assignedKiosqueIds : [])
     }
 
     await load()
