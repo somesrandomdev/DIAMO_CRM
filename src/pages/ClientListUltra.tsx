@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { useToast } from '@/components/Toast'
+import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -35,6 +38,7 @@ type Vente = {
 
 export default function ClientListUltra({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
+  const { showToast } = useToast()
   const [clients, setClients] = useState<Client[]>([])
   const [selected, setSelected] = useState<Client | null>(null)
   const [ventes, setVentes] = useState<Vente[]>([])
@@ -85,6 +89,17 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
   function handleSelect(client: Client) {
     setSelected(client)
     loadVentes(client.id)
+  }
+
+  const downloadTicket = async (lien: string) => {
+    const ok = await openTicketDownload(lien)
+    if (!ok) {
+      showToast({
+        type: 'error',
+        title: 'Ticket indisponible',
+        message: 'Erreur lors du téléchargement du ticket.',
+      })
+    }
   }
 
   return (
@@ -180,8 +195,19 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                         <p className="mt-1 text-[11px] text-text-secondary">
                           Qte {vente.quantite || 1}
                           {vente.offre?.volume_ml ? ` - ${vente.offre.volume_ml / 1000}L` : ''}
-                          {vente.lien_ticket ? ' - Ticket disponible' : ''}
                         </p>
+                        {vente.lien_ticket && (
+                          <Button
+                            type="button"
+                            variant="pos-secondary"
+                            className="mt-2 w-full"
+                            aria-label="Télécharger le ticket"
+                            onClick={() => downloadTicket(vente.lien_ticket as string)}
+                          >
+                            <Download className="h-4 w-4" />
+                            Télécharger le ticket
+                          </Button>
+                        )}
                       </div>
                     ))}
                     {ventes.length > 5 && (

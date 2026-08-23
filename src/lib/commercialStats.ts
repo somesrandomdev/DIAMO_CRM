@@ -113,3 +113,50 @@ export function startOfMonth(date: Date = new Date()): Date {
   result.setHours(0, 0, 0, 0)
   return result
 }
+
+export interface CommercialDailyPoint {
+  date: string
+  label: string
+  ca: number
+  moyenne7j: number
+}
+
+/**
+ * Continuous N-day aggregate revenue series (zero-filled so the chart never
+ * shows gaps) with a 7-day rolling average. Shape-compatible with the
+ * dashboard's DailyRevenuePoint.
+ */
+export function buildDailySeries(
+  sales: Array<{ created_at: string; montant_total: number | null }>,
+  days: number = 30,
+  now: Date = new Date()
+): CommercialDailyPoint[] {
+  const byDay = new Map<string, number>()
+  for (const sale of sales) {
+    const key = sale.created_at.slice(0, 10)
+    byDay.set(key, (byDay.get(key) ?? 0) + (sale.montant_total ?? 0))
+  }
+
+  // Local-time YYYY-MM-DD keys: toISOString() would shift to UTC and can
+  // land an evening sale on the previous day.
+  const base: Array<{ date: string; label: string; ca: number }> = []
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date(now)
+    date.setDate(now.getDate() - offset)
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    base.push({
+      date: key,
+      label: new Date(`${key}T00:00:00`).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+      }),
+      ca: byDay.get(key) ?? 0,
+    })
+  }
+
+  return base.map((point, index) => {
+    const window = base.slice(Math.max(0, index - 6), index + 1)
+    const average = window.reduce((sum, item) => sum + item.ca, 0) / window.length
+    return { ...point, moyenne7j: Math.round(average) }
+  })
+}

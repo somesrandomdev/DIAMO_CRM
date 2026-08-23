@@ -26,7 +26,7 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
     useVenteStore()
 
   const form = useVenteForm()
-  const { dailyStats, recentSales, loadVenteSummary } = useSaleSummary()
+  const { dailyStats, recentSales, dailyGoal, loadVenteSummary } = useSaleSummary()
   const { uploadTicket } = useTicketUpload()
 
   const [showAddClient, setShowAddClient] = useState(false)
@@ -113,7 +113,11 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
         onSync={queue.flushQueue}
       />
 
-      <SaleSummary todaySalesCount={dailyStats.ventes} todayRevenue={dailyStats.ca} />
+      <SaleSummary
+        todaySalesCount={dailyStats.ventes}
+        todayRevenue={dailyStats.ca}
+        dailyGoal={dailyGoal}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <SaleClientPicker

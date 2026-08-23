@@ -28,6 +28,7 @@ import { useToast } from '@/components/Toast'
 import { chartTheme } from '@/lib/chartTheme'
 import { supabase } from '@/lib/supabase'
 import {
+  buildDailySeries,
   clientPurchaseMap,
   computeCommercialKpis,
   monthKey,
@@ -37,6 +38,8 @@ import {
   type CommercialSale,
   type SupervisedKiosque,
 } from '@/lib/commercialStats'
+import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
+import type { DailyRevenuePoint } from '@/components/dashboard/useAdminDashboard'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCFACompact, toCFA } from '@/utils/price'
 
@@ -45,6 +48,12 @@ interface SaleRow extends CommercialSale {
   quantite: number
   clients?: { nom?: string } | { nom?: string }[] | null
   offres?: { nom?: string } | { nom?: string }[] | null
+}
+
+interface TrendRow {
+  kiosque_id: string
+  montant_total: number | null
+  created_at: string
 }
 
 interface ClientRow extends CommercialClient {
@@ -78,6 +87,7 @@ export default function CommercialDashboard() {
   const [editingVente, setEditingVente] = useState<EditableVente | null>(null)
   const [editingObjectif, setEditingObjectif] = useState<EditableObjectif | null>(null)
   const [isCreatingObjectif, setIsCreatingObjectif] = useState(false)
+  const [dailySeries, setDailySeries] = useState<DailyRevenuePoint[]>([])
 
   const load = useCallback(async () => {
     if (!profile?.id) {
@@ -103,6 +113,7 @@ export default function CommercialDashboard() {
       setSales([])
       setClients([])
       setObjectifs([])
+      setDailySeries([])
       setIsLoading(false)
       return
     }
@@ -116,12 +127,15 @@ export default function CommercialDashboard() {
       setSales([])
       setClients([])
       setObjectifs([])
+      setDailySeries([])
       setIsLoading(false)
       return
     }
 
     const kiosqueIds = supervised.map((kiosque) => kiosque.id)
-    const [salesResult, clientsResult, objectifsResult] = await Promise.all([
+    const trendStart = new Date()
+    trendStart.setDate(trendStart.getDate() - 29)
+    const [salesResult, clientsResult, objectifsResult, trendResult] = await Promise.all([
       supabase
         .from('ventes')
         .select('id, kiosque_id, client_id, offre_id, quantite, montant_total, created_at, clients(nom), offres(nom)')
@@ -138,9 +152,15 @@ export default function CommercialDashboard() {
         .select('id, kiosque_id, ca_cible')
         .in('kiosque_id', kiosqueIds)
         .eq('mois', monthKey()),
+      supabase
+        .from('ventes')
+        .select('kiosque_id, montant_total, created_at')
+        .in('kiosque_id', kiosqueIds)
+        .gte('created_at', trendStart.toISOString()),
     ])
 
-    const failure = salesResult.error ?? clientsResult.error ?? objectifsResult.error
+    const failure =
+      salesResult.error ?? clientsResult.error ?? objectifsResult.error ?? trendResult.error
     if (failure) {
       console.error('Error loading supervisor dashboard:', failure)
       showToast({
@@ -153,6 +173,7 @@ export default function CommercialDashboard() {
     setSales((salesResult.data ?? []) as SaleRow[])
     setClients((clientsResult.data ?? []) as ClientRow[])
     setObjectifs((objectifsResult.data ?? []) as ObjectifRow[])
+    setDailySeries(buildDailySeries((trendResult.data ?? []) as TrendRow[]))
     setIsLoading(false)
   }, [profile?.id, showToast])
 
@@ -188,6 +209,20 @@ export default function CommercialDashboard() {
   const kpis = useMemo(() => computeCommercialKpis(kiosques, sales, clients), [kiosques, sales, clients])
   const perKiosk = useMemo(() => revenuePerKiosk(kiosques, sales), [kiosques, sales])
   const purchases = useMemo(() => clientPurchaseMap(sales), [sales])
+
+  /** Month CA vs target per kiosk, worst progress first — the at-a-glance
+   *  underperformer list. Kiosques without a target sort last. */
+  const objectifRows = useMemo(() => {
+    const targetByKiosque = new Map(objectifs.map((objectif) => [objectif.kiosque_id, objectif.ca_cible]))
+    return kiosques
+      .map((kiosque) => {
+        const revenue = perKiosk.find((row) => row.kiosqueId === kiosque.id)?.revenue ?? 0
+        const target = targetByKiosque.get(kiosque.id) ?? null
+        const pct = target !== null && target > 0 ? (revenue / target) * 100 : null
+        return { kiosque, revenue, target, pct }
+      })
+      .sort((a, b) => (a.pct ?? -1) - (b.pct ?? -1))
+  }, [kiosques, objectifs, perKiosk])
 
   const selectedKiosque = kiosques.find((kiosque) => kiosque.id === selectedKiosqueId) ?? null
   const kioskSales = useMemo(
@@ -371,6 +406,53 @@ export default function CommercialDashboard() {
         <PosKpi label="Clients" value={kpis.clientsCount} sub="Tous kiosques confondus" />
         <PosKpi label="Kiosques" value={kpis.kiosquesCount} sub="Sous supervision" />
       </div>
+
+      <PosCard>
+        <PosLabel className="mb-3">Tendance 30 jours (tous kiosques)</PosLabel>
+        <DailyTrendChart data={dailySeries} />
+      </PosCard>
+
+      <PosCard>
+        <PosLabel className="mb-3">Objectifs en cours</PosLabel>
+        {objectifRows.every((row) => row.target === null) ? (
+          <p className="text-sm text-[#1C5376]">
+            Aucun objectif défini ce mois. Ouvrez un kiosque ci-dessous pour en définir un.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {objectifRows.map((row) => (
+              <button
+                key={row.kiosque.id}
+                type="button"
+                className="block min-h-12 w-full text-left"
+                aria-label={`Voir le détail de ${row.kiosque.nom}`}
+                onClick={() => setSelectedKiosqueId(row.kiosque.id)}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-[#12364D]">{row.kiosque.nom}</span>
+                  <span className="text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                    {toCFA(row.revenue)}
+                    {row.target !== null ? ` / ${toCFA(row.target)}` : ' - Non défini'}
+                  </span>
+                </div>
+                {row.pct !== null && (
+                  <div className="mt-1.5">
+                    <div className="h-2.5 w-full overflow-hidden rounded-md bg-[#E3F3FE]">
+                      <div
+                        className="h-full rounded-md bg-[#009EFB] transition-all"
+                        style={{ width: `${Math.min(100, row.pct)}%` }}
+                      />
+                    </div>
+                    <p className="mt-0.5 text-right text-[11px] font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                      {row.pct.toFixed(0)} %
+                    </p>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </PosCard>
 
       <PosCard>
         <PosLabel className="mb-3">Revenus par kiosque (mois en cours)</PosLabel>

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { monthKey } from '@/lib/commercialStats'
 import type { RecentSale } from './SaleRecentList'
 
 function joinedName(value: { nom?: string } | { nom?: string }[] | null | undefined): string {
@@ -7,16 +8,23 @@ function joinedName(value: { nom?: string } | { nom?: string }[] | null | undefi
   return value?.nom ?? 'Inconnu'
 }
 
+function daysInCurrentMonth(): number {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+}
+
 /** Today's stats bar + the five most recent sales of a kiosk. */
 export function useSaleSummary() {
   const [dailyStats, setDailyStats] = useState({ ventes: 0, ca: 0 })
   const [recentSales, setRecentSales] = useState<RecentSale[]>([])
+  /** Monthly objectif for the kiosk; null when none is defined. */
+  const [monthlyTarget, setMonthlyTarget] = useState<number | null>(null)
 
   const loadVenteSummary = useCallback(async (kiosqueId: string) => {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    const [todayResult, recentResult] = await Promise.all([
+    const [todayResult, recentResult, objectifResult] = await Promise.all([
       supabase
         .from('ventes')
         .select('id, montant_total')
@@ -28,6 +36,12 @@ export function useSaleSummary() {
         .eq('kiosque_id', kiosqueId)
         .order('created_at', { ascending: false })
         .limit(5),
+      supabase
+        .from('objectifs')
+        .select('ca_cible')
+        .eq('kiosque_id', kiosqueId)
+        .eq('mois', monthKey())
+        .maybeSingle(),
     ])
 
     if (todayResult.error) {
@@ -53,7 +67,18 @@ export function useSaleSummary() {
         }))
       )
     }
+
+    if (objectifResult.error) {
+      console.error('Error loading objectif:', objectifResult.error)
+      setMonthlyTarget(null)
+    } else {
+      setMonthlyTarget(objectifResult.data?.ca_cible ?? null)
+    }
   }, [])
 
-  return { dailyStats, recentSales, loadVenteSummary }
+  /** The month's target spread over its days; null hides the goal bar. */
+  const dailyGoal =
+    monthlyTarget !== null ? Math.round(monthlyTarget / daysInCurrentMonth()) : null
+
+  return { dailyStats, recentSales, dailyGoal, loadVenteSummary }
 }

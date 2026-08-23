@@ -7,6 +7,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useToast } from '@/components/Toast'
+import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -17,6 +19,7 @@ interface Sale {
   id: string
   created_at: string
   montant_total: number
+  lien_ticket?: string | null
   client: { nom: string } | null
   offre: { nom: string } | null
 }
@@ -38,6 +41,7 @@ function formatSaleTime(value: string) {
 
 export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
+  const { showToast } = useToast()
   const [sales, setSales] = useState<Sale[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -68,7 +72,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
 
       let query = supabase
         .from('ventes')
-        .select('id, created_at, montant_total, client:clients(nom), offre:offres(nom)')
+        .select('id, created_at, montant_total, lien_ticket, client:clients(nom), offre:offres(nom)')
         .order('created_at', { ascending: false })
       if (scope) {
         query = query.in('kiosque_id', scope)
@@ -123,6 +127,17 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     )
   }
 
+  const downloadTicket = async (lien: string) => {
+    const ok = await openTicketDownload(lien)
+    if (!ok) {
+      showToast({
+        type: 'error',
+        title: 'Ticket indisponible',
+        message: 'Erreur lors du téléchargement du ticket.',
+      })
+    }
+  }
+
   const paginatedSales = filteredSales.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -147,6 +162,28 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     { key: 'offre', header: 'Offre', render: (sale) => sale.offre?.nom || 'Offre inconnue', sortValue: (sale) => sale.offre?.nom ?? '' },
     { key: 'montant', header: 'Montant', align: 'right', render: (sale) => <span className="font-mono">{toCFA(sale.montant_total)}</span>, sortValue: (sale) => sale.montant_total },
     { key: 'id', header: 'ID vente', render: (sale) => <span className="font-mono text-[11px] text-text-secondary">{sale.id.slice(0, 8)}</span>, sortValue: (sale) => sale.id },
+    {
+      key: 'ticket',
+      header: 'Ticket',
+      align: 'right',
+      render: (sale) =>
+        sale.lien_ticket ? (
+          <Button
+            type="button"
+            variant="pos-secondary"
+            size="icon"
+            className="h-12 w-12 min-h-12"
+            aria-label="Télécharger le ticket"
+            onClick={(event) => {
+              event.stopPropagation()
+              downloadTicket(sale.lien_ticket as string)
+            }}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        ) : null,
+      sortValue: (sale) => (sale.lien_ticket ? 1 : 0),
+    },
   ]
 
   return (
@@ -233,6 +270,17 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                       <span className="text-text-secondary">Montant</span>
                       <span className="text-right font-mono font-semibold text-blue">{toCFA(sale.montant_total)}</span>
                     </div>
+                    {sale.lien_ticket && (
+                      <Button
+                        type="button"
+                        variant="pos-secondary"
+                        className="mt-3 w-full"
+                        onClick={() => downloadTicket(sale.lien_ticket as string)}
+                      >
+                        <Download className="h-4 w-4" />
+                        Télécharger le ticket
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
