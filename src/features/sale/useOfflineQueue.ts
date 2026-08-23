@@ -6,6 +6,7 @@ import {
   queueOfflineSale,
   type QueuedSale,
 } from '@/utils/offlineSalesQueue'
+import { flushOfflineClients } from '@/utils/offlineClientQueue'
 
 interface UseOfflineQueueOptions {
   /** Called after a successful flush so the caller can refresh its summary. */
@@ -42,7 +43,18 @@ export function useOfflineQueue({ onFlushed }: UseOfflineQueueOptions = {}) {
 
     setIsSyncingQueue(true)
     try {
-      const result = await flushOfflineSales()
+      // Clients first: offline-recorded sales reference them by placeholder
+      // id and can only insert once the real uuid exists.
+      const clientResult = await flushOfflineClients()
+      if (clientResult.flushed > 0) {
+        showToast({
+          type: 'success',
+          title: 'Clients synchronises',
+          message: `${clientResult.flushed} client(s) hors ligne synchronise(s).`,
+        })
+      }
+
+      const result = await flushOfflineSales(clientResult.clientIdMap)
       await refreshQueuedCount()
 
       if (result.flushed > 0) {

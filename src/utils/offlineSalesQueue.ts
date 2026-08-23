@@ -1,5 +1,6 @@
 import { openDB, type DBSchema } from 'idb'
 import { supabase } from '@/lib/supabase'
+import type { QueuedClient } from './offlineClientQueue'
 
 export interface QueuedSaleItem {
   offre_id: string
@@ -16,7 +17,7 @@ export interface QueuedSale {
   queued_at: string
 }
 
-interface OfflineSalesDB extends DBSchema {
+interface OfflineDB extends DBSchema {
   sales: {
     key: string
     value: QueuedSale
@@ -24,17 +25,26 @@ interface OfflineSalesDB extends DBSchema {
       'by-queued-at': string
     }
   }
+  // v2: clients created while offline. The offline_id key lets queued sales
+  // reference these clients and be re-pointed to the real uuid on flush.
+  offlineClients: {
+    key: string
+    value: QueuedClient
+  }
 }
 
 const DB_NAME = 'diamo-offline-sales'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
-async function getDb() {
-  return openDB<OfflineSalesDB>(DB_NAME, DB_VERSION, {
+export async function getDb() {
+  return openDB<OfflineDB>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains('sales')) {
         const store = db.createObjectStore('sales', { keyPath: 'id' })
         store.createIndex('by-queued-at', 'queued_at')
+      }
+      if (!db.objectStoreNames.contains('offlineClients')) {
+        db.createObjectStore('offlineClients', { keyPath: 'offline_id' })
       }
     },
   })
@@ -76,15 +86,31 @@ export interface FlushOfflineSalesResult {
   failed: number
 }
 
-export async function flushOfflineSales(): Promise<FlushOfflineSalesResult> {
+export async function flushOfflineSales(
+  clientIdMap: Record<string, string> = {}
+): Promise<FlushOfflineSalesResult> {
   const queuedSales = await getQueuedSales()
   let flushed = 0
   let failed = 0
 
   for (const sale of queuedSales) {
+    // Sales recorded against a client created offline carry a placeholder
+    // 'offline-...' id; resolve it to the real uuid from the client flush.
+    // Unresolvable sales stay queued for the next attempt rather than
+    // becoming orphan rows.
+    const clientId = sale.client_id.startsWith('offline-')
+      ? clientIdMap[sale.client_id]
+      : sale.client_id
+
+    if (!clientId) {
+      failed += 1
+      console.warn('Offline sale skipped: its offline client has not synced yet', sale.id)
+      continue
+    }
+
     const rows = sale.items.map((item) => ({
       kiosque_id: sale.kiosque_id,
-      client_id: sale.client_id,
+      client_id: clientId,
       offre_id: item.offre_id,
       quantite: item.quantite,
       montant_total: item.montant_total,

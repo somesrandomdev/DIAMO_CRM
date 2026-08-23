@@ -14,6 +14,7 @@ import {
   Target,
   TrendingUp,
   Users,
+  WifiOff,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -84,7 +85,21 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine
+  )
   const role = profile?.role
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   useEffect(() => {
     setMobileOpen(false)
@@ -199,6 +214,12 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {!isOnline && (
+          <div className="sticky top-0 z-50 flex min-h-10 items-center justify-center gap-2 bg-[#EB4D5E] px-3 py-2 text-center text-[12px] font-semibold text-white">
+            <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Mode hors ligne — Les ventes seront synchronisées automatiquement
+          </div>
+        )}
         <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4">
           <Button
             type="button"

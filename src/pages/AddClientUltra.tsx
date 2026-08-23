@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
+import { useToast } from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
+import { enqueueClient, type QueuedClient } from '@/utils/offlineClientQueue'
 import { useAuthStore } from '@/stores/authStore'
 
 export default function AddClientUltra({ onDone }: { onDone: (newId: string) => void }) {
   const { profile } = useAuthStore()
+  const { showToast } = useToast()
   const [formData, setFormData] = useState({
     nom_prenom: '',
     telephone: '',
@@ -27,6 +30,39 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
 
     if (!formData.nom_prenom.trim() || !formData.telephone.trim()) {
       setError('Nom et telephone sont obligatoires.')
+      return
+    }
+
+    // Offline: queue the client in IndexedDB with a placeholder id. Offline
+    // sales can reference that id; the flush re-points them to the real uuid.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (!profile?.kiosque_id) {
+        setError('Impossible de creer un client hors ligne sans kiosque attribue.')
+        return
+      }
+
+      const queuedClient: QueuedClient = {
+        offline_id: `offline-${crypto.randomUUID()}`,
+        kiosque_id: profile.kiosque_id,
+        nom: formData.nom_prenom.trim(),
+        telephone: formData.telephone.trim(),
+        email: formData.email.trim() || null,
+        localite: formData.localite.trim(),
+        type_client: formData.type_client,
+        nombre_personnes: formData.nombre_personnes ? parseInt(formData.nombre_personnes, 10) : null,
+        contenant_prefere: formData.contenant_prefere,
+        preference_contact: formData.preference_contact,
+        accepte_offres: formData.accepte_offres,
+        created_at: new Date().toISOString(),
+      }
+
+      await enqueueClient(queuedClient)
+      showToast({
+        type: 'info',
+        title: 'Client enregistre hors ligne',
+        message: 'Il sera synchronise a la reconnexion.',
+      })
+      onDone(queuedClient.offline_id)
       return
     }
 
