@@ -8,13 +8,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Edit, Store } from 'lucide-react'
+import { Edit, Store, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PosCard, PosChip, PosKpi, PosLabel } from '@/components/pos'
 import {
+  CreateObjectifDialog,
   EditClientDialog,
   EditObjectifDialog,
   EditVenteDialog,
@@ -76,6 +77,7 @@ export default function CommercialDashboard() {
   const [editingClient, setEditingClient] = useState<EditableClient | null>(null)
   const [editingVente, setEditingVente] = useState<EditableVente | null>(null)
   const [editingObjectif, setEditingObjectif] = useState<EditableObjectif | null>(null)
+  const [isCreatingObjectif, setIsCreatingObjectif] = useState(false)
 
   const load = useCallback(async () => {
     if (!profile?.id) {
@@ -430,7 +432,7 @@ export default function CommercialDashboard() {
                   <p className="mt-1 text-sm text-zinc-500">Aucun objectif défini pour ce mois.</p>
                 )}
               </div>
-              {kioskObjectif && (
+              {kioskObjectif ? (
                 <Button
                   type="button"
                   variant="pos-secondary"
@@ -440,6 +442,15 @@ export default function CommercialDashboard() {
                 >
                   <Edit className="h-4 w-4" />
                   Modifier l'objectif
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="pos-secondary"
+                  onClick={() => setIsCreatingObjectif(true)}
+                >
+                  <Target className="h-4 w-4" />
+                  Définir un objectif
                 </Button>
               )}
             </div>
@@ -513,6 +524,15 @@ export default function CommercialDashboard() {
         kiosqueNom={selectedKiosque?.nom ?? ''}
         onSaved={load}
       />
+      {selectedKiosqueId && (
+        <CreateObjectifDialog
+          open={isCreatingObjectif}
+          onOpenChange={setIsCreatingObjectif}
+          kiosqueId={selectedKiosqueId}
+          kiosqueNom={selectedKiosque?.nom ?? ''}
+          onCreated={load}
+        />
+      )}
     </div>
   )
 }
