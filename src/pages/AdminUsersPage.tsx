@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { PosChip, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import type { UserRole } from '@/stores/authStore'
@@ -44,6 +45,8 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [assignedKiosqueIds, setAssignedKiosqueIds] = useState<string[]>([])
+  const [initialAssignedIds, setInitialAssignedIds] = useState<string[]>([])
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -76,7 +79,31 @@ export default function AdminUsersPage() {
     return new Map(kiosques.map((kiosque) => [kiosque.id, kiosque.nom]))
   }, [kiosques])
 
-  const resetForm = () => setForm({ id: '', username: '', role: 'fontainier', kiosque_id: '' })
+  const resetForm = () => {
+    setForm({ id: '', username: '', role: 'fontainier', kiosque_id: '' })
+    setAssignedKiosqueIds([])
+    setInitialAssignedIds([])
+  }
+
+  // Whenever the edit form targets a commercial, load their current kiosk
+  // assignments so the toggle chips start from the database state.
+  useEffect(() => {
+    if (!form.id || form.role !== 'commercial') return
+    let cancelled = false
+    supabase
+      .from('commercials_kiosques')
+      .select('kiosque_id')
+      .eq('commercial_id', form.id)
+      .then(({ data, error }) => {
+        if (cancelled || error) return
+        const ids = (data ?? []).map((row) => row.kiosque_id as string)
+        setAssignedKiosqueIds(ids)
+        setInitialAssignedIds(ids)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [form.id, form.role])
 
   const save = async () => {
     if (!form.id) return
@@ -130,6 +157,51 @@ export default function AdminUsersPage() {
       title: 'Utilisateur mis à jour',
       message: `Les informations de ${trimmedUsername} ont été enregistrées.`,
     })
+
+    // Sync the supervised-kiosk assignments. Junction rows ARE supervisor
+    // grants, so they are also stripped when the user stops being a commercial.
+    const added =
+      form.role === 'commercial'
+        ? assignedKiosqueIds.filter((id) => !initialAssignedIds.includes(id))
+        : []
+    const removed =
+      form.role === 'commercial'
+        ? initialAssignedIds.filter((id) => !assignedKiosqueIds.includes(id))
+        : initialAssignedIds
+
+    if (added.length > 0 || removed.length > 0) {
+      const operations = []
+      if (removed.length > 0) {
+        operations.push(
+          supabase
+            .from('commercials_kiosques')
+            .delete()
+            .eq('commercial_id', form.id)
+            .in('kiosque_id', removed)
+        )
+      }
+      if (added.length > 0) {
+        operations.push(
+          supabase
+            .from('commercials_kiosques')
+            .insert(added.map((kiosqueId) => ({ commercial_id: form.id, kiosque_id: kiosqueId })))
+        )
+      }
+
+      const results = await Promise.all(operations)
+      const failure = results.find((result) => result.error)?.error
+      if (failure) {
+        console.error('Kiosk assignment sync failed:', failure)
+        showToast({
+          type: 'error',
+          title: 'Affectation impossible',
+          message: "Les kiosques supervisés n'ont pas pu être enregistrés. Veuillez réessayer.",
+        })
+      } else {
+        showToast({ type: 'success', title: 'Kiosques assignés', message: 'Kiosques assignés avec succès' })
+        setInitialAssignedIds(form.role === 'commercial' ? assignedKiosqueIds : [])
+      }
+    }
 
     await load()
     resetForm()
@@ -225,6 +297,32 @@ export default function AdminUsersPage() {
                 Enregistrer
               </Button>
             </div>
+            {form.role === 'commercial' && (
+              <div className="mt-4 space-y-2">
+                <PosLabel>Kiosques supervisés</PosLabel>
+                <div className="flex flex-wrap gap-2">
+                  {kiosques.map((kiosque) => (
+                    <PosChip
+                      key={kiosque.id}
+                      active={assignedKiosqueIds.includes(kiosque.id)}
+                      onClick={() =>
+                        setAssignedKiosqueIds((current) =>
+                          current.includes(kiosque.id)
+                            ? current.filter((id) => id !== kiosque.id)
+                            : [...current, kiosque.id]
+                        )
+                      }
+                    >
+                      {kiosque.nom}
+                    </PosChip>
+                  ))}
+                </div>
+                <p className="text-xs text-zinc-500">
+                  Le commercial supervise les kiosques sélectionnés : lecture et correction des
+                  ventes, clients et objectifs. Enregistrer pour appliquer.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
