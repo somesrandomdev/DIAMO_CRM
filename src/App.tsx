@@ -152,21 +152,6 @@ export default function App() {
               {/* Shared Routes */}
               <Route path="/profil" element={<ProfilePage />} />
 
-              {/* Legacy Routes for Compatibility */}
-              <Route path="/nouvelle-vente" element={<Navigate to="/ventes/nouvelle" replace />} />
-              <Route path="/mes-clients" element={<Navigate to="/clients" replace />} />
-              <Route path="/mes-ventes" element={<Navigate to="/ventes/historique" replace />} />
-              <Route path="/ventes" element={<Navigate to="/ventes/historique" replace />} />
-              <Route path="/analytics" element={<Navigate to="/analyses" replace />} />
-              <Route path="/historique" element={<Navigate to="/ventes/historique" replace />} />
-              <Route path="/stats" element={<Navigate to="/ventes/historique" replace />} />
-              <Route path="/vue-globale" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/kiosques" element={<Navigate to="/admin/kiosques" replace />} />
-              <Route path="/offres" element={<Navigate to="/admin/offres" replace />} />
-              <Route path="/tarifs" element={<Navigate to="/admin/tarifs" replace />} />
-              <Route path="/objectifs" element={<Navigate to="/admin/objectifs" replace />} />
-              <Route path="/utilisateurs" element={<Navigate to="/admin/utilisateurs" replace />} />
-              <Route path="/donnees-globales" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="*" element={<Navigate to={getRoleHome(profile.role)} replace />} />
             </Routes>
