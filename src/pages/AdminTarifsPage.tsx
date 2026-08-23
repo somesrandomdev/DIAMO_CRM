@@ -7,7 +7,9 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { supabase } from '@/lib/supabase'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useToast } from '@/components/Toast'
+import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
 
 interface KiosqueRow {
@@ -29,12 +31,15 @@ interface TarifRow {
 }
 
 export default function AdminTarifsPage() {
+  const { showToast } = useToast()
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
   const [offres, setOffres] = useState<OffreRow[]>([])
   const [tarifs, setTarifs] = useState<TarifRow[]>([])
   const [form, setForm] = useState({ id: '', kiosque_id: '', offre_id: '', prix: '', est_actif: true })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [deleting, setDeleting] = useState<TarifRow | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -82,18 +87,47 @@ export default function AdminTarifsPage() {
       ? await supabase.from('offres_kiosque').update(payload).eq('id', form.id)
       : await supabase.from('offres_kiosque').insert(payload)
 
-    if (result.error) console.error('Error saving tarif:', result.error)
+    if (result.error) {
+      console.error('Error saving tarif:', result.error)
+      showToast({
+        type: 'error',
+        title: 'Enregistrement impossible',
+        message: handleSupabaseError(result.error),
+      })
+    } else {
+      const label = `${names.kiosques.get(form.kiosque_id) ?? 'Kiosque'} - ${names.offres.get(form.offre_id) ?? 'Offre'}`
+      showToast({
+        type: 'success',
+        title: form.id ? 'Tarif mis à jour' : 'Tarif créé',
+        message: `${label} : ${toCFA(prix)}.`,
+      })
+    }
+
     await load()
     resetForm()
     setIsSaving(false)
   }
 
-  const remove = async (id: string) => {
-    setIsSaving(true)
-    const { error } = await supabase.from('offres_kiosque').delete().eq('id', id)
-    if (error) console.error('Error deleting tarif:', error)
+  const confirmDelete = async () => {
+    if (!deleting) return
+
+    setIsDeleting(true)
+    const { error } = await supabase.from('offres_kiosque').delete().eq('id', deleting.id)
+    setIsDeleting(false)
+
+    if (error) {
+      console.error('Error deleting tarif:', error)
+      showToast({
+        type: 'error',
+        title: 'Suppression impossible',
+        message: handleSupabaseError(error),
+      })
+      return
+    }
+
+    showToast({ type: 'success', title: 'Tarif supprimé', message: 'Le tarif a été supprimé.' })
+    setDeleting(null)
     await load()
-    setIsSaving(false)
   }
 
   const columns: DataTableColumn<TarifRow>[] = [
@@ -132,7 +166,7 @@ export default function AdminTarifsPage() {
             aria-label="Supprimer"
             onClick={(event) => {
               event.stopPropagation()
-              remove(row.id)
+              setDeleting(row)
             }}
           >
             <Trash2 className="h-4 w-4" />
@@ -188,10 +222,90 @@ export default function AdminTarifsPage() {
           ) : tarifs.length === 0 ? (
             <EmptyState title="Aucun tarif" description="Associez une offre a un kiosque pour lancer les ventes." />
           ) : (
-            <DataTable columns={columns} data={tarifs} getRowKey={(row) => row.id} />
+            <>
+              <div className="hidden sm:block">
+                <DataTable columns={columns} data={tarifs} getRowKey={(row) => row.id} />
+              </div>
+
+              {/* Mobile: one card per kiosk with its price list */}
+              <div className="space-y-3 sm:hidden">
+                {kiosques
+                  .filter((kiosque) => tarifs.some((tarif) => tarif.kiosque_id === kiosque.id))
+                  .map((kiosque) => (
+                    <div key={kiosque.id} className="rounded-md border border-border bg-surface p-3">
+                      <p className="text-[14px] font-semibold text-text">{kiosque.nom}</p>
+                      <div className="mt-2 space-y-2">
+                        {tarifs
+                          .filter((tarif) => tarif.kiosque_id === kiosque.id)
+                          .map((tarif) => (
+                            <div
+                              key={tarif.id}
+                              className="flex items-center justify-between gap-2 rounded-md bg-muted p-2"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-[13px] font-medium text-text">
+                                  {names.offres.get(tarif.offre_id) ?? 'Inconnue'}
+                                </p>
+                                <p className="mt-0.5 flex items-center gap-2">
+                                  <span className="font-mono text-[13px] font-semibold text-blue [font-variant-numeric:tabular-nums]">
+                                    {toCFA(tarif.prix)}
+                                  </span>
+                                  <StatusBadge variant={tarif.est_actif ? 'success' : 'neutral'}>
+                                    {tarif.est_actif ? 'Actif' : 'Inactif'}
+                                  </StatusBadge>
+                                </p>
+                              </div>
+                              <div className="flex shrink-0 gap-2">
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="icon"
+                                  className="h-12 w-12 min-h-12"
+                                  aria-label={`Modifier le tarif ${names.offres.get(tarif.offre_id) ?? ''} de ${kiosque.nom}`}
+                                  onClick={() =>
+                                    setForm({
+                                      id: tarif.id,
+                                      kiosque_id: tarif.kiosque_id,
+                                      offre_id: tarif.offre_id,
+                                      prix: tarif.prix.toString(),
+                                      est_actif: tarif.est_actif,
+                                    })
+                                  }
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  className="h-12 w-12 min-h-12"
+                                  aria-label={`Supprimer le tarif ${names.offres.get(tarif.offre_id) ?? ''} de ${kiosque.nom}`}
+                                  onClick={() => setDeleting(tarif)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Supprimer ce tarif ?"
+        description={`${names.kiosques.get(deleting?.kiosque_id ?? '') ?? ''} - ${
+          names.offres.get(deleting?.offre_id ?? '') ?? ''
+        } n'aura plus de prix défini. Cette action est irréversible.`}
+        isBusy={isDeleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

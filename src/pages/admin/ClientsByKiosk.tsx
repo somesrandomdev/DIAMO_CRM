@@ -281,7 +281,62 @@ export default function ClientsByKiosk() {
             {kioskClients.length === 0 ? (
               <EmptyState title="Aucun client trouvé" className="border-0" />
             ) : (
-              <DataTable columns={detailColumns} data={kioskClients} getRowKey={(client) => client.id} />
+              <>
+                <div className="hidden sm:block">
+                  <DataTable columns={detailColumns} data={kioskClients} getRowKey={(client) => client.id} />
+                </div>
+
+                {/* Mobile: client cards, phone is tap-to-call */}
+                <div className="space-y-3 sm:hidden">
+                  {kioskClients.map((client) => (
+                    <div key={client.id} className="rounded-lg border border-[#DCE1E5] bg-white p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-[15px] font-bold text-[#12364D]">{client.nom}</p>
+                          {client.telephone ? (
+                            <a
+                              href={`tel:${client.telephone}`}
+                              className="mt-0.5 inline-flex min-h-12 items-center text-sm font-semibold text-[#009EFB] underline"
+                            >
+                              {client.telephone}
+                            </a>
+                          ) : (
+                            <p className="mt-0.5 text-xs text-[#1C5376]">Téléphone non renseigné</p>
+                          )}
+                        </div>
+                        <p className="shrink-0 text-right text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                          {toCFA(spentByClient.get(client.id) ?? 0)}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-xs text-[#1C5376]">
+                        {client.type_client || '—'} - {client.nombre_personnes ?? '—'} pers.
+                      </p>
+                      <div className="mt-3 flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="pos-secondary"
+                          size="icon"
+                          className="h-12 w-12 min-h-12"
+                          aria-label={`Modifier ${client.nom}`}
+                          onClick={() => setEditingClient(client)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="pos-destructive"
+                          size="icon"
+                          className="h-12 w-12 min-h-12"
+                          aria-label={`Supprimer ${client.nom}`}
+                          onClick={() => setDeletingClient(client)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </PosCard>
         </>

@@ -195,7 +195,58 @@ export default function RapportsPage() {
           ) : rows.length === 0 ? (
             <EmptyState title="Aucun rapport" description="Les rapports apparaitront apres les premieres ventes du mois." />
           ) : (
-            <DataTable columns={columns} data={rows} getRowKey={(row) => row.kiosque.id} />
+            <>
+              <div className="hidden sm:block">
+                <DataTable columns={columns} data={rows} getRowKey={(row) => row.kiosque.id} />
+              </div>
+
+              {/* Mobile: one card per kiosk, CA vs target up front */}
+              <div className="space-y-3 sm:hidden">
+                {rows.map((row) => (
+                  <div key={row.kiosque.id} className="rounded-md border border-border bg-surface p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[14px] font-semibold text-text">{row.kiosque.nom}</p>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="icon"
+                        className="h-12 w-12 min-h-12"
+                        aria-label={`Exporter le rapport de ${row.kiosque.nom} en PDF`}
+                        onClick={() => exportPdf(row)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="mt-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-mono text-[16px] font-bold text-blue [font-variant-numeric:tabular-nums]">
+                          {toCFA(row.ca)}
+                        </span>
+                        <span className="text-[11px] text-text-secondary [font-variant-numeric:tabular-nums]">
+                          / {row.target > 0 ? toCFA(row.target) : 'Non defini'}
+                        </span>
+                      </div>
+                      <ProgressBar value={row.progress} />
+                      <p className="mt-1 text-right text-[10.5px] text-text-secondary [font-variant-numeric:tabular-nums]">
+                        {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'} - {row.ventes} vente(s)
+                      </p>
+                    </div>
+
+                    <dl className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
+                      <div>
+                        <dt className="text-text-secondary">Top client</dt>
+                        <dd className="font-medium text-text">{row.topClient}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-text-secondary">Meilleure offre</dt>
+                        <dd className="font-medium text-text">{row.bestOffer}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

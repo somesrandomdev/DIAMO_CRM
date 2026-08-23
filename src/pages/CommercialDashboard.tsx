@@ -477,11 +477,56 @@ export default function CommercialDashboard() {
             {kioskClients.length === 0 ? (
               <EmptyState title="Aucun client pour ce kiosque" className="border-0" />
             ) : (
-              <DataTable
-                columns={clientColumns}
-                data={kioskClients}
-                getRowKey={(client) => client.id}
-              />
+              <>
+                <div className="hidden sm:block">
+                  <DataTable
+                    columns={clientColumns}
+                    data={kioskClients}
+                    getRowKey={(client) => client.id}
+                  />
+                </div>
+
+                {/* Mobile: client cards */}
+                <div className="space-y-3 sm:hidden">
+                  {kioskClients.map((client) => {
+                    const stats = purchases.get(client.id)
+                    return (
+                      <div
+                        key={client.id}
+                        className="flex items-start justify-between gap-2 rounded-lg border border-[#DCE1E5] bg-white p-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[15px] font-bold text-[#12364D]">{client.nom}</p>
+                          <p className="mt-0.5 text-xs text-[#1C5376]">
+                            {client.telephone || 'Téléphone non renseigné'}
+                          </p>
+                          <p className="mt-0.5 text-xs text-[#1C5376]">
+                            Dernier achat :{' '}
+                            {stats?.lastPurchase
+                              ? new Date(stats.lastPurchase).toLocaleDateString('fr-FR')
+                              : '—'}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <p className="text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                            {toCFA(stats?.totalSpent ?? 0)}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="pos-secondary"
+                            size="icon"
+                            className="h-12 w-12 min-h-12"
+                            aria-label={`Modifier ${client.nom}`}
+                            onClick={() => setEditingClient(client)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
             )}
           </PosCard>
 
@@ -490,11 +535,57 @@ export default function CommercialDashboard() {
             {kioskSales.length === 0 ? (
               <EmptyState title="Aucune vente ce mois" className="border-0" />
             ) : (
-              <DataTable
-                columns={saleColumns}
-                data={kioskSales}
-                getRowKey={(sale) => sale.id}
-              />
+              <>
+                <div className="hidden sm:block">
+                  <DataTable
+                    columns={saleColumns}
+                    data={kioskSales}
+                    getRowKey={(sale) => sale.id}
+                  />
+                </div>
+
+                {/* Mobile: sale cards */}
+                <div className="space-y-3 sm:hidden">
+                  {kioskSales.map((sale) => (
+                    <div
+                      key={sale.id}
+                      className="flex items-start justify-between gap-2 rounded-lg border border-[#DCE1E5] bg-white p-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-semibold text-[#12364D]">
+                          {new Date(sale.created_at).toLocaleDateString('fr-FR')}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-[#1C5376]">
+                          {firstJoined(sale.clients)?.nom ?? '—'} - {firstJoined(sale.offres)?.nom ?? '—'}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <p className="text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                          {toCFA(sale.montant_total ?? 0)}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="pos-secondary"
+                          size="icon"
+                          className="h-12 w-12 min-h-12"
+                          aria-label="Modifier la vente"
+                          onClick={() =>
+                            setEditingVente({
+                              id: sale.id,
+                              quantite: sale.quantite,
+                              montant_total: sale.montant_total ?? 0,
+                              offre_id: sale.offre_id,
+                              client_id: sale.client_id,
+                            })
+                          }
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </PosCard>
         </div>

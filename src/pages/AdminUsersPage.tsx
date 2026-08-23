@@ -393,7 +393,48 @@ export default function AdminUsersPage() {
           ) : profiles.length === 0 ? (
             <EmptyState title="Aucun utilisateur" />
           ) : (
-            <DataTable columns={columns} data={profiles} getRowKey={(row) => row.id} />
+            <>
+              <div className="hidden sm:block">
+                <DataTable columns={columns} data={profiles} getRowKey={(row) => row.id} />
+              </div>
+
+              {/* Mobile: user cards */}
+              <div className="space-y-3 sm:hidden">
+                {profiles.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex items-start justify-between gap-2 rounded-md border border-border bg-surface p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-semibold text-text">{row.username}</p>
+                      <div className="mt-1">
+                        <StatusBadge variant={roleVariant(row.role)}>{roleLabels[row.role]}</StatusBadge>
+                      </div>
+                      <p className="mt-1.5 text-[12px] text-text-secondary">
+                        {row.kiosque_id ? kioskNameById.get(row.kiosque_id) ?? 'Inconnu' : 'Global'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="icon"
+                      className="h-12 w-12 min-h-12"
+                      aria-label={`Modifier ${row.username}`}
+                      onClick={() =>
+                        setForm({
+                          id: row.id,
+                          username: row.username,
+                          role: row.role,
+                          kiosque_id: row.kiosque_id ?? '',
+                        })
+                      }
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
