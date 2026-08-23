@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Search, Trash2, Edit, Users } from 'lucide-react'
+import { ArrowLeft, Search, Trash2, Edit, Upload, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PosCard, PosInput, PosKpi, PosLabel } from '@/components/pos'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { ClientImportDialog } from '@/components/ClientImportDialog'
 import { EditClientDialog, type EditableClient } from '@/components/EditDialogs'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
@@ -47,6 +48,7 @@ export default function ClientsByKiosk() {
   const [search, setSearch] = useState('')
   const [editingClient, setEditingClient] = useState<EditableClient | null>(null)
   const [deletingClient, setDeletingClient] = useState<ClientRow | null>(null)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   const load = useCallback(async () => {
@@ -262,17 +264,34 @@ export default function ClientsByKiosk() {
               <ArrowLeft className="h-4 w-4" />
               Tous les kiosques
             </Button>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8AA3B5]" />
-              <PosInput
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Rechercher par nom ou téléphone"
-                className="pl-9 sm:w-80"
-                aria-label="Rechercher un client"
-              />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="pos-secondary"
+                onClick={() => setIsImportOpen(true)}
+              >
+                <Upload className="h-4 w-4" />
+                Importer des clients
+              </Button>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8AA3B5]" />
+                <PosInput
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Rechercher par nom ou téléphone"
+                  className="pl-9 sm:w-80"
+                  aria-label="Rechercher un client"
+                />
+              </div>
             </div>
           </div>
+
+          <ClientImportDialog
+            open={isImportOpen}
+            onOpenChange={setIsImportOpen}
+            kiosqueId={selectedKiosque.id}
+            onImported={load}
+          />
 
           <PosCard>
             <PosLabel className="mb-3">

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { ClientImportDialog } from '@/components/ClientImportDialog'
 import { useToast } from '@/components/Toast'
 import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
@@ -42,6 +43,22 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
   const [clients, setClients] = useState<Client[]>([])
   const [selected, setSelected] = useState<Client | null>(null)
   const [ventes, setVentes] = useState<Vente[]>([])
+  const [isImportOpen, setIsImportOpen] = useState(false)
+
+  const reloadClients = () => {
+    if (!profile) return
+    resolveKioskScope(profile).then((scope) => {
+      if (scope === null) {
+        supabase.from('clients').select('*').then(({ data }) => setClients((data || []) as Client[]))
+      } else if (scope.length > 0) {
+        supabase
+          .from('clients')
+          .select('*')
+          .in('kiosque_id', scope)
+          .then(({ data }) => setClients((data || []) as Client[]))
+      }
+    })
+  }
 
   useEffect(() => {
     if (!profile) return
@@ -109,8 +126,27 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
           <h1 className="text-[15px] font-semibold text-text">Mes clients</h1>
           <p className="text-[12px] text-text-secondary">Fiches clients et historique des achats.</p>
         </div>
-        <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
+        <div className="flex gap-2">
+          {profile?.kiosque_id && (
+            <Button
+              type="button"
+              variant="pos-secondary"
+              onClick={() => setIsImportOpen(true)}
+            >
+              <Upload className="h-4 w-4" />
+              Importer
+            </Button>
+          )}
+          <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
+        </div>
       </div>
+
+      <ClientImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        kiosqueId={profile?.kiosque_id ?? ''}
+        onImported={reloadClients}
+      />
 
       {clients.length === 0 ? (
         <EmptyState title="Aucun client" description="Les clients crees depuis les ventes apparaitront ici." />
