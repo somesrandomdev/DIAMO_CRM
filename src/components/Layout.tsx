@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   Store,
   Target,
+  TrendingUp,
   Users,
   X,
 } from 'lucide-react'
@@ -39,6 +40,7 @@ const navigationItems: NavItem[] = [
   { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-4 w-4" />, path: '/admin/utilisateurs', roles: ['administrateur'], section: 'Principal' },
   { id: 'clients-par-kiosque', label: 'Clients par kiosque', icon: <Building2 className="h-4 w-4" />, path: '/admin/clients-par-kiosque', roles: ['administrateur'], section: 'Principal' },
   { id: 'objectifs', label: 'Objectifs', icon: <Target className="h-4 w-4" />, path: '/admin/objectifs', roles: ['administrateur'], section: 'Rapports' },
+  { id: 'performance', label: 'Performance', icon: <TrendingUp className="h-4 w-4" />, path: '/admin/performance', roles: ['administrateur'], section: 'Rapports' },
   { id: 'rapports', label: 'Rapports', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['administrateur'], section: 'Rapports' },
   { id: 'profil-admin', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['administrateur'], section: 'Systeme' },
 

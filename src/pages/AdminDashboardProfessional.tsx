@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel'
 import { BigKPICard } from '@/components/dashboard/BigKPICard'
+import { ChurnAlertCard } from '@/components/dashboard/ChurnAlertCard'
 import { KiosqueTable } from '@/components/dashboard/KiosqueTable'
 import { useAdminDashboard } from '@/components/dashboard/useAdminDashboard'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
@@ -132,6 +133,8 @@ export default function AdminDashboardProfessional() {
           {error}
         </div>
       )}
+
+      {!isLoading && <ChurnAlertCard />}
 
       {/* ── KPI row ── */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

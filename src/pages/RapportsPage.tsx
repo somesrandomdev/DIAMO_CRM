@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import jsPDF from 'jspdf'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
-import { ProgressBar } from '@/components/ui/progress-bar'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PosCard, PosLabel } from '@/components/pos'
+import { chartTheme } from '@/lib/chartTheme'
+import { monthKey, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
-import { toCFA } from '@/utils/price'
+import { formatCFACompact, toCFA } from '@/utils/price'
 
 interface KiosqueRow {
   id: string
@@ -23,6 +26,7 @@ interface VenteRow {
   offre_id: string | null
   montant_total: number | null
   quantite: number | null
+  created_at: string
   offres?: { nom?: string } | { nom?: string }[] | null
   clients?: { nom?: string } | { nom?: string }[] | null
 }
@@ -37,50 +41,57 @@ interface ReportRow {
   bestOffer: string
 }
 
-interface ObjectiveRow {
-  kiosque_id: string
-  ca_cible: number
-}
+type Period = 'current' | 'previous' | 'quarter'
+
+const periodOptions: { value: Period; label: string }[] = [
+  { value: 'current', label: 'Ce mois' },
+  { value: 'previous', label: 'Mois dernier' },
+  { value: 'quarter', label: '3 derniers mois' },
+]
 
 function joinedName(value: { nom?: string } | { nom?: string }[] | null | undefined): string {
   if (Array.isArray(value)) return value[0]?.nom ?? 'Inconnu'
   return value?.nom ?? 'Inconnu'
 }
 
+function monthKeyOffset(monthsAgo: number): string {
+  const now = new Date()
+  return monthKey(new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1))
+}
+
 export default function RapportsPage() {
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
   const [sales, setSales] = useState<VenteRow[]>([])
-  const [objectives, setObjectives] = useState<Record<string, number>>({})
+  const [objectivesByMonth, setObjectivesByMonth] = useState<Record<string, number>>({})
+  const [period, setPeriod] = useState<Period>('current')
   const [isLoading, setIsLoading] = useState(true)
 
   const load = useCallback(async () => {
     setIsLoading(true)
 
-    const monthStart = new Date()
-    monthStart.setDate(1)
-    monthStart.setHours(0, 0, 0, 0)
-
-    const monthValue = monthStart.toISOString().slice(0, 10)
+    const now = new Date()
+    const quarterStart = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 2, 1))
 
     const [kiosquesResult, salesResult, objectivesResult] = await Promise.all([
       supabase.from('kiosques').select('id, nom, adresse').order('nom'),
       supabase
         .from('ventes')
-        .select('id, kiosque_id, client_id, offre_id, montant_total, quantite, offres(nom), clients(nom)')
-        .gte('created_at', monthStart.toISOString()),
+        .select('id, kiosque_id, client_id, offre_id, montant_total, quantite, created_at, offres(nom), clients(nom)')
+        .gte('created_at', quarterStart.toISOString()),
       supabase
         .from('objectifs')
-        .select('kiosque_id, ca_cible')
-        .eq('mois', monthValue),
+        .select('kiosque_id, mois, ca_cible')
+        .in('mois', [monthKeyOffset(0), monthKeyOffset(1), monthKeyOffset(2)]),
     ])
 
     setKiosques((kiosquesResult.data ?? []) as KiosqueRow[])
     setSales((salesResult.data ?? []) as VenteRow[])
+
     const nextObjectives: Record<string, number> = {}
-    ;((objectivesResult.data ?? []) as ObjectiveRow[]).forEach((objective) => {
-      nextObjectives[objective.kiosque_id] = objective.ca_cible
-    })
-    setObjectives(nextObjectives)
+    for (const objective of (objectivesResult.data ?? []) as Array<{ kiosque_id: string; mois: string; ca_cible: number }>) {
+      nextObjectives[`${objective.kiosque_id}|${objective.mois}`] = objective.ca_cible
+    }
+    setObjectivesByMonth(nextObjectives)
     setIsLoading(false)
   }, [])
 
@@ -88,11 +99,44 @@ export default function RapportsPage() {
     load()
   }, [load])
 
+  const scoped = useMemo(() => {
+    const now = new Date()
+    let from: Date
+    let toExclusive: Date | null = null
+    if (period === 'current') {
+      from = startOfMonth(now)
+    } else if (period === 'previous') {
+      from = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 1, 1))
+      toExclusive = startOfMonth(now)
+    } else {
+      from = startOfMonth(new Date(now.getFullYear(), now.getMonth() - 2, 1))
+    }
+
+    const fromIso = from.toISOString()
+    const toIso = toExclusive?.toISOString() ?? null
+    return sales.filter(
+      (sale) => sale.created_at >= fromIso && (toIso === null || sale.created_at < toIso)
+    )
+  }, [period, sales])
+
+  const targetFor = useCallback(
+    (kiosqueId: string): number => {
+      if (period === 'current') return objectivesByMonth[`${kiosqueId}|${monthKeyOffset(0)}`] ?? 0
+      if (period === 'previous') return objectivesByMonth[`${kiosqueId}|${monthKeyOffset(1)}`] ?? 0
+      // Quarter: sum of the three months' targets (undefined months count 0)
+      return [0, 1, 2].reduce(
+        (sum, monthsAgo) => sum + (objectivesByMonth[`${kiosqueId}|${monthKeyOffset(monthsAgo)}`] ?? 0),
+        0
+      )
+    },
+    [objectivesByMonth, period]
+  )
+
   const rows = useMemo<ReportRow[]>(() => {
     return kiosques.map((kiosque) => {
-      const kioskSales = sales.filter((sale) => sale.kiosque_id === kiosque.id)
+      const kioskSales = scoped.filter((sale) => sale.kiosque_id === kiosque.id)
       const ca = kioskSales.reduce((sum, sale) => sum + (sale.montant_total ?? 0), 0)
-      const target = objectives[kiosque.id] ?? 0
+      const target = targetFor(kiosque.id)
       const clientMap = new Map<string, number>()
       const offerMap = new Map<string, number>()
 
@@ -113,16 +157,18 @@ export default function RapportsPage() {
         bestOffer: Array.from(offerMap.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'Aucune',
       }
     })
-  }, [kiosques, objectives, sales])
+  }, [kiosques, scoped, targetFor])
+
+  const periodLabel = periodOptions.find((option) => option.value === period)?.label ?? ''
 
   const exportPdf = (row: ReportRow) => {
     const pdf = new jsPDF()
     const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
     pdf.setFontSize(18)
-    pdf.text(`Rapport mensuel - ${row.kiosque.nom}`, 16, 20)
+    pdf.text(`Rapport - ${row.kiosque.nom}`, 16, 20)
     pdf.setFontSize(11)
-    pdf.text(monthLabel, 16, 30)
+    pdf.text(`${periodLabel} (${monthLabel})`, 16, 30)
     pdf.text(row.kiosque.adresse || 'Adresse non renseignee', 16, 38)
 
     pdf.setFontSize(14)
@@ -173,18 +219,89 @@ export default function RapportsPage() {
     },
   ]
 
+  const chartRows = rows
+    .map((row) => ({
+      nom: row.kiosque.nom,
+      ca: row.ca,
+      ventes: row.ventes,
+      pct: row.target > 0 ? Math.round(row.progress) : 0,
+    }))
+    .filter((row) => row.ca > 0 || row.ventes > 0)
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-[15px] font-semibold text-text">Rapports</h1>
-        <p className="text-[12px] text-text-secondary">Exports mensuels par kiosque.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[15px] font-semibold text-text">Rapports</h1>
+          <p className="text-[12px] text-text-secondary">Comparaison des kiosques et exports par periode.</p>
+        </div>
+        <div className="inline-flex rounded-md border border-border bg-surface text-[12px] font-medium">
+          {periodOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setPeriod(option.value)}
+              className={
+                period === option.value
+                  ? 'rounded-md bg-primary px-3 py-2 text-white'
+                  : 'min-h-12 px-3 py-2 text-text-secondary hover:text-text sm:min-h-0'
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Kiosk-to-kiosk comparisons — horizontal bars for mobile readability */}
+      {chartRows.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-3">
+          <PosCard>
+            <PosLabel className="mb-3">Chiffre d'affaires par kiosque</PosLabel>
+            <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
+              <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickFormatter={(value) => formatCFACompact(Number(value))} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+                <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [toCFA(Number(value)), 'CA']} />
+                <Bar dataKey="ca" fill="#009EFB" radius={[0, 4, 4, 0]} barSize={16} />
+              </BarChart>
+            </ResponsiveContainer>
+          </PosCard>
+
+          <PosCard>
+            <PosLabel className="mb-3">Realisation des objectifs (%)</PosLabel>
+            <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
+              <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickFormatter={(value) => `${value} %`} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+                <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Realisation']} />
+                <Bar dataKey="pct" fill="#12364D" radius={[0, 4, 4, 0]} barSize={16} />
+              </BarChart>
+            </ResponsiveContainer>
+          </PosCard>
+
+          <PosCard>
+            <PosLabel className="mb-3">Volume de ventes par kiosque</PosLabel>
+            <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
+              <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+                <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
+                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [value, 'Ventes']} />
+                <Bar dataKey="ventes" fill="#007EC8" radius={[0, 4, 4, 0]} barSize={16} />
+              </BarChart>
+            </ResponsiveContainer>
+          </PosCard>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Rapport mensuel
+            Rapport par kiosque - {periodLabel}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -192,8 +309,8 @@ export default function RapportsPage() {
             <div className="space-y-3">
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-16 rounded-lg" />)}
             </div>
-          ) : rows.length === 0 ? (
-            <EmptyState title="Aucun rapport" description="Les rapports apparaitront apres les premieres ventes du mois." />
+          ) : rows.length === 0 || scoped.length === 0 ? (
+            <EmptyState title="Aucun rapport" description="Les rapports apparaitront apres les premieres ventes de la periode." />
           ) : (
             <>
               <div className="hidden sm:block">
@@ -250,6 +367,17 @@ export default function RapportsPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function ProgressBar({ value }: { value: number }) {
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+      <div
+        className="h-full rounded-full bg-primary transition-all"
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
     </div>
   )
 }
