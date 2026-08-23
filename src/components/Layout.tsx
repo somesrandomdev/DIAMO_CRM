@@ -2,9 +2,11 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
+  Building2,
   Droplets,
   FileText,
   Home,
+  LayoutDashboard,
   LogOut,
   Menu,
   ShoppingCart,
@@ -35,11 +37,12 @@ const navigationItems: NavItem[] = [
   { id: 'kiosques', label: 'Kiosques', icon: <Store className="h-4 w-4" />, path: '/admin/kiosques', roles: ['administrateur'], section: 'Principal' },
   { id: 'offres', label: 'Offres', icon: <Droplets className="h-4 w-4" />, path: '/admin/offres', roles: ['administrateur'], section: 'Principal' },
   { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-4 w-4" />, path: '/admin/utilisateurs', roles: ['administrateur'], section: 'Principal' },
+  { id: 'clients-par-kiosque', label: 'Clients par kiosque', icon: <Building2 className="h-4 w-4" />, path: '/admin/clients-par-kiosque', roles: ['administrateur'], section: 'Principal' },
   { id: 'objectifs', label: 'Objectifs', icon: <Target className="h-4 w-4" />, path: '/admin/objectifs', roles: ['administrateur'], section: 'Rapports' },
   { id: 'rapports', label: 'Rapports', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['administrateur'], section: 'Rapports' },
   { id: 'profil-admin', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['administrateur'], section: 'Systeme' },
 
-  { id: 'analyses', label: 'Analyses', icon: <BarChart3 className="h-4 w-4" />, path: '/analyses', roles: ['commercial'], section: 'Principal' },
+  { id: 'supervision', label: 'Supervision', icon: <LayoutDashboard className="h-4 w-4" />, path: '/commercial', roles: ['commercial'], section: 'Principal' },
   { id: 'clients-commercial', label: 'Clients', icon: <Users className="h-4 w-4" />, path: '/clients', roles: ['commercial'], section: 'Principal' },
   { id: 'ventes-commercial', label: 'Ventes', icon: <ShoppingCart className="h-4 w-4" />, path: '/ventes/historique', roles: ['commercial'], section: 'Ventes' },
   { id: 'profil-commercial', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['commercial'], section: 'Systeme' },

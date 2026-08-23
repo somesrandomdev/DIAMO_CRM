@@ -20,6 +20,7 @@ const AdminOffresPage = lazy(() => import('@/pages/AdminOffresPage'))
 const AdminObjectivesPage = lazy(() => import('@/pages/AdminObjectivesPage'))
 const AdminTarifsPage = lazy(() => import('@/pages/AdminTarifsPage'))
 const AdminUsersPage = lazy(() => import('@/pages/AdminUsersPage'))
+const ClientsByKiosk = lazy(() => import('@/pages/admin/ClientsByKiosk'))
 const KiosqueDetailPage = lazy(() => import('@/pages/KiosqueDetailPage'))
 const RapportsPage = lazy(() => import('@/pages/RapportsPage'))
 const VenteUltraSimple = lazy(() => import('@/pages/VenteUltraSimple'))
@@ -125,17 +126,8 @@ export default function App() {
                 <Route path="/clients" element={<ClientListUltra onBack={handleBackNavigation} />} />
               </Route>
 
-              <Route element={<RoleGuard allowedRoles={['commercial', 'administrateur']} />}>
-                <Route
-                  path="/analyses"
-                  element={
-                    profile.role === 'administrateur' ? (
-                      <Navigate to="/admin/dashboard" replace />
-                    ) : (
-                      <CommercialDashboard />
-                    )
-                  }
-                />
+              <Route element={<RoleGuard allowedRoles={['commercial']} />}>
+                <Route path="/commercial" element={<CommercialDashboard />} />
               </Route>
 
               <Route element={<RoleGuard allowedRoles={['administrateur']} />}>
@@ -146,6 +138,7 @@ export default function App() {
                 <Route path="/admin/tarifs" element={<AdminTarifsPage />} />
                 <Route path="/admin/objectifs" element={<AdminObjectivesPage />} />
                 <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
+                <Route path="/admin/clients-par-kiosque" element={<ClientsByKiosk />} />
                 <Route path="/admin/rapports" element={<RapportsPage />} />
               </Route>
 

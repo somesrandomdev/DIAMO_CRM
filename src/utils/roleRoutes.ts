@@ -2,7 +2,7 @@ import type { UserRole } from '@/stores/authStore'
 
 export const roleHome: Record<UserRole, string> = {
   fontainier: '/ventes/nouvelle',
-  commercial: '/analyses',
+  commercial: '/commercial',
   administrateur: '/admin/dashboard',
 }
 
