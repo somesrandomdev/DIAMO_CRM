@@ -7,7 +7,9 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { supabase } from '@/lib/supabase'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useToast } from '@/components/Toast'
+import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { toCFA } from '@/utils/price'
 
@@ -37,11 +39,14 @@ function daysInMonth(): number {
 
 export default function AdminObjectivesPage() {
   const { profile } = useAuthStore()
+  const { showToast } = useToast()
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
   const [objectives, setObjectives] = useState<Record<string, ObjectiveRow>>({})
   const [form, setForm] = useState({ kiosqueId: '', caCible: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingKiosqueId, setDeletingKiosqueId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -96,29 +101,51 @@ export default function AdminObjectivesPage() {
 
     if (error) {
       console.error('Error saving objective:', error)
+      showToast({
+        type: 'error',
+        title: 'Enregistrement impossible',
+        message: handleSupabaseError(error),
+      })
     } else if (data) {
+      const kiosqueNom = kiosques.find((kiosque) => kiosque.id === data.kiosque_id)?.nom ?? 'Kiosque'
+      showToast({
+        type: 'success',
+        title: 'Objectif enregistré',
+        message: `${kiosqueNom} : ${toCFA(data.ca_cible)} pour ce mois.`,
+      })
       setObjectives((current) => ({ ...current, [data.kiosque_id]: data as ObjectiveRow }))
       setForm({ kiosqueId: '', caCible: '' })
     }
     setIsSaving(false)
   }
 
-  const deleteObjective = async (kiosqueId: string) => {
-    const objective = objectives[kiosqueId]
+  const confirmDelete = async () => {
+    if (!deletingKiosqueId) return
+    const objective = objectives[deletingKiosqueId]
     if (!objective) return
 
-    setIsSaving(true)
+    setIsDeleting(true)
     const { error } = await supabase.from('objectifs').delete().eq('id', objective.id)
+    setIsDeleting(false)
+
     if (error) {
       console.error('Error deleting objective:', error)
-    } else {
-      setObjectives((current) => {
-        const next = { ...current }
-        delete next[kiosqueId]
-        return next
+      showToast({
+        type: 'error',
+        title: 'Suppression impossible',
+        message: handleSupabaseError(error),
       })
+      return
     }
-    setIsSaving(false)
+
+    const kiosqueNom = kiosques.find((kiosque) => kiosque.id === deletingKiosqueId)?.nom ?? 'Kiosque'
+    showToast({ type: 'success', title: 'Objectif supprimé', message: `L'objectif de ${kiosqueNom} a été supprimé.` })
+    setObjectives((current) => {
+      const next = { ...current }
+      delete next[deletingKiosqueId]
+      return next
+    })
+    setDeletingKiosqueId(null)
   }
 
   const objectiveColumns: DataTableColumn<KiosqueRow>[] = [
@@ -166,10 +193,10 @@ export default function AdminObjectivesPage() {
             type="button"
             variant="destructive"
             size="icon-sm"
-            aria-label="Supprimer"
+            aria-label={`Supprimer l'objectif de ${kiosque.nom}`}
             onClick={(event) => {
               event.stopPropagation()
-              deleteObjective(kiosque.id)
+              setDeletingKiosqueId(kiosque.id)
             }}
             disabled={isSaving}
           >
@@ -255,6 +282,17 @@ export default function AdminObjectivesPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deletingKiosqueId !== null}
+        onOpenChange={(open) => !open && setDeletingKiosqueId(null)}
+        title="Supprimer cet objectif ?"
+        description={`${
+          kiosques.find((kiosque) => kiosque.id === deletingKiosqueId)?.nom ?? ''
+        } n'aura plus de cible pour ce mois. Cette action est irréversible.`}
+        isBusy={isDeleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { exportRowsCSV } from '@/utils/exportCSV'
@@ -45,22 +46,35 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   const itemsPerPage = 20
 
   useEffect(() => {
-    if (profile?.kiosque_id) {
+    if (profile) {
       loadSalesHistory()
     }
-  }, [profile?.kiosque_id])
+    // Reload when the user's kiosk reach changes: fontainier kiosk edit,
+    // commercial junction assignment, or role switch.
+  }, [profile?.id, profile?.role, profile?.kiosque_id])
 
   const loadSalesHistory = async () => {
-    if (!profile?.kiosque_id) return
+    if (!profile) return
 
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      // Role-aware scoping: fontainier sees their kiosk, commercial their
+      // supervised kiosques (junction table), admin everything.
+      const scope = await resolveKioskScope(profile)
+      if (scope !== null && scope.length === 0) {
+        setSales([])
+        return
+      }
+
+      let query = supabase
         .from('ventes')
         .select('id, created_at, montant_total, client:clients(nom), offre:offres(nom)')
-        .eq('kiosque_id', profile.kiosque_id)
         .order('created_at', { ascending: false })
+      if (scope) {
+        query = query.in('kiosque_id', scope)
+      }
 
+      const { data, error } = await query
       if (error) throw error
 
       const transformedSales = (data || []).map((sale) => ({

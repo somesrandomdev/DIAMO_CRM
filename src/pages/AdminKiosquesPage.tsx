@@ -6,7 +6,9 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { supabase } from '@/lib/supabase'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useToast } from '@/components/Toast'
+import { handleSupabaseError, supabase } from '@/lib/supabase'
 
 interface KiosqueRow {
   id: string
@@ -15,10 +17,13 @@ interface KiosqueRow {
 }
 
 export default function AdminKiosquesPage() {
+  const { showToast } = useToast()
   const [rows, setRows] = useState<KiosqueRow[]>([])
   const [form, setForm] = useState({ id: '', nom: '', adresse: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [deleting, setDeleting] = useState<KiosqueRow | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -47,18 +52,49 @@ export default function AdminKiosquesPage() {
       ? await supabase.from('kiosques').update(payload).eq('id', form.id)
       : await supabase.from('kiosques').insert(payload)
 
-    if (result.error) console.error('Error saving kiosque:', result.error)
+    if (result.error) {
+      console.error('Error saving kiosque:', result.error)
+      showToast({
+        type: 'error',
+        title: 'Enregistrement impossible',
+        message: handleSupabaseError(result.error),
+      })
+    } else {
+      showToast({
+        type: 'success',
+        title: form.id ? 'Kiosque mis à jour' : 'Kiosque créé',
+        message: `${payload.nom} a été enregistré.`,
+      })
+    }
+
     await load()
     resetForm()
     setIsSaving(false)
   }
 
-  const remove = async (id: string) => {
-    setIsSaving(true)
-    const { error } = await supabase.from('kiosques').delete().eq('id', id)
-    if (error) console.error('Error deleting kiosque:', error)
+  const confirmDelete = async () => {
+    if (!deleting) return
+
+    setIsDeleting(true)
+    const { error } = await supabase.from('kiosques').delete().eq('id', deleting.id)
+    setIsDeleting(false)
+
+    if (error) {
+      console.error('Error deleting kiosque:', error)
+      showToast({
+        type: 'error',
+        title: 'Suppression impossible',
+        message:
+          error.code === '23503'
+            ? 'Ce kiosque est référencé par des ventes, des clients ou des utilisateurs et ne peut pas être supprimé.'
+            : handleSupabaseError(error),
+      })
+      return
+    }
+
+    showToast({ type: 'success', title: 'Kiosque supprimé', message: `${deleting.nom} a été supprimé.` })
+    setDeleting(null)
     await load()
-    setIsSaving(false)
   }
 
   const columns: DataTableColumn<KiosqueRow>[] = [
@@ -86,10 +122,10 @@ export default function AdminKiosquesPage() {
             type="button"
             variant="destructive"
             size="icon-sm"
-            aria-label="Supprimer"
+            aria-label={`Supprimer ${row.nom}`}
             onClick={(event) => {
               event.stopPropagation()
-              remove(row.id)
+              setDeleting(row)
             }}
           >
             <Trash2 className="h-4 w-4" />
@@ -146,6 +182,15 @@ export default function AdminKiosquesPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Supprimer ce kiosque ?"
+        description={`${deleting?.nom ?? ''} — cette action est irréversible. Un kiosque référencé par des ventes ou des clients ne peut pas être supprimé.`}
+        isBusy={isDeleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

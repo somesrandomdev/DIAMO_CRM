@@ -116,12 +116,15 @@ export default function App() {
               <Route path="/dashboard" element={<Navigate to={getRoleHome(profile.role)} replace />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-              <Route
-                element={
-                  <RoleGuard allowedRoles={['fontainier', 'commercial', 'administrateur']} />
-                }
-              >
+              {/* The sale screen requires an assigned kiosk: fontainiers only.
+                  Admins don't sell (option: pick-a-kiosk was rejected), and
+                  commercials have no INSERT grant on ventes and no nav link —
+                  both previously hit VentePage's onBack() bounce. */}
+              <Route element={<RoleGuard allowedRoles={['fontainier']} />}>
                 <Route path="/ventes/nouvelle" element={<VenteUltraSimple onBack={handleBackNavigation} />} />
+              </Route>
+
+              <Route element={<RoleGuard allowedRoles={['fontainier', 'commercial', 'administrateur']} />}>
                 <Route path="/ventes/historique" element={<HistoriquePage onBack={handleBackNavigation} />} />
                 <Route path="/clients" element={<ClientListUltra onBack={handleBackNavigation} />} />
               </Route>

@@ -6,7 +6,9 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { supabase } from '@/lib/supabase'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useToast } from '@/components/Toast'
+import { handleSupabaseError, supabase } from '@/lib/supabase'
 
 interface OffreRow {
   id: string
@@ -20,10 +22,13 @@ function formatVolume(volumeMl: number | null) {
 }
 
 export default function AdminOffresPage() {
+  const { showToast } = useToast()
   const [rows, setRows] = useState<OffreRow[]>([])
   const [form, setForm] = useState({ id: '', nom: '', volume_ml: '', description: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [deleting, setDeleting] = useState<OffreRow | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -54,18 +59,49 @@ export default function AdminOffresPage() {
       ? await supabase.from('offres').update(payload).eq('id', form.id)
       : await supabase.from('offres').insert(payload)
 
-    if (result.error) console.error('Error saving offre:', result.error)
+    if (result.error) {
+      console.error('Error saving offre:', result.error)
+      showToast({
+        type: 'error',
+        title: 'Enregistrement impossible',
+        message: handleSupabaseError(result.error),
+      })
+    } else {
+      showToast({
+        type: 'success',
+        title: form.id ? 'Offre mise à jour' : 'Offre créée',
+        message: `${payload.nom} a été enregistrée.`,
+      })
+    }
+
     await load()
     resetForm()
     setIsSaving(false)
   }
 
-  const remove = async (id: string) => {
-    setIsSaving(true)
-    const { error } = await supabase.from('offres').delete().eq('id', id)
-    if (error) console.error('Error deleting offre:', error)
+  const confirmDelete = async () => {
+    if (!deleting) return
+
+    setIsDeleting(true)
+    const { error } = await supabase.from('offres').delete().eq('id', deleting.id)
+    setIsDeleting(false)
+
+    if (error) {
+      console.error('Error deleting offre:', error)
+      showToast({
+        type: 'error',
+        title: 'Suppression impossible',
+        message:
+          error.code === '23503'
+            ? 'Cette offre est référencée par des ventes ou des tarifs de kiosque et ne peut pas être supprimée.'
+            : handleSupabaseError(error),
+      })
+      return
+    }
+
+    showToast({ type: 'success', title: 'Offre supprimée', message: `${deleting.nom} a été supprimée.` })
+    setDeleting(null)
     await load()
-    setIsSaving(false)
   }
 
   const columns: DataTableColumn<OffreRow>[] = [
@@ -99,10 +135,10 @@ export default function AdminOffresPage() {
             type="button"
             variant="destructive"
             size="icon-sm"
-            aria-label="Supprimer"
+            aria-label={`Supprimer ${row.nom}`}
             onClick={(event) => {
               event.stopPropagation()
-              remove(row.id)
+              setDeleting(row)
             }}
           >
             <Trash2 className="h-4 w-4" />
@@ -152,6 +188,15 @@ export default function AdminOffresPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Supprimer cette offre ?"
+        description={`${deleting?.nom ?? ''} — cette action est irréversible. Une offre référencée par des ventes ne peut pas être supprimée.`}
+        isBusy={isDeleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

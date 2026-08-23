@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Search, Trash2, Edit, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PosCard, PosInput, PosKpi, PosLabel } from '@/components/pos'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EditClientDialog, type EditableClient } from '@/components/EditDialogs'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
@@ -347,25 +347,14 @@ export default function ClientsByKiosk() {
         onSaved={load}
       />
 
-      <Dialog open={deletingClient !== null} onOpenChange={(open) => !open && setDeletingClient(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Supprimer le client</DialogTitle>
-            <DialogDescription>
-              Voulez-vous vraiment supprimer {deletingClient?.nom} ? Un client ayant des ventes
-              enregistrées ne peut pas être supprimé.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="pos-secondary" onClick={() => setDeletingClient(null)}>
-              Annuler
-            </Button>
-            <Button type="button" variant="pos-destructive" loading={isDeleting} onClick={confirmDelete}>
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deletingClient !== null}
+        onOpenChange={(open) => !open && setDeletingClient(null)}
+        title="Supprimer le client"
+        description={`Voulez-vous vraiment supprimer ${deletingClient?.nom} ? Un client ayant des ventes enregistrées ne peut pas être supprimé.`}
+        isBusy={isDeleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

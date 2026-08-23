@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { toCFA } from '@/utils/price'
@@ -41,24 +42,30 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     if (!profile) return
 
-    if (!profile.kiosque_id) {
-      if (profile.role === 'administrateur') {
-        supabase
-          .from('clients')
-          .select('*')
-          .then(({ data }) => setClients((data || []) as Client[]))
-      } else {
-        onBack()
+    let cancelled = false
+    // Role-aware scoping: fontainier sees their kiosk's clients, commercial
+    // the clients of supervised kiosques (junction table), admin everyone.
+    // A commercial with no assignments gets the empty state, not a bounce.
+    resolveKioskScope(profile).then((scope) => {
+      if (cancelled) return
+      if (scope !== null && scope.length === 0) {
+        setClients([])
+        return
       }
-      return
-    }
 
-    supabase
-      .from('clients')
-      .select('*')
-      .eq('kiosque_id', profile.kiosque_id)
-      .then(({ data }) => setClients((data || []) as Client[]))
-  }, [profile, onBack])
+      let query = supabase.from('clients').select('*')
+      if (scope) {
+        query = query.in('kiosque_id', scope)
+      }
+      query.then(({ data }) => {
+        if (!cancelled) setClients((data || []) as Client[])
+      })
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [profile])
 
   async function loadVentes(clientId: string) {
     const { data } = await supabase
