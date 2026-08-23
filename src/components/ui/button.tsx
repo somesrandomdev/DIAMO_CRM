@@ -24,6 +24,13 @@ const buttonVariants = cva(
           'border border-success bg-success text-success-foreground shadow-none hover:bg-success-hover focus:bg-success-hover active:bg-success-active',
         warning:
           'border border-warning bg-warning text-warning-foreground shadow-none hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
+        // POS design system: high-visibility utilitarian variants
+        'pos-primary':
+          'min-h-12 bg-emerald-600 text-white hover:bg-emerald-700 focus:bg-emerald-700',
+        'pos-destructive':
+          'min-h-12 bg-red-600 text-white hover:bg-red-700 focus:bg-red-700',
+        'pos-secondary':
+          'min-h-12 border-2 border-zinc-300 bg-white text-zinc-700 hover:border-zinc-900',
       },
       size: {
         default: 'h-11 px-4 py-2',

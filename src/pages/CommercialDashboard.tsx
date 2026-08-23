@@ -1,65 +1,61 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  ComposedChart,
-  Cell,
-  Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
-import { Download, Search } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Edit, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
-import { FormInput } from '@/components/ui/form-input'
-import { KPICard } from '@/components/ui/kpi-card'
-import { ProgressBar } from '@/components/ui/progress-bar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SegmentCard } from '@/components/ui/segment-card'
+import { PosCard, PosChip, PosKpi, PosLabel } from '@/components/pos'
+import {
+  EditClientDialog,
+  EditObjectifDialog,
+  EditVenteDialog,
+  type EditableClient,
+  type EditableObjectif,
+  type EditableVente,
+  type VenteOption,
+} from '@/components/EditDialogs'
+import { useToast } from '@/components/Toast'
 import { chartTheme } from '@/lib/chartTheme'
 import { supabase } from '@/lib/supabase'
+import {
+  clientPurchaseMap,
+  computeCommercialKpis,
+  monthKey,
+  revenuePerKiosk,
+  startOfMonth,
+  type CommercialClient,
+  type CommercialSale,
+  type SupervisedKiosque,
+} from '@/lib/commercialStats'
 import { useAuthStore } from '@/stores/authStore'
-import { exportRowsCSV } from '@/utils/exportCSV'
-import { toCFA } from '@/utils/price'
+import { formatCFACompact, toCFA } from '@/utils/price'
 
-interface SaleRow {
-  id: string
-  created_at: string
-  montant_total: number | null
-  client_id: string | null
+interface SaleRow extends CommercialSale {
+  offre_id: string | null
+  quantite: number
   clients?: { nom?: string } | { nom?: string }[] | null
+  offres?: { nom?: string } | { nom?: string }[] | null
 }
 
-interface ClientInsight {
+interface ClientRow extends CommercialClient {
+  adresse?: string | null
+  email?: string | null
+  notes?: string | null
+}
+
+interface ObjectifRow {
   id: string
-  nom: string
-  derniereVisite: string
-  achatsMois: number
-  montantTotal: number
-  segment: SegmentName
-}
-
-type SegmentName = 'VIP' | 'Regulier' | 'Occasionnel'
-interface DailyPoint {
-  date: string
-  label: string
-  ca: number
-  target: number
-}
-
-interface SegmentPoint {
-  name: SegmentName
-  value: number
-  color: string
+  kiosque_id: string
+  ca_cible: number
 }
 
 function firstJoined<T>(value: T | T[] | null | undefined): T | null {
@@ -67,192 +63,154 @@ function firstJoined<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null
 }
 
-function startOfCurrentMonth(): Date {
-  const date = new Date()
-  date.setDate(1)
-  date.setHours(0, 0, 0, 0)
-  return date
-}
-
-function daysInCurrentMonth(): number {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-}
-
-function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
-}
-
-function segmentForPurchases(count: number): SegmentName {
-  if (count >= 5) return 'VIP'
-  if (count >= 2) return 'Regulier'
-  return 'Occasionnel'
-}
-
-function segmentBadgeVariant(segment: SegmentName) {
-  if (segment === 'VIP') return 'success'
-  if (segment === 'Regulier') return 'secondary'
-  return 'outline'
-}
-
 export default function CommercialDashboard() {
-  const navigate = useNavigate()
   const { profile } = useAuthStore()
-  const [isLoading, setIsLoading] = useState(true)
+  const { showToast } = useToast()
+  const [kiosques, setKiosques] = useState<SupervisedKiosque[]>([])
   const [sales, setSales] = useState<SaleRow[]>([])
-  const [target, setTarget] = useState(0)
-  const [search, setSearch] = useState('')
+  const [clients, setClients] = useState<ClientRow[]>([])
+  const [objectifs, setObjectifs] = useState<ObjectifRow[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedKiosqueId, setSelectedKiosqueId] = useState<string | null>(null)
+  const [drillOffres, setDrillOffres] = useState<VenteOption[]>([])
+  const [editingClient, setEditingClient] = useState<EditableClient | null>(null)
+  const [editingVente, setEditingVente] = useState<EditableVente | null>(null)
+  const [editingObjectif, setEditingObjectif] = useState<EditableObjectif | null>(null)
 
-  const loadDashboardData = useCallback(async () => {
-    if (!profile?.kiosque_id) {
+  const load = useCallback(async () => {
+    if (!profile?.id) {
       setIsLoading(false)
       return
     }
 
     setIsLoading(true)
-    const monthStart = startOfCurrentMonth()
 
-    try {
-      const [salesResult, targetResult] = await Promise.all([
-        supabase
-          .from('ventes')
-          .select('id, created_at, montant_total, client_id, clients(nom)')
-          .eq('kiosque_id', profile.kiosque_id)
-          .gte('created_at', monthStart.toISOString())
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('objectifs')
-          .select('ca_cible')
-          .eq('kiosque_id', profile.kiosque_id)
-          .eq('mois', monthKey(monthStart))
-          .maybeSingle(),
-      ])
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('commercials_kiosques')
+      .select('kiosque_id, kiosques(id, nom)')
+      .eq('commercial_id', profile.id)
 
-      if (salesResult.error) throw salesResult.error
-      if (targetResult.error) throw targetResult.error
-
-      setSales((salesResult.data ?? []) as SaleRow[])
-      setTarget(targetResult.data?.ca_cible ?? 0)
-    } catch (error) {
-      console.error('Error loading commercial dashboard:', error)
+    if (assignmentsError) {
+      console.error('Error loading supervised kiosques:', assignmentsError)
+      showToast({
+        type: 'error',
+        title: 'Chargement impossible',
+        message: "Vos kiosques supervisés n'ont pas pu être chargés. Veuillez réessayer.",
+      })
+      setKiosques([])
       setSales([])
-      setTarget(0)
-    } finally {
+      setClients([])
+      setObjectifs([])
       setIsLoading(false)
+      return
     }
-  }, [profile?.kiosque_id])
+
+    const supervised: SupervisedKiosque[] = (assignments ?? [])
+      .map((row) => firstJoined(row.kiosques as SupervisedKiosque | SupervisedKiosque[] | null))
+      .filter((kiosque): kiosque is SupervisedKiosque => kiosque !== null)
+    setKiosques(supervised)
+
+    if (supervised.length === 0) {
+      setSales([])
+      setClients([])
+      setObjectifs([])
+      setIsLoading(false)
+      return
+    }
+
+    const kiosqueIds = supervised.map((kiosque) => kiosque.id)
+    const [salesResult, clientsResult, objectifsResult] = await Promise.all([
+      supabase
+        .from('ventes')
+        .select('id, kiosque_id, client_id, offre_id, quantite, montant_total, created_at, clients(nom), offres(nom)')
+        .in('kiosque_id', kiosqueIds)
+        .gte('created_at', startOfMonth().toISOString())
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('clients')
+        .select('id, kiosque_id, nom, telephone, adresse, email, notes')
+        .in('kiosque_id', kiosqueIds)
+        .order('nom'),
+      supabase
+        .from('objectifs')
+        .select('id, kiosque_id, ca_cible')
+        .in('kiosque_id', kiosqueIds)
+        .eq('mois', monthKey()),
+    ])
+
+    const failure = salesResult.error ?? clientsResult.error ?? objectifsResult.error
+    if (failure) {
+      console.error('Error loading supervisor dashboard:', failure)
+      showToast({
+        type: 'error',
+        title: 'Chargement incomplet',
+        message: 'Certaines données ont échoué au chargement. Veuillez réessayer.',
+      })
+    }
+
+    setSales((salesResult.data ?? []) as SaleRow[])
+    setClients((clientsResult.data ?? []) as ClientRow[])
+    setObjectifs((objectifsResult.data ?? []) as ObjectifRow[])
+    setIsLoading(false)
+  }, [profile?.id, showToast])
 
   useEffect(() => {
-    loadDashboardData()
-  }, [loadDashboardData])
+    load()
+  }, [load])
 
-  const dailyTarget = target > 0 ? target / daysInCurrentMonth() : 0
-
-  const stats = useMemo(() => {
-    const ca = sales.reduce((sum, sale) => sum + (sale.montant_total ?? 0), 0)
-    const activeClients = new Set(sales.map((sale) => sale.client_id).filter(Boolean)).size
-    return {
-      ca,
-      ventes: sales.length,
-      activeClients,
-      panierMoyen: sales.length > 0 ? Math.round(ca / sales.length) : 0,
-      progress: target > 0 ? (ca / target) * 100 : 0,
-    }
-  }, [sales, target])
-
-  const dailyData = useMemo<DailyPoint[]>(() => {
-    const now = new Date()
-    const dayMap = new Map<string, number>()
-
-    for (let index = 29; index >= 0; index -= 1) {
-      const date = new Date(now)
-      date.setDate(now.getDate() - index)
-      dayMap.set(date.toISOString().slice(0, 10), 0)
+  // Active offers of the drilled-down kiosk, used by the vente edit dialog.
+  useEffect(() => {
+    if (!selectedKiosqueId) {
+      setDrillOffres([])
+      return
     }
 
-    sales.forEach((sale) => {
-      const key = sale.created_at.slice(0, 10)
-      if (dayMap.has(key)) dayMap.set(key, (dayMap.get(key) ?? 0) + (sale.montant_total ?? 0))
-    })
+    let cancelled = false
+    supabase
+      .from('offres_kiosque')
+      .select('offre_id, offres(id, nom)')
+      .eq('kiosque_id', selectedKiosqueId)
+      .eq('est_actif', true)
+      .then(({ data, error }) => {
+        if (cancelled || error) return
+        const options = (data ?? [])
+          .map((row) => firstJoined((row as { offres?: unknown }).offres as VenteOption | VenteOption[] | null))
+          .filter((offre): offre is VenteOption => offre !== null)
+        setDrillOffres(options)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedKiosqueId])
 
-    return Array.from(dayMap.entries()).map(([date, ca]) => ({
-      date,
-      label: new Date(`${date}T00:00:00`).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-      }),
-      ca,
-      target: Math.round(dailyTarget),
-    }))
-  }, [dailyTarget, sales])
+  const kpis = useMemo(() => computeCommercialKpis(kiosques, sales, clients), [kiosques, sales, clients])
+  const perKiosk = useMemo(() => revenuePerKiosk(kiosques, sales), [kiosques, sales])
+  const purchases = useMemo(() => clientPurchaseMap(sales), [sales])
 
-  const clients = useMemo<ClientInsight[]>(() => {
-    const map = new Map<string, ClientInsight>()
-
-    sales.forEach((sale) => {
-      const clientId = sale.client_id ?? 'inconnu'
-      const client = firstJoined(sale.clients)
-      const existing = map.get(clientId) ?? {
-        id: clientId,
-        nom: client?.nom ?? 'Client inconnu',
-        derniereVisite: sale.created_at,
-        achatsMois: 0,
-        montantTotal: 0,
-        segment: 'Occasionnel' as SegmentName,
-      }
-
-      existing.achatsMois += 1
-      existing.montantTotal += sale.montant_total ?? 0
-      if (new Date(sale.created_at) > new Date(existing.derniereVisite)) {
-        existing.derniereVisite = sale.created_at
-      }
-      existing.segment = segmentForPurchases(existing.achatsMois)
-      map.set(clientId, existing)
-    })
-
-    return Array.from(map.values())
-  }, [sales])
-
-  const segmentData = useMemo<SegmentPoint[]>(() => {
-    const points: SegmentPoint[] = [
-      { name: 'VIP', value: 0, color: chartTheme.green },
-      { name: 'Regulier', value: 0, color: chartTheme.blue },
-      { name: 'Occasionnel', value: 0, color: chartTheme.amber },
-    ]
-
-    clients.forEach((client) => {
-      const point = points.find((item) => item.name === client.segment)
-      if (point) point.value += 1
-    })
-
-    return points.filter((point) => point.value > 0)
-  }, [clients])
-
-  const topClients = useMemo(
-    () => [...clients].sort((a, b) => b.montantTotal - a.montantTotal).slice(0, 5),
-    [clients]
+  const selectedKiosque = kiosques.find((kiosque) => kiosque.id === selectedKiosqueId) ?? null
+  const kioskSales = useMemo(
+    () => sales.filter((sale) => sale.kiosque_id === selectedKiosqueId).slice(0, 10),
+    [sales, selectedKiosqueId]
   )
+  const kioskClients = useMemo(
+    () => clients.filter((client) => client.kiosque_id === selectedKiosqueId),
+    [clients, selectedKiosqueId]
+  )
+  const kioskObjectif = objectifs.find((objectif) => objectif.kiosque_id === selectedKiosqueId) ?? null
+  const kioskRevenue = perKiosk.find((row) => row.kiosqueId === selectedKiosqueId)?.revenue ?? 0
+  const objectifProgress = kioskObjectif && kioskObjectif.ca_cible > 0
+    ? (kioskRevenue / kioskObjectif.ca_cible) * 100
+    : 0
 
-  const visibleClients = useMemo(() => {
-    return clients
-      .filter((client) => client.nom.toLowerCase().includes(search.trim().toLowerCase()))
-      .sort((a, b) => b.montantTotal - a.montantTotal)
-  }, [clients, search])
+  const venteOffreOptions = useMemo(() => {
+    if (!editingVente) return drillOffres
+    if (drillOffres.some((offre) => offre.id === editingVente.offre_id)) return drillOffres
+    const sale = sales.find((row) => row.id === editingVente.id)
+    const nom = firstJoined(sale?.offres)?.nom ?? 'Offre actuelle'
+    return [...drillOffres, { id: editingVente.offre_id as string, nom }]
+  }, [drillOffres, editingVente, sales])
 
-  const exportClientTable = () => {
-    exportRowsCSV(
-      visibleClients.map((client) => ({
-        Client: client.nom,
-        'Derniere visite': new Date(client.derniereVisite).toLocaleDateString('fr-FR'),
-        'Achats mois': client.achatsMois,
-        'Montant total': client.montantTotal,
-        Segment: client.segment,
-      })),
-      `clients-${profile?.kiosques?.nom ?? 'kiosque'}.csv`
-    )
-  }
-
-  const clientColumns: DataTableColumn<ClientInsight>[] = [
+  const clientColumns: DataTableColumn<ClientRow>[] = [
     {
       key: 'nom',
       header: 'Client',
@@ -260,176 +218,301 @@ export default function CommercialDashboard() {
       sortValue: (client) => client.nom,
     },
     {
-      key: 'derniereVisite',
-      header: 'Derniere visite',
-      render: (client) => new Date(client.derniereVisite).toLocaleDateString('fr-FR'),
-      sortValue: (client) => new Date(client.derniereVisite),
+      key: 'telephone',
+      header: 'Téléphone',
+      render: (client) => client.telephone || '—',
+      sortValue: (client) => client.telephone ?? '',
     },
     {
-      key: 'achatsMois',
-      header: 'Achats mois',
-      render: (client) => client.achatsMois,
-      sortValue: (client) => client.achatsMois,
+      key: 'lastPurchase',
+      header: 'Dernier achat',
+      render: (client) => {
+        const last = purchases.get(client.id)?.lastPurchase
+        return last ? new Date(last).toLocaleDateString('fr-FR') : '—'
+      },
+      sortValue: (client) => purchases.get(client.id)?.lastPurchase ?? '',
+    },
+    {
+      key: 'totalSpent',
+      header: 'Total dépensé',
+      render: (client) => (
+        <span className="[font-variant-numeric:tabular-nums]">
+          {toCFA(purchases.get(client.id)?.totalSpent ?? 0)}
+        </span>
+      ),
+      sortValue: (client) => purchases.get(client.id)?.totalSpent ?? 0,
       align: 'right',
     },
     {
-      key: 'montantTotal',
-      header: 'Montant total',
-      render: (client) => <span className="font-mono">{toCFA(client.montantTotal)}</span>,
-      sortValue: (client) => client.montantTotal,
+      key: 'actions',
+      header: '',
       align: 'right',
-    },
-    {
-      key: 'segment',
-      header: 'Segment',
-      render: (client) => <Badge variant={segmentBadgeVariant(client.segment)}>{client.segment}</Badge>,
-      sortValue: (client) => client.segment,
+      render: (client) => (
+        <Button
+          type="button"
+          variant="pos-secondary"
+          size="icon"
+          className="h-12 w-12 min-h-12"
+          aria-label={`Modifier ${client.nom}`}
+          onClick={(event) => {
+            event.stopPropagation()
+            setEditingClient(client)
+          }}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+      ),
     },
   ]
 
+  const saleColumns: DataTableColumn<SaleRow>[] = [
+    {
+      key: 'created_at',
+      header: 'Date',
+      render: (sale) => new Date(sale.created_at).toLocaleDateString('fr-FR'),
+      sortValue: (sale) => sale.created_at,
+    },
+    {
+      key: 'client',
+      header: 'Client',
+      render: (sale) => firstJoined(sale.clients)?.nom ?? '—',
+      sortValue: (sale) => firstJoined(sale.clients)?.nom ?? '',
+    },
+    {
+      key: 'offre',
+      header: 'Offre',
+      render: (sale) => firstJoined(sale.offres)?.nom ?? '—',
+      sortValue: (sale) => firstJoined(sale.offres)?.nom ?? '',
+    },
+    {
+      key: 'montant_total',
+      header: 'Montant',
+      render: (sale) => (
+        <span className="font-semibold [font-variant-numeric:tabular-nums]">
+          {toCFA(sale.montant_total ?? 0)}
+        </span>
+      ),
+      sortValue: (sale) => sale.montant_total ?? 0,
+      align: 'right',
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (sale) => (
+        <Button
+          type="button"
+          variant="pos-secondary"
+          size="icon"
+          className="h-12 w-12 min-h-12"
+          aria-label="Modifier la vente"
+          onClick={(event) => {
+            event.stopPropagation()
+            setEditingVente({
+              id: sale.id,
+              quantite: sale.quantite,
+              montant_total: sale.montant_total ?? 0,
+              offre_id: sale.offre_id,
+              client_id: sale.client_id,
+            })
+          }}
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ]
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-28 rounded-lg" />)}
+        </div>
+        <Skeleton className="h-72 rounded-lg" />
+        <Skeleton className="h-40 rounded-lg" />
+      </div>
+    )
+  }
+
+  if (kiosques.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Supervision</h1>
+          <p className="text-sm text-zinc-500">Performance des kiosques que vous supervisez.</p>
+        </div>
+        <EmptyState
+          icon={<Store className="h-5 w-5" />}
+          title="Aucun kiosque supervisé"
+          description="Demandez à un administrateur de vous assigner des kiosques pour suivre leurs performances."
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-[15px] font-semibold text-text">Analyses commerciales</h1>
-          <p className="text-[12px] text-text-secondary">
-            Performance mensuelle de {profile?.kiosques?.nom || 'mon kiosque'}.
-          </p>
-        </div>
-        <Button type="button" variant="default" size="sm" onClick={exportClientTable} disabled={visibleClients.length === 0}>
-          <Download className="h-4 w-4" />
-          Exporter CSV
-        </Button>
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-zinc-900">Supervision</h1>
+        <p className="text-sm text-zinc-500">
+          Performance de vos {kiosques.length} kiosque{kiosques.length > 1 ? 's' : ''} — cumul du mois.
+        </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {isLoading ? (
-          [1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-32 rounded-lg" />)
-        ) : (
-          <>
-            <div className="space-y-2">
-              <KPICard label="CA ce mois" value={toCFA(stats.ca)} />
-              {target > 0 && (
-                <Card padding="sm">
-                  <ProgressBar value={stats.progress} />
-                  <p className="mt-1 text-[10.5px] text-text-secondary">
-                    {stats.progress.toFixed(1)}% de {toCFA(target)}
+        <PosKpi label="CA du mois" value={toCFA(kpis.revenueMonth)} sub="Tous kiosques confondus" />
+        <PosKpi label="Ventes" value={kpis.salesCount} sub="Ce mois" />
+        <PosKpi label="Clients" value={kpis.clientsCount} sub="Tous kiosques confondus" />
+        <PosKpi label="Kiosques" value={kpis.kiosquesCount} sub="Sous supervision" />
+      </div>
+
+      <PosCard>
+        <PosLabel className="mb-3">Revenus par kiosque (mois en cours)</PosLabel>
+        <ResponsiveContainer width="100%" height={Math.max(160, perKiosk.length * 44)}>
+          <BarChart data={perKiosk} layout="vertical" margin={{ left: 8, right: 16 }}>
+            <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
+            <XAxis
+              type="number"
+              tickFormatter={(value) => formatCFACompact(Number(value))}
+              tick={{ fill: chartTheme.axis, fontSize: 11 }}
+            />
+            <YAxis
+              dataKey="nom"
+              type="category"
+              width={130}
+              tick={{ fill: chartTheme.axis, fontSize: 12 }}
+            />
+            <Tooltip
+              contentStyle={chartTheme.tooltip}
+              formatter={(value) => [toCFA(Number(value)), 'CA']}
+            />
+            <Bar dataKey="revenue" fill="#059669" radius={[0, 4, 4, 0]} barSize={18} />
+          </BarChart>
+        </ResponsiveContainer>
+      </PosCard>
+
+      <div>
+        <PosLabel className="mb-2">Explorer un kiosque</PosLabel>
+        <div className="flex flex-wrap gap-2">
+          <PosChip
+            active={selectedKiosqueId === null}
+            onClick={() => setSelectedKiosqueId(null)}
+          >
+            Vue d'ensemble
+          </PosChip>
+          {perKiosk.map((row) => (
+            <PosChip
+              key={row.kiosqueId}
+              active={selectedKiosqueId === row.kiosqueId}
+              onClick={() => setSelectedKiosqueId(row.kiosqueId)}
+            >
+              {row.nom}
+            </PosChip>
+          ))}
+        </div>
+      </div>
+
+      {selectedKiosque ? (
+        <div className="space-y-4">
+          <PosCard>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <PosLabel>Objectif du mois</PosLabel>
+                {kioskObjectif ? (
+                  <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
+                    {toCFA(kioskRevenue)}{' '}
+                    <span className="text-sm font-medium text-zinc-500">
+                      / {toCFA(kioskObjectif.ca_cible)}
+                    </span>
                   </p>
-                </Card>
+                ) : (
+                  <p className="mt-1 text-sm text-zinc-500">Aucun objectif défini pour ce mois.</p>
+                )}
+              </div>
+              {kioskObjectif && (
+                <Button
+                  type="button"
+                  variant="pos-secondary"
+                  onClick={() =>
+                    setEditingObjectif({ id: kioskObjectif.id, ca_cible: kioskObjectif.ca_cible })
+                  }
+                >
+                  <Edit className="h-4 w-4" />
+                  Modifier l'objectif
+                </Button>
               )}
             </div>
-            <KPICard label="Nb ventes" value={stats.ventes} />
-            <KPICard label="Clients actifs" value={stats.activeClients} />
-            <KPICard label="Panier moyen" value={toCFA(stats.panierMoyen)} />
-          </>
-        )}
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>CA quotidien 30 jours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-[320px] w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={320}>
-                <ComposedChart data={dailyData}>
-                  <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" minTickGap={16} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
-                  <YAxis tickFormatter={(value) => toCFA(Number(value))} width={82} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
-                  <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [toCFA(Number(value)), 'CA']} />
-                  <Bar dataKey="ca" fill={chartTheme.blue} radius={[6, 6, 0, 0]} />
-                  {target > 0 && (
-                    <Line dataKey="target" stroke={chartTheme.red} strokeDasharray="6 4" dot={false} />
-                  )}
-                </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Segmentation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-[320px] w-full" />
-            ) : (
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={segmentData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={105} label>
-                    {segmentData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [value, 'Clients']} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-            {!isLoading && segmentData.length > 0 && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {segmentData.map((point) => (
-                  <SegmentCard
-                    key={point.name}
-                    value={point.value}
-                    label={point.name}
-                    variant={point.name === 'VIP' ? 'success' : point.name === 'Regulier' ? 'info' : 'warning'}
+            {kioskObjectif && (
+              <div className="mt-3">
+                <div className="h-3 w-full overflow-hidden rounded-md bg-zinc-100">
+                  <div
+                    className="h-full rounded-md bg-emerald-600 transition-all"
+                    style={{ width: `${Math.min(100, objectifProgress)}%` }}
                   />
-                ))}
+                </div>
+                <p className="mt-1 text-right text-xs font-semibold text-zinc-500 [font-variant-numeric:tabular-nums]">
+                  {objectifProgress.toFixed(1)} %
+                </p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </PosCard>
 
-      <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Top 5 clients</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topClients} layout="vertical" margin={{ left: 18 }}>
-                <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tickFormatter={(value) => toCFA(Number(value))} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
-                <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
-                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [toCFA(Number(value)), 'Montant']} />
-                <Bar dataKey="montantTotal" fill={chartTheme.green} radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle>Client intelligence</CardTitle>
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <FormInput
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className="pl-9 sm:w-64"
-                  placeholder="Rechercher un client"
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {visibleClients.length === 0 ? (
-              <EmptyState title="Aucun client a afficher" className="border-0 bg-muted" />
+          <PosCard>
+            <PosLabel className="mb-3">Clients du kiosque</PosLabel>
+            {kioskClients.length === 0 ? (
+              <EmptyState title="Aucun client pour ce kiosque" className="border-0" />
             ) : (
               <DataTable
                 columns={clientColumns}
-                data={visibleClients}
+                data={kioskClients}
                 getRowKey={(client) => client.id}
-                onRowClick={(client) => navigate(`/clients?client=${client.id}`)}
               />
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </PosCard>
+
+          <PosCard>
+            <PosLabel className="mb-3">Ventes récentes</PosLabel>
+            {kioskSales.length === 0 ? (
+              <EmptyState title="Aucune vente ce mois" className="border-0" />
+            ) : (
+              <DataTable
+                columns={saleColumns}
+                data={kioskSales}
+                getRowKey={(sale) => sale.id}
+              />
+            )}
+          </PosCard>
+        </div>
+      ) : (
+        <PosCard>
+          <p className="text-sm text-zinc-500">
+            Sélectionnez un kiosque ci-dessus pour voir ses clients, ses ventes récentes et son objectif.
+          </p>
+        </PosCard>
+      )}
+
+      <EditClientDialog
+        open={editingClient !== null}
+        onOpenChange={(open) => !open && setEditingClient(null)}
+        client={editingClient}
+        onSaved={load}
+      />
+      <EditVenteDialog
+        open={editingVente !== null}
+        onOpenChange={(open) => !open && setEditingVente(null)}
+        vente={editingVente}
+        clients={kioskClients.map((client) => ({ id: client.id, nom: client.nom }))}
+        offres={venteOffreOptions}
+        onSaved={load}
+      />
+      <EditObjectifDialog
+        open={editingObjectif !== null}
+        onOpenChange={(open) => !open && setEditingObjectif(null)}
+        objectif={editingObjectif}
+        kiosqueNom={selectedKiosque?.nom ?? ''}
+        onSaved={load}
+      />
     </div>
   )
 }
