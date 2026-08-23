@@ -1,57 +1,73 @@
-# 🚰 Diam'o — Système de Gestion de Franchise d'Eau
+# DIAMO CRM
 
-CRM pour kiosques de vente d'eau : ventes, clients, offres, objectifs et analyses, avec mode hors-ligne (PWA) et génération de tickets PDF.
+Système de gestion CRM pour le réseau de franchises Diam'O au Sénégal.
+
+## Fonctionnalités
+
+- **Gestion des ventes** : Enregistrement des ventes avec génération de tickets PDF
+- **Gestion des clients** : Base de données clients avec historique des achats et import CSV
+- **Supervision multi-kiosques** : Dashboard pour commerciaux supervisant plusieurs kiosques
+- **Suivi des objectifs** : Objectifs mensuels par kiosque avec suivi en temps réel
+- **Analytics admin** : Performance des fontainiers, comparaison des kiosques, alertes d'inactivité client
+- **Mode hors ligne** : Ventes et création de clients possibles sans connexion internet, synchronisation automatique à la reconnexion
+- **Export de données** : Export CSV et PDF des rapports
 
 ## Rôles
 
-- **Fontainier** : ventes rapides, gestion de ses clients, historique
-- **Commercial** : analyses, objectifs, gestion de son portefeuille
-- **Administrateur** : gestion complète (kiosques, offres, tarifs, utilisateurs, rapports)
+- **Administrateur** : Accès complet, gestion des utilisateurs et kiosques
+- **Commercial** : Supervision de plusieurs kiosques (table `commercials_kiosques`), lecture et correction des ventes/clients/objectifs
+- **Fontainier** : Ventes et gestion des clients de son kiosque
 
-## Stack
+## Stack technique
 
-React 19 · TypeScript · Vite 7 · Tailwind CSS 4 · Zustand · Supabase (Postgres + Auth + Storage) · React Router 7 · Recharts · PWA (Workbox via vite-plugin-pwa)
-
-## Schéma Base de Données
-
-| Table | Champs | Description |
-|-------|--------|-------------|
-| **kiosques** | id, nom, adresse, created_at | Informations des kiosques |
-| **profiles** | id, username, role, kiosque_id, created_at | Profils utilisateurs avec rôles |
-| **offres** | id, nom, volume_ml, description, created_at | Produits disponibles |
-| **offres_kiosque** | id, kiosque_id, offre_id, prix, est_actif, created_at | Prix par kiosque et offre |
-| **clients** | id, kiosque_id, nom, telephone, situation_familiale, adresse, notes, created_at | Informations clients |
-| **ventes** | id, kiosque_id, client_id, offre_id, quantite, montant_total, lien_ticket, created_at | Historique des ventes |
-
-Migration SQL : `supabase/migrations/`. RLS obligatoire sur toutes les tables.
+- **Frontend** : React 19, TypeScript 5.8, Tailwind CSS 4, Recharts, Zustand
+- **Backend** : Supabase (PostgreSQL, Auth, Storage, Realtime)
+- **PWA** : Service workers avec Workbox pour le mode hors ligne
+- **Déploiement** : Vercel
 
 ## Installation
 
-Prérequis : Node.js 18+, un compte Supabase.
-
 ```bash
-git clone <repository-url>
-cd diamo-app
 npm install
-# créer un .env.local à la racine (voir variables ci-dessous)
+```
+
+Créer un fichier `.env` :
+```
+VITE_SUPABASE_URL=votre_url_supabase
+VITE_SUPABASE_ANON_KEY=votre_cle_anon
+```
+
+Lancer en développement :
+```bash
 npm run dev
 ```
 
-Variables d'environnement requises (`.env.local`) :
-
-```
-VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
+Build pour production :
+```bash
+npm run build
 ```
 
-## Scripts
+## Tests
 
 ```bash
-npm run dev            # développement
-npm run build          # build production (tsc + vite)
-npm run preview        # prévisualiser le build
-npm run lint           # ESLint
-npm test               # tests unitaires (Jest)
-npm run cy:open        # Cypress interactif
-npm run test:e2e       # tests e2e Cypress
+npm test
 ```
+
+## Structure du projet
+
+```
+src/
+├── features/     # Modules fonctionnels (vente, etc.)
+├── pages/        # Pages de l'application
+├── components/   # Composants réutilisables (UI, POS, dialogs)
+├── stores/       # État global (Zustand)
+├── lib/          # Utilitaires et helpers (Supabase, stats, scope)
+└── utils/        # Fonctions utilitaires (offline, prix, CSV)
+```
+
+## Sécurité
+
+- Row Level Security (RLS) activé sur toutes les tables
+- Politiques RLS basées sur les rôles utilisateurs
+- Tickets stockés dans un bucket privé, servis via URLs signées
+- CSP strict configuré dans vercel.json
