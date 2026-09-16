@@ -18,7 +18,6 @@ export interface Profile {
   username: string
   email?: string
   phone?: string
-  address?: string
   role: UserRole
   kiosque_id?: string | null
   kiosques?: { nom: string }

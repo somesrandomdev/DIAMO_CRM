@@ -21,7 +21,6 @@ interface ProfileData {
   username: string
   email?: string
   phone?: string
-  address?: string
 }
 
 const roleLabels: Record<string, string> = {
@@ -50,7 +49,6 @@ export default function ProfilePage() {
     username: profile?.username || '',
     email: profile?.email || '',
     phone: profile?.phone || '',
-    address: profile?.address || '',
   })
 
   const handleSave = async () => {
@@ -64,11 +62,12 @@ export default function ProfilePage() {
     try {
       const { error } = await supabase
         .from('profiles')
+        // NOTE: profiles has no 'address' column — sending one fails the
+        // whole update with PGRST204 (schema cache).
         .update({
           username: formData.username.trim(),
           email: formData.email,
           phone: formData.phone,
-          address: formData.address,
         })
         .eq('id', profile?.id)
 
@@ -190,18 +189,6 @@ export default function ProfilePage() {
               <h2 className="text-[12px] font-semibold text-text">Affectation</h2>
               <ReadonlyLine icon={<Shield className="h-4 w-4" />} value={roleLabels[profile?.role || ''] || 'Role inconnu'} />
               <ReadonlyLine icon={<MapPin className="h-4 w-4" />} value={profile?.kiosques?.nom || 'Aucun kiosque assigne'} />
-
-              <label className="block space-y-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">Adresse</span>
-                {isEditing ? (
-                  <FormInput
-                    value={formData.address}
-                    onChange={(event) => setFormData({ ...formData, address: event.target.value })}
-                  />
-                ) : (
-                  <ReadonlyLine icon={<MapPin className="h-4 w-4" />} value={profile?.address || 'Non definie'} />
-                )}
-              </label>
             </div>
           </div>
 
