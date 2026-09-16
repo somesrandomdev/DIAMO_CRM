@@ -10,14 +10,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
+      injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: "Diam'o - Gestion de Franchise d'Eau",
-        short_name: "Diam'o",
-        description: "Systeme de gestion de franchise d'eau",
-        theme_color: '#1a6ef5',
-        background_color: '#f4f6fa',
+        name: 'DIAMO CRM',
+        short_name: 'DIAMO',
+        description: "Système de gestion CRM pour Diam'O",
+        theme_color: '#009EFB',
+        background_color: '#F6F9FB',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -30,7 +31,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // SPA fallback so deep links work offline
+        navigateFallback: '/index.html',
+        // The USER activates updates via the prompt (never silently)
+        skipWaiting: false,
+        clientsClaim: false,
         runtimeCaching: [
           {
             // Auth must never be cached: a replayed /token or /user response
@@ -82,7 +88,7 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
     }),
   ],

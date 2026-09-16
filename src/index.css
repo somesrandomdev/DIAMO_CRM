@@ -439,6 +439,23 @@
 }
 
 .diamo-shell { display:flex; height:100vh; overflow:hidden; background:var(--bg); }
+
+/* PWA update prompt entrance */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 .diamo-sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
 .diamo-sidebar .logo { display:flex; align-items:center; gap:8px; padding:14px 16px; border-bottom:1px solid var(--border); }
 .diamo-sidebar .logo .icon { width:28px; height:28px; background:var(--blue); border-radius:7px; display:flex; align-items:center; justify-content:center; }
