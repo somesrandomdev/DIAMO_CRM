@@ -49,7 +49,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
         email: formData.email.trim() || null,
         localite: formData.localite.trim(),
         type_client: formData.type_client,
-        nombre_personnes: formData.nombre_personnes ? parseInt(formData.nombre_personnes, 10) : null,
+        nombre_personnes: formData.nombre_personnes ? parseInt(formData.nombre_personnes, 10) : 1,
         contenant_prefere: formData.contenant_prefere,
         preference_contact: formData.preference_contact,
         accepte_offres: formData.accepte_offres,
@@ -76,7 +76,9 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
           email: formData.email.trim() || null,
           localite: formData.localite.trim(),
           type_client: formData.type_client,
-          nombre_personnes: formData.nombre_personnes ? parseInt(formData.nombre_personnes, 10) : null,
+          // clients.nombre_personnes is NOT NULL (default 1): sending null
+          // fails the insert with 23502 when the field is left empty.
+          nombre_personnes: formData.nombre_personnes ? parseInt(formData.nombre_personnes, 10) : 1,
           contenant_prefere: formData.contenant_prefere,
           preference_contact: formData.preference_contact,
           accepte_offres: formData.accepte_offres,

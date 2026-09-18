@@ -59,7 +59,8 @@ export async function flushOfflineClients(): Promise<FlushOfflineClientsResult> 
         email: client.email,
         localite: client.localite,
         type_client: client.type_client,
-        nombre_personnes: client.nombre_personnes,
+        // Defensive: pre-fix queued clients may carry null (NOT NULL column).
+        nombre_personnes: client.nombre_personnes ?? 1,
         contenant_prefere: client.contenant_prefere,
         preference_contact: client.preference_contact,
         accepte_offres: client.accepte_offres,
