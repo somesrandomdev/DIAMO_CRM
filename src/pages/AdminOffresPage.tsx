@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Edit, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { SearchBar } from '@/components/SearchBar'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 
@@ -29,6 +30,13 @@ export default function AdminOffresPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [deleting, setDeleting] = useState<OffreRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [offreSearch, setOffreSearch] = useState('')
+
+  const filteredRows = useMemo(() => {
+    const needle = offreSearch.trim().toLowerCase()
+    if (!needle) return rows
+    return rows.filter((row) => row.nom.toLowerCase().includes(needle))
+  }, [offreSearch, rows])
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -184,7 +192,24 @@ export default function AdminOffresPage() {
           ) : rows.length === 0 ? (
             <EmptyState title="Aucune offre" description="Ajoutez une offre pour activer les ventes." />
           ) : (
-            <DataTable columns={columns} data={rows} getRowKey={(row) => row.id} />
+            <>
+              <div className="mb-3 sm:w-80">
+                <SearchBar
+                  value={offreSearch}
+                  onChange={setOffreSearch}
+                  placeholder="Rechercher une offre"
+                  resultCount={filteredRows.length}
+                />
+              </div>
+              {filteredRows.length === 0 ? (
+                <EmptyState
+                  title="Aucun resultat"
+                  description="Essayez un autre nom d'offre."
+                />
+              ) : (
+                <DataTable columns={columns} data={filteredRows} getRowKey={(row) => row.id} />
+              )}
+            </>
           )}
         </CardContent>
       </Card>

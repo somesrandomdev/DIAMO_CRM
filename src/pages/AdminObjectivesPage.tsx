@@ -8,6 +8,7 @@ import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { SearchBar } from '@/components/SearchBar'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -47,6 +48,13 @@ export default function AdminObjectivesPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [deletingKiosqueId, setDeletingKiosqueId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [objectiveSearch, setObjectiveSearch] = useState('')
+
+  const filteredKiosques = useMemo(() => {
+    const needle = objectiveSearch.trim().toLowerCase()
+    if (!needle) return kiosques
+    return kiosques.filter((kiosque) => kiosque.nom.toLowerCase().includes(needle))
+  }, [kiosques, objectiveSearch])
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -278,7 +286,24 @@ export default function AdminObjectivesPage() {
           ) : kiosques.length === 0 ? (
             <EmptyState title="Aucun kiosque" />
           ) : (
-            <DataTable columns={objectiveColumns} data={kiosques} getRowKey={(row) => row.id} />
+            <>
+              <div className="mb-3 sm:w-80">
+                <SearchBar
+                  value={objectiveSearch}
+                  onChange={setObjectiveSearch}
+                  placeholder="Rechercher un kiosque"
+                  resultCount={filteredKiosques.length}
+                />
+              </div>
+              {filteredKiosques.length === 0 ? (
+                <EmptyState
+                  title="Aucun resultat"
+                  description="Essayez un autre nom de kiosque."
+                />
+              ) : (
+                <DataTable columns={objectiveColumns} data={filteredKiosques} getRowKey={(row) => row.id} />
+              )}
+            </>
           )}
         </CardContent>
       </Card>

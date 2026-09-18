@@ -7,6 +7,7 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SearchBar } from '@/components/SearchBar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { PosChip, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
@@ -47,6 +48,17 @@ export default function AdminUsersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [assignedKiosqueIds, setAssignedKiosqueIds] = useState<string[]>([])
   const [initialAssignedIds, setInitialAssignedIds] = useState<string[]>([])
+  const [userSearch, setUserSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all')
+
+  const filteredProfiles = useMemo(() => {
+    const needle = userSearch.trim().toLowerCase()
+    return profiles.filter((row) => {
+      const matchesSearch = !needle || row.username.toLowerCase().includes(needle)
+      const matchesRole = roleFilter === 'all' || row.role === roleFilter
+      return matchesSearch && matchesRole
+    })
+  }, [profiles, roleFilter, userSearch])
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -394,13 +406,46 @@ export default function AdminUsersPage() {
             <EmptyState title="Aucun utilisateur" />
           ) : (
             <>
-              <div className="hidden sm:block">
-                <DataTable columns={columns} data={profiles} getRowKey={(row) => row.id} />
+              <div className="mb-3 grid gap-3 sm:grid-cols-[1fr_220px]">
+                <SearchBar
+                  value={userSearch}
+                  onChange={setUserSearch}
+                  placeholder="Rechercher un utilisateur"
+                  resultCount={filteredProfiles.length}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {(['all', 'fontainier', 'commercial', 'administrateur'] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setRoleFilter(role)}
+                      aria-pressed={roleFilter === role}
+                      className={
+                        roleFilter === role
+                          ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                          : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                      }
+                    >
+                      {role === 'all' ? 'Tous' : roleLabels[role]}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {filteredProfiles.length === 0 ? (
+                <EmptyState
+                  title="Aucun resultat"
+                  description="Essayez un autre nom ou changez de filtre de role."
+                />
+              ) : (
+              <div className="hidden sm:block">
+                <DataTable columns={columns} data={filteredProfiles} getRowKey={(row) => row.id} />
+              </div>
+              )}
 
               {/* Mobile: user cards */}
               <div className="space-y-3 sm:hidden">
-                {profiles.map((row) => (
+                {filteredProfiles.map((row) => (
                   <div
                     key={row.id}
                     className="flex items-start justify-between gap-2 rounded-md border border-border bg-surface p-3"

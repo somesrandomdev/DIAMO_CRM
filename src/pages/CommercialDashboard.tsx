@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SearchBar } from '@/components/SearchBar'
 import { PosCard, PosChip, PosKpi, PosLabel } from '@/components/pos'
 import {
   CreateObjectifDialog,
@@ -225,14 +226,41 @@ export default function CommercialDashboard() {
   }, [kiosques, objectifs, perKiosk])
 
   const selectedKiosque = kiosques.find((kiosque) => kiosque.id === selectedKiosqueId) ?? null
-  const kioskSales = useMemo(
-    () => sales.filter((sale) => sale.kiosque_id === selectedKiosqueId).slice(0, 10),
+  const allKioskSales = useMemo(
+    () => sales.filter((sale) => sale.kiosque_id === selectedKiosqueId),
     [sales, selectedKiosqueId]
   )
-  const kioskClients = useMemo(
+  const allKioskClients = useMemo(
     () => clients.filter((client) => client.kiosque_id === selectedKiosqueId),
     [clients, selectedKiosqueId]
   )
+
+  // Drill-down search + progressive display: the kiosk can have hundreds of
+  // clients; search first, then show 20 at a time behind a "Charger plus".
+  const [clientSearch, setClientSearch] = useState('')
+  const [visibleClients, setVisibleClients] = useState(20)
+  const [visibleSales, setVisibleSales] = useState(10)
+
+  // Reset the paging when switching kiosques or typing.
+  useEffect(() => {
+    setVisibleClients(20)
+  }, [selectedKiosqueId, clientSearch])
+  useEffect(() => {
+    setVisibleSales(10)
+  }, [selectedKiosqueId])
+
+  const kioskClients = useMemo(() => {
+    const needle = clientSearch.trim().toLowerCase()
+    if (!needle) return allKioskClients
+    return allKioskClients.filter(
+      (client) =>
+        client.nom.toLowerCase().includes(needle) ||
+        (client.telephone ?? '').toLowerCase().includes(needle)
+    )
+  }, [allKioskClients, clientSearch])
+  const shownClients = kioskClients.slice(0, visibleClients)
+  const kioskSales = allKioskSales.slice(0, visibleSales)
+
   const kioskObjectif = objectifs.find((objectif) => objectif.kiosque_id === selectedKiosqueId) ?? null
   const kioskRevenue = perKiosk.find((row) => row.kiosqueId === selectedKiosqueId)?.revenue ?? 0
   const objectifProgress = kioskObjectif && kioskObjectif.ca_cible > 0
@@ -556,21 +584,35 @@ export default function CommercialDashboard() {
 
           <PosCard>
             <PosLabel className="mb-3">Clients du kiosque</PosLabel>
-            {kioskClients.length === 0 ? (
+            <div className="mb-3">
+              <SearchBar
+                value={clientSearch}
+                onChange={setClientSearch}
+                placeholder="Nom ou telephone du client"
+                resultCount={kioskClients.length}
+              />
+            </div>
+            {allKioskClients.length === 0 ? (
               <EmptyState title="Aucun client pour ce kiosque" className="border-0" />
+            ) : kioskClients.length === 0 ? (
+              <EmptyState
+                title="Aucun resultat"
+                description="Essayez un autre nom ou numero de telephone."
+                className="border-0"
+              />
             ) : (
               <>
                 <div className="hidden sm:block">
                   <DataTable
                     columns={clientColumns}
-                    data={kioskClients}
+                    data={shownClients}
                     getRowKey={(client) => client.id}
                   />
                 </div>
 
                 {/* Mobile: client cards */}
                 <div className="space-y-3 sm:hidden">
-                  {kioskClients.map((client) => {
+                  {shownClients.map((client) => {
                     const stats = purchases.get(client.id)
                     return (
                       <div
@@ -608,6 +650,17 @@ export default function CommercialDashboard() {
                     )
                   })}
                 </div>
+
+                {visibleClients < kioskClients.length && (
+                  <Button
+                    type="button"
+                    variant="pos-secondary"
+                    className="w-full"
+                    onClick={() => setVisibleClients((count) => count + 20)}
+                  >
+                    Charger plus ({kioskClients.length - visibleClients} restants)
+                  </Button>
+                )}
               </>
             )}
           </PosCard>
@@ -667,6 +720,17 @@ export default function CommercialDashboard() {
                     </div>
                   ))}
                 </div>
+
+                {visibleSales < allKioskSales.length && (
+                  <Button
+                    type="button"
+                    variant="pos-secondary"
+                    className="w-full"
+                    onClick={() => setVisibleSales((count) => count + 20)}
+                  >
+                    Charger plus ({allKioskSales.length - visibleSales} restantes)
+                  </Button>
+                )}
               </>
             )}
           </PosCard>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Edit, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { SearchBar } from '@/components/SearchBar'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 
@@ -24,6 +25,13 @@ export default function AdminKiosquesPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [deleting, setDeleting] = useState<KiosqueRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [kiosqueSearch, setKiosqueSearch] = useState('')
+
+  const filteredRows = useMemo(() => {
+    const needle = kiosqueSearch.trim().toLowerCase()
+    if (!needle) return rows
+    return rows.filter((row) => row.nom.toLowerCase().includes(needle))
+  }, [kiosqueSearch, rows])
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -178,7 +186,24 @@ export default function AdminKiosquesPage() {
           ) : rows.length === 0 ? (
             <EmptyState title="Aucun kiosque" description="Creez le premier kiosque du reseau." />
           ) : (
-            <DataTable columns={columns} data={rows} getRowKey={(row) => row.id} />
+            <>
+              <div className="mb-3 sm:w-80">
+                <SearchBar
+                  value={kiosqueSearch}
+                  onChange={setKiosqueSearch}
+                  placeholder="Rechercher un kiosque"
+                  resultCount={filteredRows.length}
+                />
+              </div>
+              {filteredRows.length === 0 ? (
+                <EmptyState
+                  title="Aucun resultat"
+                  description="Essayez un autre nom de kiosque."
+                />
+              ) : (
+                <DataTable columns={columns} data={filteredRows} getRowKey={(row) => row.id} />
+              )}
+            </>
           )}
         </CardContent>
       </Card>

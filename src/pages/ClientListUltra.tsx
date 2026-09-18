@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Download, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ClientImportDialog } from '@/components/ClientImportDialog'
+import { SearchBar } from '@/components/SearchBar'
 import { useToast } from '@/components/Toast'
 import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
@@ -44,6 +45,24 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
   const [selected, setSelected] = useState<Client | null>(null)
   const [ventes, setVentes] = useState<Vente[]>([])
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [visibleCount, setVisibleCount] = useState(24)
+
+  const filteredClients = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    if (!needle) return clients
+    return clients.filter(
+      (client) =>
+        client.nom.toLowerCase().includes(needle) ||
+        (client.telephone ?? '').toLowerCase().includes(needle)
+    )
+  }, [clients, search])
+
+  useEffect(() => {
+    setVisibleCount(24)
+  }, [search])
+
+  const visibleClients = filteredClients.slice(0, visibleCount)
 
   const reloadClients = () => {
     if (!profile) return
@@ -151,8 +170,25 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
       {clients.length === 0 ? (
         <EmptyState title="Aucun client" description="Les clients crees depuis les ventes apparaitront ici." />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {clients.map((client) => (
+        <>
+          <div className="sm:w-80">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Nom ou telephone du client"
+              resultCount={filteredClients.length}
+            />
+          </div>
+
+          {filteredClients.length === 0 ? (
+            <EmptyState
+              title="Aucun resultat"
+              description="Essayez un autre nom ou numero de telephone."
+            />
+          ) : (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {visibleClients.map((client) => (
             <Card key={client.id} padding="md">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -172,8 +208,24 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                 Details
               </Button>
             </Card>
-          ))}
-        </div>
+                ))}
+
+                {/* "Details" button stays 36px on desktop but the grid keeps cards tappable;
+                    load-more keeps long lists snappy on phones. */}
+                {visibleCount < filteredClients.length && (
+                  <Button
+                    type="button"
+                    variant="pos-secondary"
+                    className="h-12 w-full sm:col-span-2 xl:col-span-3"
+                    onClick={() => setVisibleCount((count) => count + 24)}
+                  >
+                    Charger plus ({filteredClients.length - visibleCount} restants)
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       {selected && (

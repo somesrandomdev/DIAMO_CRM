@@ -95,8 +95,16 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     }
   }
 
+  // Date presets: 'all' | 'today' | 'week' | 'month', or 'custom' + dateFilter.
+  const [datePreset, setDatePreset] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all')
+
   const filteredSales = useMemo(() => {
     const query = searchTerm.trim().toLowerCase()
+    const now = new Date()
+    const todayKey = now.toISOString().slice(0, 10)
+    const weekAgo = new Date(now)
+    weekAgo.setDate(now.getDate() - 6)
+    const monthStart = `${todayKey.slice(0, 7)}-01`
 
     return sales.filter((sale) => {
       const matchesSearch =
@@ -105,14 +113,20 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
         sale.offre?.nom?.toLowerCase().includes(query) ||
         sale.id.toLowerCase().includes(query)
 
-      const matchesDate = !dateFilter || sale.created_at.startsWith(dateFilter)
+      const saleDate = sale.created_at.slice(0, 10)
+      let matchesDate = true
+      if (datePreset === 'today') matchesDate = saleDate === todayKey
+      else if (datePreset === 'week') matchesDate = sale.created_at >= weekAgo.toISOString()
+      else if (datePreset === 'month') matchesDate = saleDate >= monthStart
+      else if (datePreset === 'custom') matchesDate = !dateFilter || saleDate === dateFilter
+
       return matchesSearch && matchesDate
     })
-  }, [dateFilter, sales, searchTerm])
+  }, [dateFilter, datePreset, sales, searchTerm])
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [dateFilter, searchTerm])
+  }, [dateFilter, datePreset, searchTerm])
 
   const exportToCSV = () => {
     exportRowsCSV(
@@ -203,8 +217,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
       </div>
 
       <Card>
-        <CardContent className="pt-4">
-          <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
+        <CardContent className="space-y-3 pt-4">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-text-tertiary sm:top-2.5" />
               <FormInput
@@ -215,22 +229,53 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 className="pl-9"
               />
             </div>
-            <FormInput
-              type="date"
-              value={dateFilter}
-              onChange={(event) => setDateFilter(event.target.value)}
-            />
             <Button
               type="button"
               variant="default"
               onClick={() => {
                 setSearchTerm('')
                 setDateFilter('')
+                setDatePreset('all')
               }}
             >
               <RotateCcw className="h-4 w-4" />
               Reinitialiser
             </Button>
+          </div>
+
+          {/* Period presets — one tap instead of picking dates on a phone */}
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ['all', 'Toutes'],
+                ['today', "Aujourd'hui"],
+                ['week', '7 derniers jours'],
+                ['month', 'Ce mois'],
+                ['custom', 'Date precise'],
+              ] as const
+            ).map(([preset, labelText]) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setDatePreset(preset)}
+                aria-pressed={datePreset === preset}
+                className={
+                  datePreset === preset
+                    ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                    : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                }
+              >
+                {labelText}
+              </button>
+            ))}
+            {datePreset === 'custom' && (
+              <FormInput
+                type="date"
+                value={dateFilter}
+                onChange={(event) => setDateFilter(event.target.value)}
+                className="sm:w-48"
+              />
+            )}
           </div>
         </CardContent>
       </Card>
