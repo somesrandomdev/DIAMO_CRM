@@ -3,6 +3,8 @@ import { useToast } from '@/components/Toast'
 import { generateTicket } from '@/lib/ticketGenerator'
 import { supabase } from '@/lib/supabase'
 
+export { formatFrenchNumber, formatVolume } from '@/lib/ticketFormat'
+
 /**
  * Storage path for a sale's ticket PDF.
  *
@@ -47,6 +49,7 @@ export function useTicketUpload() {
 
       try {
         const ticket = await generateTicket({
+          saleId: input.saleId,
           client: input.client,
           offres: input.offres,
           montant_total: input.montantTotal,

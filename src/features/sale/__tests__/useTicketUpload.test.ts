@@ -7,7 +7,7 @@ jest.mock('@/lib/ticketGenerator', () => ({ generateTicket: jest.fn() }))
 jest.mock('@/lib/supabase', () => ({ supabase: {}, handleSupabaseError: jest.fn() }))
 jest.mock('@/components/Toast', () => ({ useToast: () => ({ showToast: jest.fn() }) }))
 
-import { ticketPath } from '../useTicketUpload'
+import { ticketPath, formatFrenchNumber, formatVolume } from '../useTicketUpload'
 
 describe('ticketPath', () => {
   it('nests the PDF under the kiosque folder — the storage RLS policy requires the first path segment to be the uploader kiosque_id', () => {
@@ -19,5 +19,21 @@ describe('ticketPath', () => {
     expect(path.startsWith('a-b_c.9/')).toBe(true)
     expect(path.endsWith('/ticket-xyz.pdf')).toBe(true)
     expect(path.split('/')).toHaveLength(2)
+  })
+})
+
+describe('ticket formatting helpers', () => {
+  it('formats amounts with French spacing', () => {
+    expect(formatFrenchNumber(700)).toBe('700')
+    expect(formatFrenchNumber(12500)).toBe('12 500')
+    expect(formatFrenchNumber(1000000)).toBe('1 000 000')
+  })
+
+  it('formats volumes as litres when divisible by 1000, ml otherwise', () => {
+    expect(formatVolume(10000)).toBe('10L')
+    expect(formatVolume(1000)).toBe('1L')
+    expect(formatVolume(19000)).toBe('19L')
+    expect(formatVolume(500)).toBe('500 ml')
+    expect(formatVolume(12500)).toBe('12 500 ml')
   })
 })
