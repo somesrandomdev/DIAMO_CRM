@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosLabel } from '@/components/pos'
+import { PosCard, PosLabel, PosProgress } from '@/components/pos'
 import { chartTheme } from '@/lib/chartTheme'
 import { monthKey, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
@@ -195,7 +195,7 @@ export default function RapportsPage() {
       align: 'right',
       render: (row) => (
         <div className="ml-auto w-24">
-          <ProgressBar value={row.progress} />
+          <PosProgress value={row.progress} className="bg-muted" barClassName="bg-primary" />
           <p className="mt-1 text-right text-[10.5px] text-text-secondary">
             {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'}
           </p>
@@ -344,7 +344,7 @@ export default function RapportsPage() {
                           / {row.target > 0 ? toCFA(row.target) : 'Non defini'}
                         </span>
                       </div>
-                      <ProgressBar value={row.progress} />
+                      <PosProgress value={row.progress} className="bg-muted" barClassName="bg-primary" />
                       <p className="mt-1 text-right text-[10.5px] text-text-secondary [font-variant-numeric:tabular-nums]">
                         {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'} - {row.ventes} vente(s)
                       </p>
@@ -371,13 +371,3 @@ export default function RapportsPage() {
   )
 }
 
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-      <div
-        className="h-full rounded-full bg-primary transition-all"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-    </div>
-  )
-}

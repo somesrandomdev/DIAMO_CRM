@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Download, RotateCcw, Search } from 'lucide-react'
+import { Download, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FormInput } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SearchBar } from '@/components/SearchBar'
 import { useToast } from '@/components/Toast'
 import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
@@ -219,16 +220,11 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
       <Card>
         <CardContent className="space-y-3 pt-4">
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-text-tertiary sm:top-2.5" />
-              <FormInput
-                type="text"
-                placeholder="Client, offre ou ID..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                className="pl-9"
-              />
-            </div>
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Client, offre ou ID..."
+            />
             <Button
               type="button"
               variant="default"

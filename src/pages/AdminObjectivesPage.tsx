@@ -9,6 +9,7 @@ import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SearchBar } from '@/components/SearchBar'
+import { monthKey } from '@/lib/commercialStats'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -26,12 +27,8 @@ interface ObjectiveRow {
   ca_cible: number
 }
 
-function monthValue(): string {
-  const date = new Date()
-  date.setDate(1)
-  date.setHours(0, 0, 0, 0)
-  return date.toISOString().slice(0, 10)
-}
+// Shared month-key helper (local-time 'YYYY-MM-01', the objectifs.mois format).
+const monthValue = () => monthKey()
 
 function daysInMonth(): number {
   const date = new Date()

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
 
 /**
@@ -130,10 +131,6 @@ function num(value: number | string | null | undefined): number {
     return Number.isFinite(parsed) ? parsed : 0
   }
   return 0
-}
-
-function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
 function previousMonthStart(date: Date): Date {

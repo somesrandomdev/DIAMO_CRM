@@ -1,5 +1,5 @@
 import { toCFA } from '@/utils/price'
-import { PosCard } from '@/components/pos'
+import { PosCard, PosProgress } from '@/components/pos'
 
 interface SaleSummaryProps {
   todaySalesCount: number
@@ -25,12 +25,7 @@ export function SaleSummary({ todaySalesCount, todayRevenue, dailyGoal }: SaleSu
 
       {dailyGoal !== null && (
         <div>
-          <div className="h-3 w-full overflow-hidden rounded-md bg-[#E3F3FE]">
-            <div
-              className="h-full rounded-md bg-[#009EFB] transition-all"
-              style={{ width: `${Math.min(100, goalProgress)}%` }}
-            />
-          </div>
+          <PosProgress value={goalProgress} className="h-3" />
           <p className="mt-1 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
             Objectif du jour : {toCFA(todayRevenue)} / {toCFA(dailyGoal)} CFA (
             {goalProgress.toFixed(0)} %)

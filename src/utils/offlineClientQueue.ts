@@ -26,11 +26,6 @@ export async function enqueueClient(client: QueuedClient): Promise<void> {
   await db.put('offlineClients', client)
 }
 
-export async function getQueuedClientsCount(): Promise<number> {
-  const db = await getDb()
-  return db.count('offlineClients')
-}
-
 export interface FlushOfflineClientsResult {
   flushed: number
   failed: number

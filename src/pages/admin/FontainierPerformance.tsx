@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosLabel } from '@/components/pos'
+import { PosCard, PosLabel, PosProgress } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { chartTheme } from '@/lib/chartTheme'
 import { monthKey, startOfMonth } from '@/lib/commercialStats'
@@ -141,12 +141,11 @@ export default function FontainierPerformance() {
         const tone = attainmentTone(row.attainment)
         return (
           <div className="ml-auto w-28">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={`h-full rounded-full ${tone.fill}`}
-                style={{ width: `${Math.min(100, row.attainment ?? 0)}%` }}
-              />
-            </div>
+            <PosProgress
+              value={Math.min(100, row.attainment ?? 0)}
+              className="h-2 rounded-full bg-muted"
+              barClassName={`rounded-full ${tone.fill}`}
+            />
             <p className={`mt-1 text-right text-[11px] font-semibold [font-variant-numeric:tabular-nums] ${tone.text}`}>
               {row.attainment !== null ? `${row.attainment.toFixed(0)} %` : 'N/A'}
             </p>
@@ -242,9 +241,11 @@ export default function FontainierPerformance() {
                     </p>
                   </div>
                   <div className="mt-2">
-                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div className={`h-full rounded-full ${tone.fill}`} style={{ width: `${Math.min(100, row.attainment ?? 0)}%` }} />
-                    </div>
+                    <PosProgress
+                      value={Math.min(100, row.attainment ?? 0)}
+                      className="rounded-full bg-muted"
+                      barClassName={`rounded-full ${tone.fill}`}
+                    />
                     <p className={`mt-1 text-right text-[11px] font-semibold [font-variant-numeric:tabular-nums] ${tone.text}`}>
                       {row.attainment !== null
                         ? `${row.attainment.toFixed(0)} % de ${row.target ? toCFA(row.target) : '—'}`

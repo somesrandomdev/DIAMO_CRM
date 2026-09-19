@@ -14,7 +14,7 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
-import { PosCard, PosChip, PosKpi, PosLabel } from '@/components/pos'
+import { PosCard, PosChip, PosKpi, PosLabel, PosProgress } from '@/components/pos'
 import {
   CreateObjectifDialog,
   EditClientDialog,
@@ -465,12 +465,7 @@ export default function CommercialDashboard() {
                 </div>
                 {row.pct !== null && (
                   <div className="mt-1.5">
-                    <div className="h-2.5 w-full overflow-hidden rounded-md bg-[#E3F3FE]">
-                      <div
-                        className="h-full rounded-md bg-[#009EFB] transition-all"
-                        style={{ width: `${Math.min(100, row.pct)}%` }}
-                      />
-                    </div>
+                    <PosProgress value={row.pct} />
                     <p className="mt-0.5 text-right text-[11px] font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
                       {row.pct.toFixed(0)} %
                     </p>
@@ -569,12 +564,7 @@ export default function CommercialDashboard() {
             </div>
             {kioskObjectif && (
               <div className="mt-3">
-                <div className="h-3 w-full overflow-hidden rounded-md bg-[#F6F9FB]">
-                  <div
-                    className="h-full rounded-md bg-[#009EFB] transition-all"
-                    style={{ width: `${Math.min(100, objectifProgress)}%` }}
-                  />
-                </div>
+                <PosProgress value={objectifProgress} className="h-3 bg-[#F6F9FB]" />
                 <p className="mt-1 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
                   {objectifProgress.toFixed(1)} %
                 </p>

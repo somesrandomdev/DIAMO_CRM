@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin, Users } from 'lucide-react'
-import { EvolutionLineChart } from '@/components/charts/EvolutionLineChart'
+import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
 import type { DailyRevenuePoint } from '@/components/dashboard/useAdminDashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -182,7 +182,7 @@ export default function KiosqueDetailPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <EvolutionLineChart data={stats.daily} />
+        <DailyTrendChart data={stats.daily} />
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

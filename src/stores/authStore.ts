@@ -38,8 +38,6 @@ interface AuthStore {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signOut: () => Promise<void>
   loadProfile: () => Promise<void>
-  isAuthenticated: () => boolean
-  hasRole: (role: UserRole) => boolean
 }
 
 // Rate limiter for login attempts (5 attempts per minute)
@@ -202,15 +200,5 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       console.error('Error in loadProfile:', error)
       set({ user: null, profile: null })
     }
-  },
-
-  isAuthenticated: () => {
-    const { user, profile } = get()
-    return user !== null && profile !== null
-  },
-
-  hasRole: (role: UserRole) => {
-    const { profile } = get()
-    return profile?.role === role
   },
 }))
