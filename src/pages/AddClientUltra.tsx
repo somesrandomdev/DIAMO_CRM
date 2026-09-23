@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { useToast } from '@/components/Toast'
+import { normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
 import { enqueueClient, type QueuedClient } from '@/utils/offlineClientQueue'
 import { useAuthStore } from '@/stores/authStore'
@@ -24,6 +25,21 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  /**
+   * Per-kiosk duplicate check (the UNIQUE constraint is (kiosque_id, telephone)
+   * — the SAME client MAY exist in several kiosques on purpose). Normalized
+   * digits only, so spacing never hides a duplicate.
+   */
+  async function findDuplicateInKiosk(normalized: string, kiosqueId: string) {
+    const { data } = await supabase
+      .from('clients')
+      .select('id, nom')
+      .eq('telephone', normalized)
+      .eq('kiosque_id', kiosqueId)
+      .maybeSingle()
+    return data
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
@@ -33,6 +49,8 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
       return
     }
 
+    const normalizedPhone = normalizePhone(formData.telephone)
+
     // Offline: queue the client in IndexedDB with a placeholder id. Offline
     // sales can reference that id; the flush re-points them to the real uuid.
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -41,11 +59,21 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
         return
       }
 
+      const duplicate = await findDuplicateInKiosk(normalizedPhone, profile.kiosque_id)
+      if (duplicate) {
+        showToast({
+          type: 'error',
+          title: 'Doublon',
+          message: `Ce numéro existe déjà dans ce kiosque pour « ${duplicate.nom} ».`,
+        })
+        return
+      }
+
       const queuedClient: QueuedClient = {
         offline_id: `offline-${crypto.randomUUID()}`,
         kiosque_id: profile.kiosque_id,
         nom: formData.nom_prenom.trim(),
-        telephone: formData.telephone.trim(),
+        telephone: normalizedPhone,
         email: formData.email.trim() || null,
         localite: formData.localite.trim(),
         type_client: formData.type_client,
@@ -68,11 +96,30 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
 
     setLoading(true)
     try {
+      if (!profile?.kiosque_id) {
+        setError('Aucun kiosque attribue : impossible de creer un client.')
+        setLoading(false)
+        return
+      }
+
+      const duplicate = await findDuplicateInKiosk(normalizedPhone, profile.kiosque_id)
+      if (duplicate) {
+        showToast({
+          type: 'error',
+          title: 'Doublon',
+          message: `Ce numéro existe déjà dans ce kiosque pour « ${duplicate.nom} ».`,
+        })
+        setLoading(false)
+        return
+      }
+
       const { data, error: insertError } = await supabase
         .from('clients')
         .insert({
           nom: formData.nom_prenom.trim(),
-          telephone: formData.telephone.trim(),
+          // Stored normalized so duplicate checks and login resolution match
+          // regardless of how the number was typed.
+          telephone: normalizedPhone,
           email: formData.email.trim() || null,
           localite: formData.localite.trim(),
           type_client: formData.type_client,

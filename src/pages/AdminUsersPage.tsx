@@ -11,6 +11,7 @@ import { SearchBar } from '@/components/SearchBar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { PosChip, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
+import { normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
 import type { UserRole } from '@/stores/authStore'
 
@@ -23,6 +24,7 @@ interface ProfileRow {
   id: string
   username: string
   role: UserRole
+  phone: string | null
   kiosque_id: string | null
 }
 
@@ -42,7 +44,7 @@ export default function AdminUsersPage() {
   const { showToast } = useToast()
   const [profiles, setProfiles] = useState<ProfileRow[]>([])
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
-  const [form, setForm] = useState({ id: '', username: '', role: 'fontainier' as UserRole, kiosque_id: '' })
+  const [form, setForm] = useState({ id: '', username: '', phone: '', role: 'fontainier' as UserRole, kiosque_id: '' })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -63,7 +65,7 @@ export default function AdminUsersPage() {
   const load = useCallback(async () => {
     setIsLoading(true)
     const [profilesResult, kiosquesResult] = await Promise.all([
-      supabase.from('profiles').select('id, username, role, kiosque_id').order('username'),
+      supabase.from('profiles').select('id, username, role, phone, kiosque_id').order('username'),
       supabase.from('kiosques').select('id, nom').order('nom'),
     ])
 
@@ -92,7 +94,7 @@ export default function AdminUsersPage() {
   }, [kiosques])
 
   const resetForm = () => {
-    setForm({ id: '', username: '', role: 'fontainier', kiosque_id: '' })
+    setForm({ id: '', username: '', phone: '', role: 'fontainier', kiosque_id: '' })
     setAssignedKiosqueIds([])
     setInitialAssignedIds([])
   }
@@ -165,6 +167,9 @@ export default function AdminUsersPage() {
       .update({
         username: trimmedUsername,
         role: form.role,
+        // Normalized digits: doubles as a login identifier and matches
+        // profiles_phone_unique.
+        phone: normalizePhone(form.phone) || null,
         // profiles.kiosque_id is fontainier-only: commercials get their
         // kiosques exclusively from the commercials_kiosques junction table.
         kiosque_id: form.role === 'fontainier' ? form.kiosque_id : null,
@@ -177,7 +182,9 @@ export default function AdminUsersPage() {
         type: 'error',
         title: 'Modification impossible',
         message:
-          'Impossible de mettre à jour cet utilisateur. Vérifiez que les informations sont correctes.',
+          error.code === '23505'
+            ? 'Ce numéro est déjà utilisé par un autre compte.'
+            : 'Impossible de mettre à jour cet utilisateur. Vérifiez que les informations sont correctes.',
       })
       setIsSaving(false)
       return
@@ -282,6 +289,7 @@ export default function AdminUsersPage() {
             setForm({
               id: row.id,
               username: row.username,
+              phone: row.phone ?? '',
               role: row.role,
               kiosque_id: row.kiosque_id ?? '',
             })
@@ -332,6 +340,12 @@ export default function AdminUsersPage() {
           <CardContent>
             <div className="grid gap-3 lg:grid-cols-[1fr_180px_auto]">
               <FormInput value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Nom utilisateur" />
+              <FormInput
+                value={form.phone}
+                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                placeholder="Téléphone (ex : 77 123 45 67)"
+                type="tel"
+              />
               <FormSelect value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as UserRole }))}>
                 <option value="fontainier">Fontainier</option>
                 <option value="commercial">Commercial</option>
@@ -469,6 +483,7 @@ export default function AdminUsersPage() {
                         setForm({
                           id: row.id,
                           username: row.username,
+                          phone: row.phone ?? '',
                           role: row.role,
                           kiosque_id: row.kiosque_id ?? '',
                         })

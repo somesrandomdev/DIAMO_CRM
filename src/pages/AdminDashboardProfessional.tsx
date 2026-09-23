@@ -13,7 +13,8 @@ import { AlertsPanel } from '@/components/dashboard/AlertsPanel'
 import { BigKPICard } from '@/components/dashboard/BigKPICard'
 import { ChurnAlertCard } from '@/components/dashboard/ChurnAlertCard'
 import { KiosqueTable } from '@/components/dashboard/KiosqueTable'
-import { useAdminDashboard } from '@/components/dashboard/useAdminDashboard'
+import { TopClientsCard } from '@/components/TopClientsCard'
+import { useAdminDashboard, type AdminTimePeriod } from '@/components/dashboard/useAdminDashboard'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
 import { KioskComparisonChart } from '@/components/charts/KioskComparisonChart'
 import { OffreDonut } from '@/components/charts/OffreDonut'
@@ -24,6 +25,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatCount, toCFA } from '@/utils/price'
 
 type QuickAction = 'kiosque' | 'offre' | 'utilisateur' | 'export' | null
+
+const PERIOD_OPTIONS: { value: AdminTimePeriod; label: string }[] = [
+  { value: 'today', label: "Aujourd'hui" },
+  { value: 'week', label: '7 derniers jours' },
+  { value: 'month', label: 'Ce mois' },
+  { value: 'lastmonth', label: 'Mois dernier' },
+  { value: 'custom', label: 'Date précise' },
+]
 
 function downloadCsv(filename: string, rows: string[][]) {
   const csv = rows
@@ -38,30 +47,76 @@ function downloadCsv(filename: string, rows: string[][]) {
   window.URL.revokeObjectURL(url)
 }
 
-/** Toggle between "Ce mois" and "Mois dernier". */
-function PeriodToggle({
-  value,
-  onChange,
-}: {
-  value: 'current' | 'previous'
-  onChange: (v: 'current' | 'previous') => void
-}) {
+/** Period + kiosk filter bar — every change re-fetches the dashboard. */
+function DashboardFilters() {
+  const {
+    timePeriod,
+    setTimePeriod,
+    customDate,
+    setCustomDate,
+    selectedKiosqueIds,
+    toggleKiosk,
+    allKiosques,
+  } = useAdminDashboard()
+
   return (
-    <div className="inline-flex rounded-md border border-border bg-surface text-[12px] font-medium">
-      {(['current', 'previous'] as const).map((p) => (
+    <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
+      <div className="flex flex-wrap gap-2">
+        {PERIOD_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setTimePeriod(option.value)}
+            aria-pressed={timePeriod === option.value}
+            className={
+              timePeriod === option.value
+                ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+        {timePeriod === 'custom' && (
+          <input
+            type="date"
+            value={customDate}
+            onChange={(event) => setCustomDate(event.target.value)}
+            aria-label="Date précise"
+            className="h-11 rounded-md border border-border bg-surface px-3 text-[13px] text-text"
+          />
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
         <button
-          key={p}
           type="button"
-          onClick={() => onChange(p)}
+          onClick={() => selectedKiosqueIds.forEach(toggleKiosk)}
+          aria-pressed={selectedKiosqueIds.length === 0}
           className={
-            value === p
-              ? 'rounded-md bg-blue px-3 py-1.5 text-white'
-              : 'px-3 py-1.5 text-text-secondary hover:text-text'
+            selectedKiosqueIds.length === 0
+              ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+              : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
           }
         >
-          {p === 'current' ? 'Ce mois' : 'Mois dernier'}
+          Tous les kiosques
         </button>
-      ))}
+        {allKiosques.map((kiosque) => (
+          <button
+            key={kiosque.id}
+            type="button"
+            onClick={() => toggleKiosk(kiosque.id)}
+            aria-pressed={selectedKiosqueIds.includes(kiosque.id)}
+            className={
+              selectedKiosqueIds.includes(kiosque.id)
+                ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+            }
+          >
+            {kiosque.nom}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -74,8 +129,6 @@ export default function AdminDashboardProfessional() {
     kiosques,
     dailyRevenue,
     offerBreakdown,
-    period,
-    setPeriod,
     isLoading,
     error,
     refresh,
@@ -105,6 +158,9 @@ export default function AdminDashboardProfessional() {
 
   return (
     <div className="space-y-5">
+      {/* ── Filters (period + kiosques) ── */}
+      <DashboardFilters />
+
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -114,7 +170,6 @@ export default function AdminDashboardProfessional() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <PeriodToggle value={period} onChange={setPeriod} />
           <Button
             type="button"
             variant="default"
@@ -135,6 +190,7 @@ export default function AdminDashboardProfessional() {
       )}
 
       {!isLoading && <ChurnAlertCard />}
+      {!isLoading && <TopClientsCard />}
 
       {/* ── KPI row ── */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -143,15 +199,9 @@ export default function AdminDashboardProfessional() {
         ) : (
           <>
             <BigKPICard
-              label="Chiffre d'affaires du mois"
+              label="Chiffre d'affaires"
               value={toCFA(kpis.revenue)}
-              hint={
-                kpis.revenueDelta !== null
-                  ? 'vs mois dernier'
-                  : period === 'previous'
-                    ? 'mois précédent'
-                    : undefined
-              }
+              hint="vs période précédente"
               deltaPercent={kpis.revenueDelta ?? undefined}
               icon={<BarChart3 className="h-5 w-5" />}
               tone="blue"
@@ -240,12 +290,10 @@ export default function AdminDashboardProfessional() {
               <DailyTrendChart data={dailyRevenue} />
               <KioskComparisonChart
                 data={kiosques}
-                showDelta={period === 'current'}
+                showDelta
                 onBarClick={(id) => navigate(`/admin/kiosques/${id}`)}
               />
-              {period === 'current' && offerBreakdown.length > 0 && (
-                <OffreDonut data={offerBreakdown} />
-              )}
+              {offerBreakdown.length > 0 && <OffreDonut data={offerBreakdown} />}
               <KiosqueTable rows={kiosques} />
             </>
           )}

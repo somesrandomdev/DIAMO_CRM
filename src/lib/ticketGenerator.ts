@@ -69,7 +69,7 @@ export async function generateTicket(data: TicketData) {
   const logoHeight = (logoWidth * 131) / 329
 
   /* -- Pass 1: measure the page height ------------------------------------ */
-  const headerHeight = 6 + logoHeight + 5 + 4.5 + 4.5 + 3
+  const headerHeight = 6 + logoHeight + 5 + 4.5 + 3
   const metaHeight = 4 + 4 + 4 + (client.telephone ? 4 : 0) + 3
   const tableHeaderHeight = 5.5
   const rowHeights = items.map(() => 4.8)
@@ -99,12 +99,6 @@ export async function generateTicket(data: TicketData) {
   pdf.setFontSize(16)
   pdf.setTextColor(...BRAND.deepBlue)
   pdf.text("Diam'O", PAGE_WIDTH / 2, y, { align: 'center' })
-  y += 4.5
-
-  pdf.setFont('helvetica', 'italic')
-  pdf.setFontSize(9)
-  pdf.setTextColor(...BRAND.waterBlue)
-  pdf.text('Le goût de l’excellence', PAGE_WIDTH / 2, y, { align: 'center' })
   y += 4.5
 
   pdf.setFont('helvetica', 'bold')

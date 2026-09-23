@@ -6,7 +6,11 @@ import { supabase } from '@/lib/supabase'
  * Period the dashboard is currently showing.
  * 'current' = month to date, 'previous' = the full month before it.
  */
-export type DashboardPeriod = 'current' | 'previous'
+/**
+ * Period selector for the admin dashboard filters.
+ * 'custom' uses the date picked via setCustomDate ('YYYY-MM-DD').
+ */
+export type AdminTimePeriod = 'today' | 'week' | 'month' | 'lastmonth' | 'custom'
 
 /* ------------------------------------------------------------------ *
  * RPC contract
@@ -192,9 +196,48 @@ export function useAdminDashboard() {
   const [raw, setRaw] = useState<RpcPayload | null>(null)
   const [kiosqueNames, setKiosqueNames] = useState<Map<string, string>>(new Map())
   const [offreNames, setOffreNames] = useState<Map<string, string>>(new Map())
-  const [period, setPeriod] = useState<DashboardPeriod>('current')
+  const [allKiosques, setAllKiosques] = useState<{ id: string; nom: string }[]>([])
+  const [timePeriod, setTimePeriod] = useState<AdminTimePeriod>('month')
+  const [customDate, setCustomDate] = useState(() => toDateParam(new Date()))
+  const [selectedKiosqueIds, setSelectedKiosqueIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  /** Window covered by the KPI cards and ranking; the trend stays a rolling
+   *  30 days regardless (it's a trend line, not a period total). */
+  const windows = useMemo(() => {
+    const now = new Date()
+    const dayOffset = (offset: number) => {
+      const date = new Date(now)
+      date.setDate(now.getDate() + offset)
+      return date
+    }
+    switch (timePeriod) {
+      case 'today':
+        return { start: dayOffset(0), prev: dayOffset(-1) }
+      case 'week':
+        return { start: dayOffset(-6), prev: dayOffset(-13) }
+      case 'lastmonth': {
+        const start = startOfMonth(dayOffset(-30))
+        const prev = previousMonthStart(start)
+        return { start, prev }
+      }
+      case 'custom': {
+        const parts = customDate.split('-').map(Number)
+        const start = new Date(parts[0], (parts[1] ?? 1) - 1, parts[2] ?? 1)
+        const prev = new Date(start)
+        prev.setDate(start.getDate() - 1)
+        return { start, prev }
+      }
+      case 'month':
+      default:
+        return { start: startOfMonth(now), prev: previousMonthStart(now) }
+    }
+  }, [customDate, timePeriod])
+
+  const startKey = toDateParam(windows.start)
+  const prevKey = toDateParam(windows.prev)
+  const kioskKey = selectedKiosqueIds.join(',')
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -202,8 +245,6 @@ export function useAdminDashboard() {
 
     try {
       const now = new Date()
-      const monthStart = startOfMonth(now)
-      const prevStart = previousMonthStart(now)
       const last30Start = new Date(now)
       last30Start.setDate(now.getDate() - 29)
 
@@ -212,9 +253,11 @@ export function useAdminDashboard() {
       // and are covered by the admin read-all policies.
       const [statsResult, kiosquesResult, offresResult] = await Promise.all([
         supabase.rpc('get_admin_dashboard_stats', {
-          p_month_start: toDateParam(monthStart),
-          p_prev_start: toDateParam(prevStart),
+          p_month_start: toDateParam(windows.start),
+          p_prev_start: toDateParam(windows.prev),
           p_last30_start: toDateParam(last30Start),
+          // Requires the 20260919 migration; NULL = all kiosques.
+          p_kiosque_ids: selectedKiosqueIds.length > 0 ? selectedKiosqueIds : null,
         }),
         supabase.from('kiosques').select('id, nom').order('nom'),
         supabase.from('offres').select('id, nom'),
@@ -231,7 +274,9 @@ export function useAdminDashboard() {
         previous: payload.previous ?? [],
         daily: payload.daily ?? [],
       })
-      setKiosqueNames(new Map((kiosquesResult.data ?? []).map((row) => [row.id, row.nom])))
+      const kiosqueRows = (kiosquesResult.data ?? []) as { id: string; nom: string }[]
+      setKiosqueNames(new Map(kiosqueRows.map((row) => [row.id, row.nom])))
+      setAllKiosques(kiosqueRows)
       setOffreNames(new Map((offresResult.data ?? []).map((row) => [row.id, row.nom])))
     } catch (caught) {
       console.error('Error loading admin dashboard:', caught)
@@ -244,11 +289,20 @@ export function useAdminDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startKey, prevKey, kioskKey])
 
   useEffect(() => {
     load()
   }, [load])
+
+  const toggleKiosk = useCallback((kiosqueId: string) => {
+    setSelectedKiosqueIds((current) =>
+      current.includes(kiosqueId)
+        ? current.filter((id) => id !== kiosqueId)
+        : [...current, kiosqueId]
+    )
+  }, [])
 
   /**
    * All derived data. Recomputed only when the payload, the name lookups, or
@@ -282,18 +336,15 @@ export function useAdminDashboard() {
       )
     })
 
-    const showingPrevious = period === 'previous'
-
-    // Which month's numbers drive the cards and the kiosk bar chart.
-    const activeCaByKiosque = showingPrevious ? previousCaByKiosque : currentCaByKiosque
-    const activeNbByKiosque = showingPrevious ? new Map<string, number>() : currentNbByKiosque
+    // The active window (chosen by the period filter) drives the cards and
+    // the kiosk bar chart; the previous window only feeds the delta.
+    const activeCaByKiosque = currentCaByKiosque
+    const activeNbByKiosque = currentNbByKiosque
 
     const currentRevenue = [...currentCaByKiosque.values()].reduce((a, b) => a + b, 0)
     const previousRevenue = [...previousCaByKiosque.values()].reduce((a, b) => a + b, 0)
-    const currentTransactions = currentRows.reduce((sum, row) => sum + num(row.nb), 0)
-
-    const activeRevenue = showingPrevious ? previousRevenue : currentRevenue
-    const activeTransactions = showingPrevious ? 0 : currentTransactions
+    const activeRevenue = currentRevenue
+    const activeTransactions = currentRows.reduce((sum, row) => sum + num(row.nb), 0)
 
     // Kiosk league table / bar chart.
     const kiosqueIds = new Set<string>([
@@ -305,12 +356,8 @@ export function useAdminDashboard() {
       .map((id) => {
         const caMois = activeCaByKiosque.get(id) ?? 0
         const nbVentes = activeNbByKiosque.get(id) ?? 0
-        // Delta only means something for the current month (previous vs the
-        // month before it isn't in the payload), so it's zeroed when the user
-        // toggles to last month rather than showing a misleading number.
-        const delta = showingPrevious
-          ? 0
-          : percentDelta(caMois, previousCaByKiosque.get(id) ?? 0)
+        // Delta = selected window vs the window before it.
+        const delta = percentDelta(caMois, previousCaByKiosque.get(id) ?? 0)
 
         return {
           id,
@@ -324,21 +371,18 @@ export function useAdminDashboard() {
       })
       .sort((a, b) => b.caMois - a.caMois)
 
-    // Offer breakdown — only available for the current month, since the
-    // `previous` payload is aggregated per kiosk and carries no offre_id.
+    // Offer breakdown from the active window's per-offre rows.
     const offerMap = new Map<string, OfferBreakdownPoint>()
-    if (!showingPrevious) {
-      currentRows.forEach((row) => {
-        const name = row.offre_id
-          ? offreNames.get(row.offre_id) ?? 'Offre inconnue'
-          : 'Offre inconnue'
-        const existing = offerMap.get(name) ?? { name, value: 0, ventes: 0, quantite: 0 }
-        existing.value += num(row.ca)
-        existing.ventes += num(row.nb)
-        existing.quantite += num(row.qty)
-        offerMap.set(name, existing)
-      })
-    }
+    currentRows.forEach((row) => {
+      const name = row.offre_id
+        ? offreNames.get(row.offre_id) ?? 'Offre inconnue'
+        : 'Offre inconnue'
+      const existing = offerMap.get(name) ?? { name, value: 0, ventes: 0, quantite: 0 }
+      existing.value += num(row.ca)
+      existing.ventes += num(row.nb)
+      existing.quantite += num(row.qty)
+      offerMap.set(name, existing)
+    })
     const offerBreakdown = [...offerMap.values()].sort((a, b) => b.value - a.value)
 
     const now = new Date()
@@ -351,7 +395,7 @@ export function useAdminDashboard() {
     return {
       kpis: {
         revenue: activeRevenue,
-        revenueDelta: showingPrevious ? 0 : percentDelta(currentRevenue, previousRevenue),
+        revenueDelta: percentDelta(currentRevenue, previousRevenue),
         transactions: activeTransactions,
         transactionsDelta: 0,
         topKiosqueName: topKiosque?.caMois ? topKiosque.nom : 'Aucun',
@@ -361,22 +405,27 @@ export function useAdminDashboard() {
       },
       kiosques,
       // The daily series is always the rolling 30 days regardless of the
-      // toggle — it's a trend line, and cutting it to a calendar month would
-      // make the "last month" view a stub.
+      // period — it's a trend line, and cutting it to the window would make
+      // short periods a stub.
       dailyRevenue: buildDailySeries(raw.daily ?? [], last30Start, 30),
       offerBreakdown,
     }
-  }, [raw, kiosqueNames, offreNames, period])
+  }, [raw, kiosqueNames, offreNames])
 
   return useMemo(
     () => ({
       ...data,
-      period,
-      setPeriod,
+      timePeriod,
+      setTimePeriod,
+      customDate,
+      setCustomDate,
+      selectedKiosqueIds,
+      toggleKiosk,
+      allKiosques,
       isLoading,
       error,
       refresh: load,
     }),
-    [data, period, isLoading, error, load]
+    [data, toggleKiosk, timePeriod, customDate, selectedKiosqueIds, allKiosques, isLoading, error, load]
   )
 }

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/Toast'
 import {
   generateTemporaryPassword,
   provisionEmployee,
@@ -61,8 +62,10 @@ export function AddEmployeeDialog({
   onCreated,
 }: AddEmployeeDialogProps) {
   const fieldId = useId()
+  const { showToast } = useToast()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>('fontainier')
   const [kiosqueId, setKiosqueId] = useState('')
@@ -86,6 +89,7 @@ export function AddEmployeeDialog({
     if (!open) return
     setFullName('')
     setEmail('')
+    setPhone('')
     setPassword(generateTemporaryPassword())
     setRole('fontainier')
     setKiosqueId('')
@@ -128,8 +132,17 @@ export function AddEmployeeDialog({
       password,
       role,
       kiosqueId: needsKiosque ? kiosqueId : null,
+      phone: phone.trim() || undefined,
     })
     setIsSaving(false)
+
+    if (!result.success && result.phoneConflict) {
+      showToast({
+        type: 'error',
+        title: 'Numéro déjà utilisé',
+        message: 'Ce numéro est déjà utilisé par un autre compte.',
+      })
+    }
 
     if (!result.success) {
       setFormError(result.message)
@@ -182,11 +195,29 @@ export function AddEmployeeDialog({
               autoComplete="off"
               error={!!errors.fullName}
               aria-invalid={!!errors.fullName}
-              aria-describedby={errors.fullName ? `${fieldId}-name-error` : undefined}
+              aria-describedby={`${fieldId}-name-help${errors.fullName ? ` ${fieldId}-name-error` : ''}`}
             />
+            <p id={`${fieldId}-name-help`} className="text-[12px] text-text-secondary">
+              Sert d'identifiant de connexion (en plus du téléphone).
+            </p>
             {errors.fullName && (
               <FieldError id={`${fieldId}-name-error`}>{errors.fullName}</FieldError>
             )}
+          </div>
+
+          {/* Téléphone (optionnel) — sert d'identifiant de connexion */}
+          <div className="space-y-1.5">
+            <Label htmlFor={`${fieldId}-phone`} className="text-[13px]">
+              Téléphone (optionnel)
+            </Label>
+            <FormInput
+              id={`${fieldId}-phone`}
+              type="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="Ex : 77 123 45 67"
+              autoComplete="off"
+            />
           </div>
 
           {/* E-mail */}

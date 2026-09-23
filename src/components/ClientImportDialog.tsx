@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { PosLabel, PosSelect } from '@/components/pos'
+import { normalizePhone } from '@/lib/phone'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 
@@ -51,6 +52,9 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
     adresse: '',
   })
   const [skipInvalid, setSkipInvalid] = useState(true)
+  const [skipDuplicates, setSkipDuplicates] = useState(true)
+  /** Normalized phones already present in the TARGET kiosk (per-kiosk uniqueness). */
+  const [kioskPhones, setKioskPhones] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
   const [isImporting, setIsImporting] = useState(false)
 
@@ -62,7 +66,26 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
     setMapping({ nom: '', telephone: '', email: '', adresse: '' })
     setError('')
     setIsImporting(false)
+    setKioskPhones(new Set())
   }, [open])
+
+  // Existing phones of the target kiosk — duplicates are only flagged against
+  // THIS kiosk (the same client in another kiosk is allowed by design).
+  useEffect(() => {
+    if (!open || !kiosqueId) return
+    let cancelled = false
+    supabase
+      .from('clients')
+      .select('telephone')
+      .eq('kiosque_id', kiosqueId)
+      .then(({ data, error }) => {
+        if (cancelled || error) return
+        setKioskPhones(new Set((data ?? []).map((row) => normalizePhone(row.telephone))))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, kiosqueId])
 
   const handleFile = (file: File) => {
     setFileName(file.name)
@@ -102,8 +125,26 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
     adresse: (mapping.adresse ? row[mapping.adresse] ?? '' : '').trim() || null,
   }))
 
+  // Duplicate = normalized phone already in the target kiosk OR already seen
+  // earlier in the CSV itself. Per-kiosk scope: another kiosk's number is fine.
+  const seenPhones = new Set<string>()
+  const isDuplicate = (row: (typeof mappedRows)[number]): boolean => {
+    const phone = normalizePhone(row.telephone)
+    if (!phone) return false
+    if (kioskPhones.has(phone)) return true
+    if (seenPhones.has(phone)) return true
+    return false
+  }
+  const duplicateFlags = mappedRows.map((row) => {
+    const dup = isDuplicate(row)
+    const phone = normalizePhone(row.telephone)
+    if (phone && !dup) seenPhones.add(phone)
+    return dup
+  })
+
   const validRows = mappedRows.filter((row) => row.nom.length > 0)
   const invalidCount = mappedRows.length - validRows.length
+  const duplicateCount = validRows.filter((_, index) => duplicateFlags[index]).length
 
   const importClients = async () => {
     if (!mapping.nom) {
@@ -119,8 +160,21 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
       return
     }
 
+    const nonDuplicateRows = validRows.filter((_, index) => !duplicateFlags[index])
+    if (duplicateCount > 0 && !skipDuplicates) {
+      setError(
+        `${duplicateCount} doublon(s) détecté(s) dans ce kiosque — cochez « Ignorer les doublons » ou retirez-les du fichier.`
+      )
+      return
+    }
+
     setIsImporting(true)
-    const toInsert = validRows.map((row) => ({ ...row, kiosque_id: kiosqueId }))
+    const toInsert = nonDuplicateRows.map((row) => ({
+      ...row,
+      // Normalized digits: matches duplicate checks and login resolution.
+      telephone: normalizePhone(row.telephone),
+      kiosque_id: kiosqueId,
+    }))
 
     // Insert in chunks: PostgREST payload limits apply to very large CSVs.
     let inserted = 0
@@ -146,7 +200,11 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
     showToast({
       type: 'success',
       title: 'Import réussi',
-      message: `${inserted} client(s) importé(s)${invalidCount > 0 ? `, ${invalidCount} ligne(s) ignorée(s)` : ''}.`,
+      message:
+        `${inserted} client(s) importé(s)` +
+        (duplicateCount > 0 && skipDuplicates ? `, ${duplicateCount} doublon(s) ignoré(s)` : '') +
+        (invalidCount > 0 ? `, ${invalidCount} ligne(s) invalide(s) ignorée(s)` : '') +
+        '.',
     })
     onOpenChange(false)
     onImported()
@@ -214,16 +272,35 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
                 <div className="space-y-1 text-[13px]">
                   {mappedRows.slice(0, 5).map((row, index) => (
                     <p key={index} className="truncate">
-                      <span className={row.nom ? 'font-semibold text-[#12364D]' : 'text-[#FF4949]'}>
+                      <span
+                        className={
+                          !row.nom || duplicateFlags[index]
+                            ? 'font-semibold text-[#FF4949]'
+                            : 'font-semibold text-[#12364D]'
+                        }
+                      >
                         {row.nom || '(sans nom — sera ignorée)'}
+                        {duplicateFlags[index] ? ' — doublon dans ce kiosque' : ''}
                       </span>
                       {row.telephone ? <span className="text-[#1C5376]"> - {row.telephone}</span> : null}
                     </p>
                   ))}
                 </div>
                 <p className="mt-2 text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
-                  {validRows.length} ligne(s) valide(s), {invalidCount} invalide(s).
+                  {validRows.length} ligne(s) valide(s), {invalidCount} invalide(s)
+                  {duplicateCount > 0 ? `, ${duplicateCount} doublon(s)` : ''}.
                 </p>
+                {duplicateCount > 0 && (
+                  <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
+                    <input
+                      type="checkbox"
+                      checked={skipDuplicates}
+                      onChange={(event) => setSkipDuplicates(event.target.checked)}
+                      className="h-5 w-5"
+                    />
+                    Ignorer les doublons
+                  </label>
+                )}
                 {invalidCount > 0 && (
                   <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
                     <input

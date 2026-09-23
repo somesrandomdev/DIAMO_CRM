@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { getEnvConfig } from '@/utils/env'
+import { normalizePhone } from '@/lib/phone'
 import type { UserRole } from '@/stores/authStore'
 
 export interface ProvisionEmployeeInput {
@@ -9,6 +10,8 @@ export interface ProvisionEmployeeInput {
   password: string
   role: UserRole
   kiosqueId: string | null
+  /** Optional contact number; stored normalized (digits only). */
+  phone?: string
 }
 
 export interface ProvisionEmployeeResult {
@@ -17,6 +20,8 @@ export interface ProvisionEmployeeResult {
   message: string
   /** True when the account exists but the employee must confirm their e-mail. */
   needsEmailConfirmation?: boolean
+  /** True when profiles_phone_unique rejected the number. */
+  phoneConflict?: boolean
 }
 
 /**
@@ -112,6 +117,8 @@ export async function provisionEmployee(
       id: newUser.id,
       username: input.fullName,
       email: input.email,
+      // profiles_phone_unique: normalized digits, or null (multiple NULLs allowed).
+      phone: input.phone ? normalizePhone(input.phone) : null,
       role: input.role,
       // profiles.kiosque_id is fontainier-only; commercials are supervised
       // via commercials_kiosques, assigned separately by an admin.
@@ -122,6 +129,13 @@ export async function provisionEmployee(
 
   if (profileError) {
     console.error('Employee profile upsert failed:', profileError)
+    if (profileError.code === '23505') {
+      return {
+        success: false,
+        phoneConflict: true,
+        message: 'Ce numéro est déjà utilisé par un autre compte.',
+      }
+    }
     // The Auth account now exists but has no usable profile. Say so plainly
     // rather than reporting a success the admin can't act on.
     return {

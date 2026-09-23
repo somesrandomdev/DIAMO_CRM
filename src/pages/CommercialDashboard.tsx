@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Edit, Store, Target } from 'lucide-react'
+import { Edit, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -16,12 +16,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
 import { PosCard, PosChip, PosKpi, PosLabel, PosProgress } from '@/components/pos'
 import {
-  CreateObjectifDialog,
   EditClientDialog,
-  EditObjectifDialog,
   EditVenteDialog,
   type EditableClient,
-  type EditableObjectif,
   type EditableVente,
   type VenteOption,
 } from '@/components/EditDialogs'
@@ -86,8 +83,6 @@ export default function CommercialDashboard() {
   const [drillOffres, setDrillOffres] = useState<VenteOption[]>([])
   const [editingClient, setEditingClient] = useState<EditableClient | null>(null)
   const [editingVente, setEditingVente] = useState<EditableVente | null>(null)
-  const [editingObjectif, setEditingObjectif] = useState<EditableObjectif | null>(null)
-  const [isCreatingObjectif, setIsCreatingObjectif] = useState(false)
   const [dailySeries, setDailySeries] = useState<DailyRevenuePoint[]>([])
 
   const load = useCallback(async () => {
@@ -526,41 +521,19 @@ export default function CommercialDashboard() {
       {selectedKiosque ? (
         <div className="space-y-4">
           <PosCard>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <PosLabel>Objectif du mois</PosLabel>
-                {kioskObjectif ? (
-                  <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
-                    {toCFA(kioskRevenue)}{' '}
-                    <span className="text-sm font-medium text-[#1C5376]">
-                      / {toCFA(kioskObjectif.ca_cible)}
-                    </span>
-                  </p>
-                ) : (
-                  <p className="mt-1 text-sm text-[#1C5376]">Aucun objectif défini pour ce mois.</p>
-                )}
-              </div>
+            <div>
+              <PosLabel>Objectif du mois</PosLabel>
               {kioskObjectif ? (
-                <Button
-                  type="button"
-                  variant="pos-secondary"
-                  onClick={() =>
-                    setEditingObjectif({ id: kioskObjectif.id, ca_cible: kioskObjectif.ca_cible })
-                  }
-                >
-                  <Edit className="h-4 w-4" />
-                  Modifier l'objectif
-                </Button>
+                <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
+                  {toCFA(kioskRevenue)}{' '}
+                  <span className="text-sm font-medium text-[#1C5376]">
+                    / {toCFA(kioskObjectif.ca_cible)}
+                  </span>
+                </p>
               ) : (
-                <Button
-                  type="button"
-                  variant="pos-secondary"
-                  onClick={() => setIsCreatingObjectif(true)}
-                >
-                  <Target className="h-4 w-4" />
-                  Définir un objectif
-                </Button>
+                <p className="mt-1 text-sm text-[#1C5376]">Aucun objectif défini pour ce mois.</p>
               )}
+              <p className="mt-0.5 text-[11px] text-[#1C5376]">Objectif fixé par l'administrateur.</p>
             </div>
             {kioskObjectif && (
               <div className="mt-3">
@@ -747,22 +720,6 @@ export default function CommercialDashboard() {
         offres={venteOffreOptions}
         onSaved={load}
       />
-      <EditObjectifDialog
-        open={editingObjectif !== null}
-        onOpenChange={(open) => !open && setEditingObjectif(null)}
-        objectif={editingObjectif}
-        kiosqueNom={selectedKiosque?.nom ?? ''}
-        onSaved={load}
-      />
-      {selectedKiosqueId && (
-        <CreateObjectifDialog
-          open={isCreatingObjectif}
-          onOpenChange={setIsCreatingObjectif}
-          kiosqueId={selectedKiosqueId}
-          kiosqueNom={selectedKiosque?.nom ?? ''}
-          onCreated={load}
-        />
-      )}
     </div>
   )
 }

@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormInput } from '@/components/ui/form-input'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -67,7 +68,9 @@ export default function ProfilePage() {
         .update({
           username: formData.username.trim(),
           email: formData.email,
-          phone: formData.phone,
+          // Normalized digits: profiles_phone_unique compares this format,
+          // and it doubles as a login identifier.
+          phone: normalizePhone(formData.phone) || null,
         })
         .eq('id', profile?.id)
 
@@ -78,9 +81,13 @@ export default function ProfilePage() {
       setIsEditing(false)
     } catch (caught) {
       console.error('Profile update failed:', caught)
+      const code = (caught as { code?: string } | null)?.code
       setFeedback({
         kind: 'error',
-        text: 'Une erreur est survenue lors de la sauvegarde',
+        text:
+          code === '23505'
+            ? 'Ce numéro est déjà utilisé par un autre compte.'
+            : 'Une erreur est survenue lors de la sauvegarde',
       })
     } finally {
       setLoading(false)

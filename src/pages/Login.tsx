@@ -1,6 +1,9 @@
 import { useCallback, useState } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { looksLikePhone, normalizePhone } from '@/lib/phone'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,29 +11,79 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 /**
- * Sign-in only.
+ * Sign-in only, by phone / identifiant / email.
  *
  * Public self-registration was deliberately removed: this is an internal tool,
  * and an open sign-up form on a public URL let anyone create a working account.
  * Employee accounts are now created by an administrator from
  * Administration > Utilisateurs > "Ajouter un employé", which also assigns the
  * role and kiosk in the same step.
+ *
+ * A non-email identifier (phone or username) is resolved to the account email
+ * by the resolve_login_identifier RPC (DB-side, security definer) before the
+ * password check.
  */
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const { signIn } = useAuthStore()
+  const { showToast } = useToast()
+
+  /**
+   * Emails go through as-is; digit-shaped input is normalized so "77 123 45
+   * 67" and "771234567" resolve identically; anything else is a username.
+   * Returns null (with a toast) when the RPC can't match the identifier.
+   */
+  const resolveEmail = useCallback(
+    async (raw: string): Promise<string | null> => {
+      if (raw.includes('@')) return raw.trim().toLowerCase()
+
+      const pIdentifier = looksLikePhone(raw) ? normalizePhone(raw) : raw.trim()
+
+      const { data, error } = await supabase.rpc('resolve_login_identifier', {
+        p_identifier: pIdentifier,
+      })
+      if (error) {
+        console.error('resolve_login_identifier failed:', error.code, error.message)
+        showToast({
+          type: 'error',
+          title: 'Connexion impossible',
+          message: 'La recherche de votre compte a échoué. Veuillez réessayer.',
+        })
+        return null
+      }
+
+      // Accept the shapes a Postgres function might return: a bare email
+      // string, an object, or a single-row table.
+      const email =
+        typeof data === 'string'
+          ? data
+          : ((Array.isArray(data) ? data[0] : data)?.email ?? null)
+
+      if (!email) {
+        showToast({
+          type: 'error',
+          title: 'Identifiant non trouvé',
+          message:
+            'Aucun compte ne correspond à ce numéro ou identifiant. Contactez votre administrateur.',
+        })
+        return null
+      }
+      return email
+    },
+    [showToast]
+  )
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
       setError('')
 
-      if (!email.trim()) {
-        setError('Veuillez saisir votre adresse e-mail.')
+      if (!identifier.trim()) {
+        setError('Veuillez saisir votre téléphone, identifiant ou e-mail.')
         return
       }
       if (!password.trim()) {
@@ -40,6 +93,12 @@ export default function Login() {
 
       setLoading(true)
       try {
+        const email = await resolveEmail(identifier)
+        if (!email) {
+          setLoading(false)
+          return
+        }
+
         // Routed through the store so rate limiting, e-mail validation and
         // profile loading all happen in one place. On success the store sets
         // `profile` and App.tsx swaps to the authenticated routes on its own.
@@ -54,7 +113,7 @@ export default function Login() {
         setLoading(false)
       }
     },
-    [email, password, signIn]
+    [identifier, password, resolveEmail, signIn]
   )
 
   return (
@@ -78,14 +137,14 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="identifier">Téléphone, identifiant ou email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="votre.email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value.trim())}
+                  id="identifier"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Ex : 77 123 45 67 ou votre identifiant"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
                 />
               </div>
@@ -137,13 +196,13 @@ function friendlyAuthError(raw?: string): string {
   const message = raw.toLowerCase()
 
   if (message.includes('invalid login') || message.includes('invalid credentials')) {
-    return 'E-mail ou mot de passe incorrect.'
+    return 'Identifiant ou mot de passe incorrect.'
   }
   if (message.includes('email not confirmed')) {
     return 'Veuillez confirmer votre e-mail avant de vous connecter.'
   }
   if (message.includes('user not found')) {
-    return 'Aucun compte ne correspond à cet e-mail.'
+    return 'Aucun compte ne correspond à cet identifiant.'
   }
   if (message.includes('rate') || message.includes('trop de tentatives')) {
     return raw // store's rate-limit message is already in French
