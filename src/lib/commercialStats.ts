@@ -114,6 +114,22 @@ export function startOfMonth(date: Date = new Date()): Date {
   return result
 }
 
+/**
+ * Which kiosque ids the ranking should render:
+ * - a kiosque filter is active -> ONLY the selected kiosques (a filtered view
+ *   must never list unfiltered kiosks padded with zeros);
+ * - no filter (all kiosques)  -> every kiosque with data PLUS the full roster
+ *   so newly-created kiosks still appear at zero.
+ */
+export function scopedKiosqueIds(
+  selectedIds: string[],
+  dataKeys: Iterable<string>,
+  allKioskIds: Iterable<string>
+): string[] {
+  if (selectedIds.length > 0) return [...new Set(selectedIds)]
+  return [...new Set([...dataKeys, ...allKioskIds])]
+}
+
 export interface CommercialDailyPoint {
   date: string
   label: string

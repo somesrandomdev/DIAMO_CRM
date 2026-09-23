@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { startOfMonth } from '@/lib/commercialStats'
+import { scopedKiosqueIds, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
 
 /**
@@ -348,11 +348,9 @@ export function useAdminDashboard() {
     const activeRevenue = currentRevenue
     const activeTransactions = currentRows.reduce((sum, row) => sum + num(row.nb), 0)
 
-    // Kiosk league table / bar chart.
-    const kiosqueIds = new Set<string>([
-      ...activeCaByKiosque.keys(),
-      ...kiosqueNames.keys(),
-    ])
+    // Kiosk league table / bar chart — scoped to the kiosque filter when one
+    // is active, otherwise the full roster (data keys + every known kiosque).
+    const kiosqueIds = scopedKiosqueIds(selectedKiosqueIds, activeCaByKiosque.keys(), kiosqueNames.keys())
 
     const kiosques: KiosquePerformance[] = [...kiosqueIds]
       .map((id) => {
@@ -412,7 +410,7 @@ export function useAdminDashboard() {
       dailyRevenue: buildDailySeries(raw.daily ?? [], last30Start, 30),
       offerBreakdown,
     }
-  }, [raw, kiosqueNames, offreNames])
+  }, [raw, kiosqueNames, offreNames, selectedKiosqueIds])
 
   return useMemo(
     () => ({
