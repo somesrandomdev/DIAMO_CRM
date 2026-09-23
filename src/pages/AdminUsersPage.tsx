@@ -3,13 +3,13 @@ import { Edit, Save, UserPlus } from 'lucide-react'
 import { AddEmployeeDialog } from '@/components/admin/AddEmployeeDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
-import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { PosChip, PosLabel } from '@/components/pos'
+import { PosChip, PosInput, PosLabel, PosSelect } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
@@ -48,6 +48,7 @@ export default function AdminUsersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
   const [assignedKiosqueIds, setAssignedKiosqueIds] = useState<string[]>([])
   const [initialAssignedIds, setInitialAssignedIds] = useState<string[]>([])
   const [userSearch, setUserSearch] = useState('')
@@ -97,6 +98,17 @@ export default function AdminUsersPage() {
     setForm({ id: '', username: '', phone: '', role: 'fontainier', kiosque_id: '' })
     setAssignedKiosqueIds([])
     setInitialAssignedIds([])
+  }
+
+  const openEdit = (row: ProfileRow) => {
+    setForm({
+      id: row.id,
+      username: row.username,
+      phone: row.phone ?? '',
+      role: row.role,
+      kiosque_id: row.kiosque_id ?? '',
+    })
+    setIsEditOpen(true)
   }
 
   // Whenever the edit form targets a commercial, load their current kiosk
@@ -265,6 +277,7 @@ export default function AdminUsersPage() {
       setInitialAssignedIds(form.role === 'commercial' ? assignedKiosqueIds : [])
     }
 
+    setIsEditOpen(false)
     await load()
     resetForm()
     setIsSaving(false)
@@ -286,13 +299,7 @@ export default function AdminUsersPage() {
           aria-label="Modifier"
           onClick={(event) => {
             event.stopPropagation()
-            setForm({
-              id: row.id,
-              username: row.username,
-              phone: row.phone ?? '',
-              role: row.role,
-              kiosque_id: row.kiosque_id ?? '',
-            })
+            openEdit(row)
           }}
         >
           <Edit className="h-4 w-4" />
@@ -332,39 +339,54 @@ export default function AdminUsersPage() {
         }}
       />
 
-      {form.id && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Modifier un utilisateur</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 lg:grid-cols-[1fr_180px_auto]">
-              <FormInput value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} placeholder="Nom utilisateur" />
-              <FormInput
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier un utilisateur</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              save()
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="edit-username">Identifiant *</PosLabel>
+              <PosInput
+                id="edit-username"
+                value={form.username}
+                onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
+                placeholder="Nom utilisateur"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="edit-phone">Téléphone</PosLabel>
+              <PosInput
+                id="edit-phone"
+                type="tel"
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                placeholder="Téléphone (ex : 77 123 45 67)"
-                type="tel"
+                placeholder="Ex : 77 123 45 67"
               />
-              <FormSelect value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as UserRole }))}>
+            </div>
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="edit-role">Rôle *</PosLabel>
+              <PosSelect
+                id="edit-role"
+                value={form.role}
+                onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as UserRole }))}
+              >
                 <option value="fontainier">Fontainier</option>
                 <option value="commercial">Commercial</option>
                 <option value="administrateur">Administrateur</option>
-              </FormSelect>
-              <Button type="button" variant="primary" onClick={save} loading={isSaving}>
-                <Save className="h-4 w-4" />
-                Enregistrer
-              </Button>
+              </PosSelect>
             </div>
             {form.role === 'fontainier' && (
-              <div className="mt-3 max-w-md space-y-1.5">
-                <label
-                  htmlFor="edit-kiosque"
-                  className="text-xs font-semibold uppercase tracking-wider text-[#1C5376]"
-                >
-                  Kiosque assigné *
-                </label>
-                <FormSelect
+              <div className="space-y-1.5">
+                <PosLabel htmlFor="edit-kiosque">Kiosque assigné *</PosLabel>
+                <PosSelect
                   id="edit-kiosque"
                   value={form.kiosque_id}
                   onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}
@@ -373,11 +395,11 @@ export default function AdminUsersPage() {
                   {kiosques.map((kiosque) => (
                     <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
                   ))}
-                </FormSelect>
+                </PosSelect>
               </div>
             )}
             {form.role === 'commercial' && (
-              <div className="mt-4 space-y-2">
+              <div className="space-y-2">
                 <PosLabel>Kiosques supervisés</PosLabel>
                 <div className="flex flex-wrap gap-2">
                   {kiosques.map((kiosque) => (
@@ -403,9 +425,18 @@ export default function AdminUsersPage() {
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
+            <DialogFooter>
+              <Button type="button" variant="pos-secondary" onClick={() => setIsEditOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" variant="pos-primary" loading={isSaving}>
+                <Save className="h-4 w-4" />
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -479,15 +510,7 @@ export default function AdminUsersPage() {
                       size="icon"
                       className="h-12 w-12 min-h-12"
                       aria-label={`Modifier ${row.username}`}
-                      onClick={() =>
-                        setForm({
-                          id: row.id,
-                          username: row.username,
-                          phone: row.phone ?? '',
-                          role: row.role,
-                          kiosque_id: row.kiosque_id ?? '',
-                        })
-                      }
+                      onClick={() => openEdit(row)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

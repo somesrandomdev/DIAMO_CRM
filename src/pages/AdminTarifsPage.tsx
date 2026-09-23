@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit, Save, Trash2 } from 'lucide-react'
+import { Edit, Plus, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
-import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { PosInput, PosLabel, PosSelect } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
@@ -40,6 +47,7 @@ export default function AdminTarifsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [deleting, setDeleting] = useState<TarifRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -69,6 +77,22 @@ export default function AdminTarifsPage() {
   }), [kiosques, offres])
 
   const resetForm = () => setForm({ id: '', kiosque_id: '', offre_id: '', prix: '', est_actif: true })
+
+  const openCreate = () => {
+    resetForm()
+    setIsFormOpen(true)
+  }
+
+  const openEdit = (tarif: TarifRow) => {
+    setForm({
+      id: tarif.id,
+      kiosque_id: tarif.kiosque_id,
+      offre_id: tarif.offre_id,
+      prix: tarif.prix.toString(),
+      est_actif: tarif.est_actif,
+    })
+    setIsFormOpen(true)
+  }
 
   const save = async () => {
     if (!form.kiosque_id || !form.offre_id || !form.prix) return
@@ -103,6 +127,7 @@ export default function AdminTarifsPage() {
       })
     }
 
+    setIsFormOpen(false)
     await load()
     resetForm()
     setIsSaving(false)
@@ -148,13 +173,7 @@ export default function AdminTarifsPage() {
             aria-label="Modifier"
             onClick={(event) => {
               event.stopPropagation()
-              setForm({
-                id: row.id,
-                kiosque_id: row.kiosque_id,
-                offre_id: row.offre_id,
-                prix: row.prix.toString(),
-                est_actif: row.est_actif,
-              })
+              openEdit(row)
             }}
           >
             <Edit className="h-4 w-4" />
@@ -178,37 +197,16 @@ export default function AdminTarifsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-[15px] font-semibold text-text">Tarifs</h1>
-        <p className="text-[12px] text-text-secondary">Prix actifs par kiosque et par offre.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[15px] font-semibold text-text">Tarifs</h1>
+          <p className="text-[12px] text-text-secondary">Prix actifs par kiosque et par offre.</p>
+        </div>
+        <Button type="button" variant="primary" onClick={openCreate}>
+          <Plus className="h-4 w-4" />
+          Nouveau tarif
+        </Button>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{form.id ? 'Modifier un tarif' : 'Nouveau tarif'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_160px_140px_auto]">
-            <FormSelect value={form.kiosque_id} onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}>
-              <option value="">Kiosque</option>
-              {kiosques.map((kiosque) => <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>)}
-            </FormSelect>
-            <FormSelect value={form.offre_id} onChange={(event) => setForm((current) => ({ ...current, offre_id: event.target.value }))}>
-              <option value="">Offre</option>
-              {offres.map((offre) => <option key={offre.id} value={offre.id}>{offre.nom}</option>)}
-            </FormSelect>
-            <FormInput value={form.prix} onChange={(event) => setForm((current) => ({ ...current, prix: event.target.value }))} type="number" min={0} placeholder="Prix CFA" />
-            <FormSelect value={String(form.est_actif)} onChange={(event) => setForm((current) => ({ ...current, est_actif: event.target.value === 'true' }))}>
-              <option value="true">Actif</option>
-              <option value="false">Inactif</option>
-            </FormSelect>
-            <Button type="button" variant="primary" onClick={save} loading={isSaving} disabled={!form.kiosque_id || !form.offre_id || !form.prix}>
-              <Save className="h-4 w-4" />
-              Enregistrer
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -262,15 +260,7 @@ export default function AdminTarifsPage() {
                                   size="icon"
                                   className="h-12 w-12 min-h-12"
                                   aria-label={`Modifier le tarif ${names.offres.get(tarif.offre_id) ?? ''} de ${kiosque.nom}`}
-                                  onClick={() =>
-                                    setForm({
-                                      id: tarif.id,
-                                      kiosque_id: tarif.kiosque_id,
-                                      offre_id: tarif.offre_id,
-                                      prix: tarif.prix.toString(),
-                                      est_actif: tarif.est_actif,
-                                    })
-                                  }
+                                  onClick={() => openEdit(tarif)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -295,6 +285,87 @@ export default function AdminTarifsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{form.id ? 'Modifier le tarif' : 'Nouveau tarif'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              save()
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="tarif-kiosque">Kiosque *</PosLabel>
+              <PosSelect
+                id="tarif-kiosque"
+                value={form.kiosque_id}
+                onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}
+              >
+                <option value="">Choisir un kiosque...</option>
+                {kiosques.map((kiosque) => (
+                  <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
+                ))}
+              </PosSelect>
+            </div>
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="tarif-offre">Offre *</PosLabel>
+              <PosSelect
+                id="tarif-offre"
+                value={form.offre_id}
+                onChange={(event) => setForm((current) => ({ ...current, offre_id: event.target.value }))}
+              >
+                <option value="">Choisir une offre...</option>
+                {offres.map((offre) => (
+                  <option key={offre.id} value={offre.id}>{offre.nom}</option>
+                ))}
+              </PosSelect>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <PosLabel htmlFor="tarif-prix">Prix (CFA) *</PosLabel>
+                <PosInput
+                  id="tarif-prix"
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={form.prix}
+                  onChange={(event) => setForm((current) => ({ ...current, prix: event.target.value }))}
+                  placeholder="Ex : 500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <PosLabel htmlFor="tarif-actif">Statut</PosLabel>
+                <PosSelect
+                  id="tarif-actif"
+                  value={String(form.est_actif)}
+                  onChange={(event) => setForm((current) => ({ ...current, est_actif: event.target.value === 'true' }))}
+                >
+                  <option value="true">Actif</option>
+                  <option value="false">Inactif</option>
+                </PosSelect>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                variant="pos-primary"
+                loading={isSaving}
+                disabled={!form.kiosque_id || !form.offre_id || !form.prix}
+              >
+                <Save className="h-4 w-4" />
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleting !== null}

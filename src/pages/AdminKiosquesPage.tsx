@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit, Save, Trash2 } from 'lucide-react'
+import { Edit, Plus, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
-import { FormInput } from '@/components/ui/form-input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SearchBar } from '@/components/SearchBar'
+import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 
@@ -21,6 +28,7 @@ export default function AdminKiosquesPage() {
   const { showToast } = useToast()
   const [rows, setRows] = useState<KiosqueRow[]>([])
   const [form, setForm] = useState({ id: '', nom: '', adresse: '' })
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [deleting, setDeleting] = useState<KiosqueRow | null>(null)
@@ -45,7 +53,15 @@ export default function AdminKiosquesPage() {
     load()
   }, [load])
 
-  const resetForm = () => setForm({ id: '', nom: '', adresse: '' })
+  const openCreate = () => {
+    setForm({ id: '', nom: '', adresse: '' })
+    setIsFormOpen(true)
+  }
+
+  const openEdit = (row: KiosqueRow) => {
+    setForm({ id: row.id, nom: row.nom, adresse: row.adresse ?? '' })
+    setIsFormOpen(true)
+  }
 
   const save = async () => {
     if (!form.nom.trim()) return
@@ -75,8 +91,8 @@ export default function AdminKiosquesPage() {
       })
     }
 
+    setIsFormOpen(false)
     await load()
-    resetForm()
     setIsSaving(false)
   }
 
@@ -118,10 +134,10 @@ export default function AdminKiosquesPage() {
             type="button"
             variant="default"
             size="icon-sm"
-            aria-label="Modifier"
+            aria-label={`Modifier ${row.nom}`}
             onClick={(event) => {
               event.stopPropagation()
-              setForm({ id: row.id, nom: row.nom, adresse: row.adresse ?? '' })
+              openEdit(row)
             }}
           >
             <Edit className="h-4 w-4" />
@@ -145,34 +161,16 @@ export default function AdminKiosquesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-[15px] font-semibold text-text">Kiosques</h1>
-        <p className="text-[12px] text-text-secondary">Gestion des points de vente du reseau.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[15px] font-semibold text-text">Kiosques</h1>
+          <p className="text-[12px] text-text-secondary">Gestion des points de vente du reseau.</p>
+        </div>
+        <Button type="button" variant="primary" onClick={openCreate}>
+          <Plus className="h-4 w-4" />
+          Nouveau kiosque
+        </Button>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{form.id ? 'Modifier un kiosque' : 'Nouveau kiosque'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
-            <FormInput
-              value={form.nom}
-              onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))}
-              placeholder="Nom du kiosque"
-            />
-            <FormInput
-              value={form.adresse}
-              onChange={(event) => setForm((current) => ({ ...current, adresse: event.target.value }))}
-              placeholder="Adresse"
-            />
-            <Button type="button" variant="primary" onClick={save} loading={isSaving} disabled={!form.nom.trim()}>
-              <Save className="h-4 w-4" />
-              {form.id ? 'Mettre a jour' : 'Creer'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -207,6 +205,50 @@ export default function AdminKiosquesPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{form.id ? 'Modifier le kiosque' : 'Nouveau kiosque'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              save()
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="kiosque-nom">Nom *</PosLabel>
+              <PosInput
+                id="kiosque-nom"
+                value={form.nom}
+                onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))}
+                placeholder="Nom du kiosque"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="kiosque-adresse">Adresse</PosLabel>
+              <PosInput
+                id="kiosque-adresse"
+                value={form.adresse}
+                onChange={(event) => setForm((current) => ({ ...current, adresse: event.target.value }))}
+                placeholder="Adresse"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" variant="pos-primary" loading={isSaving} disabled={!form.nom.trim()}>
+                <Save className="h-4 w-4" />
+                {form.id ? 'Mettre a jour' : 'Creer'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleting !== null}

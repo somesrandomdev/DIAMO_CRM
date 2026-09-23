@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Save, Target, Trash2 } from 'lucide-react'
+import { Edit, Plus, Save, Target, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
-import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SearchBar } from '@/components/SearchBar'
+import { PosInput, PosLabel, PosSelect } from '@/components/pos'
 import { monthKey } from '@/lib/commercialStats'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
@@ -41,6 +42,17 @@ export default function AdminObjectivesPage() {
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
   const [objectives, setObjectives] = useState<Record<string, ObjectiveRow>>({})
   const [form, setForm] = useState({ kiosqueId: '', caCible: '' })
+  const [isFormOpen, setIsFormOpen] = useState(false)
+
+  const openCreate = () => {
+    setForm({ kiosqueId: '', caCible: '' })
+    setIsFormOpen(true)
+  }
+
+  const openEdit = (kiosqueId: string) => {
+    setForm({ kiosqueId, caCible: objectives[kiosqueId]?.ca_cible?.toString() ?? '' })
+    setIsFormOpen(true)
+  }
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingKiosqueId, setDeletingKiosqueId] = useState<string | null>(null)
@@ -119,6 +131,7 @@ export default function AdminObjectivesPage() {
         message: `${kiosqueNom} : ${toCFA(data.ca_cible)} pour ce mois.`,
       })
       setObjectives((current) => ({ ...current, [data.kiosque_id]: data as ObjectiveRow }))
+      setIsFormOpen(false)
       setForm({ kiosqueId: '', caCible: '' })
     }
     setIsSaving(false)
@@ -194,19 +207,34 @@ export default function AdminObjectivesPage() {
         if (!objective) return null
 
         return (
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon-sm"
-            aria-label={`Supprimer l'objectif de ${kiosque.nom}`}
-            onClick={(event) => {
-              event.stopPropagation()
-              setDeletingKiosqueId(kiosque.id)
-            }}
-            disabled={isSaving}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="default"
+              size="icon-sm"
+              aria-label={`Modifier l'objectif de ${kiosque.nom}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                openEdit(kiosque.id)
+              }}
+              disabled={isSaving}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon-sm"
+              aria-label={`Supprimer l'objectif de ${kiosque.nom}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                setDeletingKiosqueId(kiosque.id)
+              }}
+              disabled={isSaving}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         )
       },
     },
@@ -229,51 +257,16 @@ export default function AdminObjectivesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Definir une cible
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
-            <FormSelect
-              value={form.kiosqueId}
-              onChange={(event) =>
-                setForm({
-                  kiosqueId: event.target.value,
-                  caCible: objectives[event.target.value]?.ca_cible?.toString() ?? '',
-                })
-              }
-            >
-              <option value="">Selectionner un kiosque</option>
-              {kiosques.map((kiosque) => (
-                <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
-              ))}
-            </FormSelect>
-            <FormInput
-              type="number"
-              min={0}
-              value={form.caCible}
-              onChange={(event) => setForm((current) => ({ ...current, caCible: event.target.value }))}
-              placeholder="CA cible CFA"
-            />
-            <Button
-              type="button"
-              variant="primary"
-              onClick={saveObjective}
-              loading={isSaving}
-              disabled={!form.kiosqueId || !form.caCible}
-            >
-              <Save className="h-4 w-4" />
-              {selectedObjective ? 'Mettre a jour' : 'Sauvegarder'}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Objectifs actifs
+            </CardTitle>
+            <Button type="button" variant="primary" onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Definir une cible
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Objectifs actifs</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -304,6 +297,66 @@ export default function AdminObjectivesPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedObjective ? 'Mettre a jour la cible' : 'Definir une cible'}</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              saveObjective()
+            }}
+            className="space-y-4"
+          >
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="objectif-kiosque">Kiosque *</PosLabel>
+              <PosSelect
+                id="objectif-kiosque"
+                value={form.kiosqueId}
+                onChange={(event) =>
+                  setForm({
+                    kiosqueId: event.target.value,
+                    caCible: objectives[event.target.value]?.ca_cible?.toString() ?? '',
+                  })
+                }
+              >
+                <option value="">Selectionner un kiosque</option>
+                {kiosques.map((kiosque) => (
+                  <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
+                ))}
+              </PosSelect>
+            </div>
+            <div className="space-y-1.5">
+              <PosLabel htmlFor="objectif-cible">CA cible (CFA) *</PosLabel>
+              <PosInput
+                id="objectif-cible"
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={form.caCible}
+                onChange={(event) => setForm((current) => ({ ...current, caCible: event.target.value }))}
+                placeholder="Ex : 500000"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                variant="pos-primary"
+                loading={isSaving}
+                disabled={!form.kiosqueId || !form.caCible}
+              >
+                <Save className="h-4 w-4" />
+                {selectedObjective ? 'Mettre a jour' : 'Sauvegarder'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deletingKiosqueId !== null}
