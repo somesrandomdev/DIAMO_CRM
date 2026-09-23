@@ -56,6 +56,7 @@ function DashboardFilters() {
     setCustomDate,
     selectedKiosqueIds,
     toggleKiosk,
+    clearKiosques,
     allKiosques,
   } = useAdminDashboard()
 
@@ -91,7 +92,7 @@ function DashboardFilters() {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => selectedKiosqueIds.forEach(toggleKiosk)}
+          onClick={clearKiosques}
           aria-pressed={selectedKiosqueIds.length === 0}
           className={
             selectedKiosqueIds.length === 0

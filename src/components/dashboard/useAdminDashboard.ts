@@ -304,6 +304,9 @@ export function useAdminDashboard() {
     )
   }, [])
 
+  /** "Tous les kiosques": empty selection => the RPC call sends NULL. */
+  const clearKiosques = useCallback(() => setSelectedKiosqueIds([]), [])
+
   /**
    * All derived data. Recomputed only when the payload, the name lookups, or
    * the selected period change — not on every render of the dashboard.
@@ -421,11 +424,12 @@ export function useAdminDashboard() {
       setCustomDate,
       selectedKiosqueIds,
       toggleKiosk,
+      clearKiosques,
       allKiosques,
       isLoading,
       error,
       refresh: load,
     }),
-    [data, toggleKiosk, timePeriod, customDate, selectedKiosqueIds, allKiosques, isLoading, error, load]
+    [data, toggleKiosk, clearKiosques, timePeriod, customDate, selectedKiosqueIds, allKiosques, isLoading, error, load]
   )
 }
