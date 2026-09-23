@@ -3,7 +3,7 @@ import { Edit, Save, UserPlus } from 'lucide-react'
 import { AddEmployeeDialog } from '@/components/admin/AddEmployeeDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -343,6 +343,9 @@ export default function AdminUsersPage() {
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier un utilisateur</DialogTitle>
+            <DialogDescription>
+              Identifiant, téléphone, rôle et affectation du compte.
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(event) => {

@@ -48,11 +48,22 @@ export default function Login() {
       })
       if (error) {
         console.error('resolve_login_identifier failed:', error.code, error.message)
-        showToast({
-          type: 'error',
-          title: 'Connexion impossible',
-          message: 'La recherche de votre compte a échoué. Veuillez réessayer.',
-        })
+        // The RPC RAISES 'Identifiant non trouvé' when nothing matches — that
+        // is a "no account" answer, not a technical failure.
+        if (error.code === 'P0001' && error.message.toLowerCase().includes('identifiant')) {
+          showToast({
+            type: 'error',
+            title: 'Identifiant non trouvé',
+            message:
+              'Aucun compte ne correspond à ce numéro ou identifiant. Contactez votre administrateur.',
+          })
+        } else {
+          showToast({
+            type: 'error',
+            title: 'Connexion impossible',
+            message: 'La recherche de votre compte a échoué. Veuillez réessayer.',
+          })
+        }
         return null
       }
 

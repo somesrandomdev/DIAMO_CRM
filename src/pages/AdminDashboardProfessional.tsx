@@ -30,7 +30,6 @@ const PERIOD_OPTIONS: { value: AdminTimePeriod; label: string }[] = [
   { value: 'today', label: "Aujourd'hui" },
   { value: 'week', label: '7 derniers jours' },
   { value: 'month', label: 'Ce mois' },
-  { value: 'lastmonth', label: 'Mois dernier' },
   { value: 'custom', label: 'Date précise' },
 ]
 

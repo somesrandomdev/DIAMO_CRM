@@ -6,6 +6,7 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -210,6 +211,9 @@ export default function AdminKiosquesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{form.id ? 'Modifier le kiosque' : 'Nouveau kiosque'}</DialogTitle>
+            <DialogDescription>
+              {form.id ? 'Mettez à jour les informations du kiosque.' : 'Créez un point de vente du réseau.'}
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(event) => {

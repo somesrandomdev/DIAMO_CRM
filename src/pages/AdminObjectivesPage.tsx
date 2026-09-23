@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Edit, Plus, Save, Target, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { KPICard } from '@/components/ui/kpi-card'
@@ -302,6 +302,9 @@ export default function AdminObjectivesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedObjective ? 'Mettre a jour la cible' : 'Definir une cible'}</DialogTitle>
+            <DialogDescription>
+              Objectif mensuel de chiffre d'affaires pour un kiosque.
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(event) => {

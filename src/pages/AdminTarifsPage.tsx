@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -290,6 +291,9 @@ export default function AdminTarifsPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{form.id ? 'Modifier le tarif' : 'Nouveau tarif'}</DialogTitle>
+            <DialogDescription>
+              Prix d'une offre pour un kiosque donné.
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(event) => {

@@ -9,8 +9,12 @@ import { supabase } from '@/lib/supabase'
 /**
  * Period selector for the admin dashboard filters.
  * 'custom' uses the date picked via setCustomDate ('YYYY-MM-DD').
+ *
+ * NOTE: no 'last month' option — the live get_admin_dashboard_stats has NO
+ * upper bound on its "current" bucket (everything >= p_month_start), so a
+ * last-month window would silently include the current month too.
  */
-export type AdminTimePeriod = 'today' | 'week' | 'month' | 'lastmonth' | 'custom'
+export type AdminTimePeriod = 'today' | 'week' | 'month' | 'custom'
 
 /* ------------------------------------------------------------------ *
  * RPC contract
@@ -217,11 +221,6 @@ export function useAdminDashboard() {
         return { start: dayOffset(0), prev: dayOffset(-1) }
       case 'week':
         return { start: dayOffset(-6), prev: dayOffset(-13) }
-      case 'lastmonth': {
-        const start = startOfMonth(dayOffset(-30))
-        const prev = previousMonthStart(start)
-        return { start, prev }
-      }
       case 'custom': {
         const parts = customDate.split('-').map(Number)
         const start = new Date(parts[0], (parts[1] ?? 1) - 1, parts[2] ?? 1)

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -226,6 +227,9 @@ export default function AdminOffresPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{form.id ? 'Modifier l’offre' : 'Nouvelle offre'}</DialogTitle>
+            <DialogDescription>
+              Nom, volume et description de l'offre vendue par les kiosques.
+            </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(event) => {
