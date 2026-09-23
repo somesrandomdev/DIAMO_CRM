@@ -22,6 +22,7 @@ const AdminTarifsPage = lazy(() => import('@/pages/AdminTarifsPage'))
 const AdminUsersPage = lazy(() => import('@/pages/AdminUsersPage'))
 const ClientsByKiosk = lazy(() => import('@/pages/admin/ClientsByKiosk'))
 const FontainierPerformance = lazy(() => import('@/pages/admin/FontainierPerformance'))
+const KiosqueExplorer = lazy(() => import('@/pages/admin/KiosqueExplorer'))
 const KiosqueDetailPage = lazy(() => import('@/pages/KiosqueDetailPage'))
 const RapportsPage = lazy(() => import('@/pages/RapportsPage'))
 const VenteUltraSimple = lazy(() => import('@/pages/VenteUltraSimple'))
@@ -144,6 +145,7 @@ export default function App() {
                 <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
                 <Route path="/admin/clients-par-kiosque" element={<ClientsByKiosk />} />
                 <Route path="/admin/performance" element={<FontainierPerformance />} />
+                <Route path="/admin/explorer" element={<KiosqueExplorer />} />
                 <Route path="/admin/rapports" element={<RapportsPage />} />
               </Route>
 
