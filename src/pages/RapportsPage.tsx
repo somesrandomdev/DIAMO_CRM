@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import jsPDF from 'jspdf'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Download, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,6 +7,7 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PosCard, PosLabel, PosProgress } from '@/components/pos'
+import { generateReportPdf } from '@/lib/reportPdf'
 import { chartTheme } from '@/lib/chartTheme'
 import { monthKey, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
@@ -161,28 +161,23 @@ export default function RapportsPage() {
 
   const periodLabel = periodOptions.find((option) => option.value === period)?.label ?? ''
 
-  const exportPdf = (row: ReportRow) => {
-    const pdf = new jsPDF()
-    const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  const exportPdf = async (row: ReportRow) => {
+    const dataUri = await generateReportPdf({
+      kiosqueNom: row.kiosque.nom,
+      kiosqueAdresse: row.kiosque.adresse,
+      periodLabel,
+      ca: row.ca,
+      ventes: row.ventes,
+      target: row.target,
+      progress: row.progress,
+      topClient: row.topClient,
+      bestOffer: row.bestOffer,
+    })
 
-    pdf.setFontSize(18)
-    pdf.text(`Rapport - ${row.kiosque.nom}`, 16, 20)
-    pdf.setFontSize(11)
-    pdf.text(`${periodLabel} (${monthLabel})`, 16, 30)
-    pdf.text(row.kiosque.adresse || 'Adresse non renseignee', 16, 38)
-
-    pdf.setFontSize(14)
-    pdf.text('Synthese', 16, 56)
-    pdf.setFontSize(11)
-    pdf.text(`Chiffre d'affaires: ${toCFA(row.ca)}`, 16, 68)
-    pdf.text(`Nombre de ventes: ${row.ventes}`, 16, 78)
-    pdf.text(`Panier moyen: ${toCFA(row.ventes > 0 ? row.ca / row.ventes : 0)}`, 16, 88)
-    pdf.text(`Top client: ${row.topClient}`, 16, 98)
-    pdf.text(`Meilleure offre: ${row.bestOffer}`, 16, 108)
-    pdf.text(`Objectif: ${row.target > 0 ? toCFA(row.target) : 'Non defini'}`, 16, 118)
-    pdf.text(`Realisation: ${row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'}`, 16, 128)
-
-    pdf.save(`rapport-${row.kiosque.nom.toLowerCase().replaceAll(' ', '-')}.pdf`)
+    const link = document.createElement('a')
+    link.href = dataUri
+    link.download = `rapport-${row.kiosque.nom.toLowerCase().replaceAll(' ', '-')}.pdf`
+    link.click()
   }
 
   const columns: DataTableColumn<ReportRow>[] = [

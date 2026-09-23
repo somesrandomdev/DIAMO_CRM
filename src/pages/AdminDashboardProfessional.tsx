@@ -14,7 +14,7 @@ import { BigKPICard } from '@/components/dashboard/BigKPICard'
 import { ChurnAlertCard } from '@/components/dashboard/ChurnAlertCard'
 import { KiosqueTable } from '@/components/dashboard/KiosqueTable'
 import { TopClientsCard } from '@/components/TopClientsCard'
-import { useAdminDashboard } from '@/components/dashboard/useAdminDashboard'
+import { useAdminDashboard, type AdminTimePeriod } from '@/components/dashboard/useAdminDashboard'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
 import { KioskComparisonChart } from '@/components/charts/KioskComparisonChart'
 import { OffreDonut } from '@/components/charts/OffreDonut'
@@ -25,6 +25,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatCount, toCFA } from '@/utils/price'
 
 type QuickAction = 'kiosque' | 'offre' | 'utilisateur' | 'export' | null
+
+const PERIOD_OPTIONS: { value: AdminTimePeriod; label: string }[] = [
+  { value: 'today', label: "Aujourd'hui" },
+  { value: 'week', label: '7 derniers jours' },
+  { value: 'month', label: 'Ce mois' },
+  { value: 'custom', label: 'Date précise' },
+]
 
 
 function downloadCsv(filename: string, rows: string[][]) {
@@ -48,6 +55,14 @@ export default function AdminDashboardProfessional() {
     kiosques,
     dailyRevenue,
     offerBreakdown,
+    timePeriod,
+    setTimePeriod,
+    customDate,
+    setCustomDate,
+    selectedKiosqueIds,
+    toggleKiosk,
+    clearKiosques,
+    allKiosques,
     isLoading,
     error,
     refresh,
@@ -75,14 +90,81 @@ export default function AdminDashboardProfessional() {
     ])
   }
 
+  const activeKiosqueLabel = useMemo(() => {
+    if (selectedKiosqueIds.length === 0) return 'Tous les kiosques'
+    if (selectedKiosqueIds.length === 1)
+      return allKiosques.find((kiosque) => kiosque.id === selectedKiosqueIds[0])?.nom ?? '1 kiosque'
+    return `${selectedKiosqueIds.length} kiosques sélectionnés`
+  }, [allKiosques, selectedKiosqueIds])
+
   return (
     <div className="space-y-5">
+      {/* ── Filtres (période + kiosques) — JSX inline: le hook n'est instancié
+          que dans CE composant, les filtres ne peuvent pas diverger du rendu ── */}
+      <div className="space-y-3 rounded-lg border border-border bg-surface p-3">
+        <div className="flex flex-wrap gap-2">
+          {PERIOD_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setTimePeriod(option.value)}
+              aria-pressed={timePeriod === option.value}
+              className={
+                timePeriod === option.value
+                  ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+          {timePeriod === 'custom' && (
+            <input
+              type="date"
+              value={customDate}
+              onChange={(event) => setCustomDate(event.target.value)}
+              aria-label="Date précise"
+              className="h-11 rounded-md border border-border bg-surface px-3 text-[13px] text-text"
+            />
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={clearKiosques}
+            aria-pressed={selectedKiosqueIds.length === 0}
+            className={
+              selectedKiosqueIds.length === 0
+                ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+            }
+          >
+            Tous les kiosques
+          </button>
+          {allKiosques.map((kiosque) => (
+            <button
+              key={kiosque.id}
+              type="button"
+              onClick={() => toggleKiosk(kiosque.id)}
+              aria-pressed={selectedKiosqueIds.includes(kiosque.id)}
+              className={
+                selectedKiosqueIds.includes(kiosque.id)
+                  ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
+                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+              }
+            >
+              {kiosque.nom}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-[16px] font-semibold text-text">Tableau de bord</h1>
           <p className="text-[12px] text-text-secondary">
-            Vue d'ensemble du réseau de kiosques.
+            Vue d'ensemble du réseau — {activeKiosqueLabel.toLowerCase()}.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
