@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit, Save, UserPlus } from 'lucide-react'
+import { Edit, KeyRound, Save, UserPlus } from 'lucide-react'
 import { AddEmployeeDialog } from '@/components/admin/AddEmployeeDialog'
+import { PasswordResetDialog } from '@/components/admin/PasswordResetDialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -49,6 +50,7 @@ export default function AdminUsersPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [resettingUser, setResettingUser] = useState<ProfileRow | null>(null)
   const [assignedKiosqueIds, setAssignedKiosqueIds] = useState<string[]>([])
   const [initialAssignedIds, setInitialAssignedIds] = useState<string[]>([])
   const [userSearch, setUserSearch] = useState('')
@@ -292,18 +294,34 @@ export default function AdminUsersPage() {
       header: '',
       align: 'right',
       render: (row) => (
-        <Button
-          type="button"
-          variant="default"
-          size="icon-sm"
-          aria-label="Modifier"
-          onClick={(event) => {
-            event.stopPropagation()
-            openEdit(row)
-          }}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="default"
+            size="icon"
+            className="h-12 w-12 min-h-12"
+            aria-label={`Réinitialiser le mot de passe de ${row.username}`}
+            title={`Réinitialiser le mot de passe de ${row.username}`}
+            onClick={(event) => {
+              event.stopPropagation()
+              setResettingUser(row)
+            }}
+          >
+            <KeyRound className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            size="icon-sm"
+            aria-label="Modifier"
+            onClick={(event) => {
+              event.stopPropagation()
+              openEdit(row)
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        </div>
       ),
     },
   ]
@@ -507,16 +525,28 @@ export default function AdminUsersPage() {
                         {row.kiosque_id ? kioskNameById.get(row.kiosque_id) ?? 'Inconnu' : 'Global'}
                       </p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="icon"
-                      className="h-12 w-12 min-h-12"
-                      aria-label={`Modifier ${row.username}`}
-                      onClick={() => openEdit(row)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="icon"
+                        className="h-12 w-12 min-h-12"
+                        aria-label={`Réinitialiser le mot de passe de ${row.username}`}
+                        onClick={() => setResettingUser(row)}
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="icon"
+                        className="h-12 w-12 min-h-12"
+                        aria-label={`Modifier ${row.username}`}
+                        onClick={() => openEdit(row)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -524,6 +554,14 @@ export default function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
+
+      <PasswordResetDialog
+        open={resettingUser !== null}
+        onOpenChange={(open) => !open && setResettingUser(null)}
+        userId={resettingUser?.id ?? ''}
+        username={resettingUser?.username ?? ''}
+        telephone={resettingUser?.phone}
+      />
     </div>
   )
 }

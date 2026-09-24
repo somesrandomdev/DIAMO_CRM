@@ -18,6 +18,8 @@ export interface Profile {
   username: string
   email?: string
   phone?: string
+  /** True => the user is blocked on a password-change dialog before any route. */
+  must_change_password?: boolean
   role: UserRole
   kiosque_id?: string | null
   kiosques?: { nom: string }

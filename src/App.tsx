@@ -2,6 +2,7 @@ import { useEffect, useState, Suspense, lazy, useCallback } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ForcePasswordChangeDialog } from '@/components/ForcePasswordChangeDialog'
 import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { ToastProvider } from '@/components/Toast'
 import { Loading } from '@/components/Loading'
@@ -102,6 +103,18 @@ export default function App() {
             </Routes>
           </Suspense>
           <PWAUpdatePrompt />
+        </ToastProvider>
+      </ErrorBoundary>
+    )
+  }
+
+  // Forced first-login password change: a blocking full-screen gate instead of
+  // the authenticated routes. Clearing the flag unmounts it and the app continues.
+  if (profile.must_change_password) {
+    return (
+      <ErrorBoundary fallback={<ErrorFallback />}>
+        <ToastProvider>
+          <ForcePasswordChangeDialog />
         </ToastProvider>
       </ErrorBoundary>
     )

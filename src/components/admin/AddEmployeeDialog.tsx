@@ -11,9 +11,11 @@ import {
 import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/Toast'
+import { normalizePhone } from '@/lib/phone'
 import {
   generateTemporaryPassword,
   provisionEmployee,
+  type ProvisionEmployeeResult,
 } from '@/lib/userProvisioning'
 import type { UserRole } from '@/stores/authStore'
 
@@ -103,9 +105,9 @@ export function AddEmployeeDialog({
     const next: FieldErrors = {}
 
     if (!fullName.trim()) next.fullName = 'Veuillez saisir le nom complet.'
-    if (!email.trim()) {
-      next.email = "Veuillez saisir l'adresse e-mail."
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    // Email is OPTIONAL since login works with identifiant or phone; when left
+    // empty a synthetic @diamo.local address is generated at submit time.
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       next.email = "Cette adresse e-mail n'est pas valide."
     }
     if (password.length < 6) {
@@ -119,6 +121,26 @@ export function AddEmployeeDialog({
     return Object.keys(next).length === 0
   }
 
+  /**
+   * Synthetic address for accounts created without an email: the user logs in
+   * with their identifiant or phone and NEVER sees this address. Normalized
+   * phone first (it doubles as a login identifier), else a slug of the name.
+   * Retried with a random suffix if the address is already registered.
+   */
+  const buildSyntheticEmail = (attempt: number): string => {
+    const base = normalizePhone(phone) || slugify(fullName) || 'utilisateur'
+    const suffix = attempt === 0 ? '' : `-${Math.random().toString(36).slice(2, 6)}`
+    return `${base}${suffix}@diamo.local`
+  }
+
+  const slugify = (value: string): string =>
+    value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9._-]/g, '')
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setFormError('')
@@ -126,14 +148,27 @@ export function AddEmployeeDialog({
     if (!validate()) return
 
     setIsSaving(true)
-    const result = await provisionEmployee({
-      fullName: fullName.trim(),
-      email: email.trim(),
-      password,
-      role,
-      kiosqueId: needsKiosque ? kiosqueId : null,
-      phone: phone.trim() || undefined,
-    })
+
+    const submittedEmail = email.trim().toLowerCase()
+    let lastResult: ProvisionEmployeeResult = {
+      success: false,
+      message: "Le compte n'a pas pu être créé. Veuillez réessayer.",
+    }
+    // Retry with suffixes when a synthetic address collides (real emails are
+    // used as-is and only tried once — the admin chose them deliberately).
+    for (let attempt = 0; attempt <= (submittedEmail ? 0 : 3); attempt += 1) {
+      const effectiveEmail = submittedEmail || buildSyntheticEmail(attempt)
+      lastResult = await provisionEmployee({
+        fullName: fullName.trim(),
+        email: effectiveEmail,
+        password,
+        role,
+        kiosqueId: needsKiosque ? kiosqueId : null,
+        phone: phone.trim() || undefined,
+      })
+      if (!(lastResult.emailTaken && !submittedEmail)) break
+    }
+    const result = lastResult
     setIsSaving(false)
 
     if (!result.success && result.phoneConflict) {
@@ -220,10 +255,10 @@ export function AddEmployeeDialog({
             />
           </div>
 
-          {/* E-mail */}
+          {/* E-mail (optionnel) */}
           <div className="space-y-1.5">
             <Label htmlFor={`${fieldId}-email`} className="text-[13px]">
-              Adresse e-mail
+              Adresse e-mail (optionnelle)
             </Label>
             <FormInput
               id={`${fieldId}-email`}
@@ -234,8 +269,11 @@ export function AddEmployeeDialog({
               autoComplete="off"
               error={!!errors.email}
               aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? `${fieldId}-email-error` : undefined}
+              aria-describedby={`${fieldId}-email-help${errors.email ? ` ${fieldId}-email-error` : ''}`}
             />
+            <p id={`${fieldId}-email-help`} className="text-[12px] text-text-secondary">
+              Optionnel — l'utilisateur pourra se connecter avec son identifiant ou son téléphone.
+            </p>
             {errors.email && (
               <FieldError id={`${fieldId}-email-error`}>{errors.email}</FieldError>
             )}

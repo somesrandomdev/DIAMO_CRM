@@ -20,6 +20,8 @@ export interface ProvisionEmployeeResult {
   message: string
   /** True when the account exists but the employee must confirm their e-mail. */
   needsEmailConfirmation?: boolean
+  /** True when the signUp e-mail is already registered (caller may retry with a different synthetic address). */
+  emailTaken?: boolean
   /** True when profiles_phone_unique rejected the number. */
   phoneConflict?: boolean
 }
@@ -85,7 +87,12 @@ export async function provisionEmployee(
   })
 
   if (error) {
-    return { success: false, message: friendlySignUpError(error.message) }
+    const message = error.message.toLowerCase()
+    // Email collisions are retriable: the caller (AddEmployeeDialog) regenerates
+    // a synthetic address with a random suffix when this flag is set.
+    const emailTaken =
+      message.includes('already registered') || message.includes('already exists')
+    return { success: false, emailTaken, message: friendlySignUpError(error.message) }
   }
 
   const newUser = data.user
@@ -103,6 +110,7 @@ export async function provisionEmployee(
   if (newUser.identities && newUser.identities.length === 0) {
     return {
       success: false,
+      emailTaken: true,
       message: 'Un compte existe déjà avec cette adresse e-mail.',
     }
   }
