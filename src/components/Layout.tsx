@@ -187,9 +187,9 @@ export default function Layout({ children }: LayoutProps) {
                   key={item.id}
                   type="button"
                   className={cn(
-                    'flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-[12.5px] font-medium text-text transition-colors lg:min-h-9',
+                    'nav-item flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-[12.5px] font-medium text-text transition-colors lg:min-h-9',
                     isActivePath(item.path)
-                      ? 'bg-blue-light text-blue'
+                      ? 'nav-item active bg-blue-light text-blue'
                       : 'hover:bg-muted hover:text-blue'
                   )}
                   onClick={() => handleNavigation(item.path)}
@@ -271,7 +271,9 @@ export default function Layout({ children }: LayoutProps) {
 
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
         <main className="min-h-0 flex-1 overflow-auto bg-bg p-3 sm:p-4">
-          <div className="mx-auto w-full max-w-[1200px]">{children}</div>
+          <div key={location.pathname} className="page-in mx-auto w-full max-w-[1200px]">
+            {children}
+          </div>
         </main>
       </div>
     </div>

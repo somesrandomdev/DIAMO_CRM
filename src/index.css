@@ -28,6 +28,11 @@
   --radius-md: 10px;
   --radius-lg: 14px;
 
+  /* Motion tokens — animations utilisent transform/opacity uniquement */
+  --dur-fast: 120ms;
+  --dur-med: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
   --font-main: 'Karla', system-ui, sans-serif;
   --font-heading: 'Nunito', 'Karla', sans-serif;
   --font-mono: 'Karla', ui-monospace, monospace;
@@ -410,6 +415,12 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    /* Shimmer et count-up désactivés proprement */
+    .skeleton-shimmer::after {
+      display: none;
     }
   }
 
@@ -454,6 +465,45 @@
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+/* Skeleton shimmer (translateX only — pas de layout thrash) */
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+/* Toasts: slide-in depuis la droite, fade-out */
+@keyframes toast-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-in {
+  animation: toast-in var(--dur-med) var(--ease-out);
+}
+
+/* Transition de route: fade + slide 150ms (keyée par pathname) */
+@keyframes page-in {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.page-in {
+  animation: page-in 150ms var(--ease-out);
 }
 
 .diamo-sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }

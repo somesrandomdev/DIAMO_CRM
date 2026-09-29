@@ -6,7 +6,8 @@ function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-muted', className)}
+      // shimmer (translateX) au lieu du simple pulse — plus « vivant », zéro layout thrash
+      className={cn('skeleton-shimmer rounded-md bg-muted', className)}
       {...props}
     />
   )

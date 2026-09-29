@@ -57,7 +57,15 @@ export function PosCard({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('rounded-lg border border-[#DCE1E5] bg-white p-4', className)} {...props} />
+  return (
+    <div
+      className={cn(
+        'rounded-lg border border-[#DCE1E5] bg-white p-4 transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-md',
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
 interface PosKpiProps {

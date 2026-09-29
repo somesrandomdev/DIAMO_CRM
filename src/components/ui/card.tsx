@@ -17,7 +17,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'rounded-md border border-border bg-surface text-foreground shadow-none',
+      'rounded-md border border-border bg-surface text-foreground shadow-none transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:shadow-md',
       paddingClasses[padding],
       className
     )}

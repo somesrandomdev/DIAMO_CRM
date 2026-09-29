@@ -145,6 +145,7 @@ function ToastItem({
   return (
     <div
       className={cn(
+          'toast-in',
         'pointer-events-auto min-w-[320px] max-w-md p-4 rounded-lg shadow-lg border transition-all duration-300',
         config.className,
         isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'

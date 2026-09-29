@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { useCountUp } from '@/lib/useCountUp'
+import { toCFA } from '@/utils/price'
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,6 +20,10 @@ interface BigKPICardProps {
    * not meaningful — an absent arrow is honest, a "0 %" arrow is not.
    */
   deltaPercent?: number
+  /** Valeur numérique à animer (count-up 600ms). `value` sert de fallback. */
+  countTo?: number
+  /** Format du count-up: CFA ou nombre brut. */
+  countFormat?: 'cfa' | 'count'
 }
 
 /**
@@ -57,7 +63,16 @@ export function BigKPICard({
   icon,
   tone = 'blue',
   deltaPercent,
+  countTo,
+  countFormat = 'count',
 }: BigKPICardProps) {
+  const animated = useCountUp(countTo ?? 0)
+  const displayValue =
+    countTo !== undefined
+      ? countFormat === 'cfa'
+        ? toCFA(animated)
+        : String(animated)
+      : value
   const tones = toneStyles[tone]
   const hasDelta = typeof deltaPercent === 'number' && Number.isFinite(deltaPercent)
   // Narrow to a plain number so the JSX below doesn't need non-null assertions.
@@ -85,8 +100,8 @@ export function BigKPICard({
         </span>
       </div>
 
-      <p className="mt-3 font-mono text-[30px] font-bold leading-none tracking-tight text-text sm:text-[36px]">
-        {value}
+      <p className="mt-3 font-mono text-[30px] font-bold leading-none tracking-tight text-text sm:text-[36px] [font-variant-numeric:tabular-nums]">
+        {displayValue}
       </p>
 
       {(delta || hint) && (

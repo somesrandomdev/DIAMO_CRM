@@ -184,6 +184,8 @@ export default function AdminDashboardProfessional() {
             <BigKPICard
               label="Chiffre d'affaires"
               value={toCFA(kpis.revenue)}
+              countTo={kpis.revenue}
+              countFormat="cfa"
               hint="vs période précédente"
               deltaPercent={kpis.revenueDelta ?? undefined}
               icon={<BarChart3 className="h-5 w-5" />}
@@ -192,6 +194,8 @@ export default function AdminDashboardProfessional() {
             <BigKPICard
               label="Tickets émis ce mois"
               value={formatCount(kpis.transactions)}
+              countTo={kpis.transactions}
+              countFormat="count"
               hint="nombre de ventes enregistrées"
               icon={<ShoppingCart className="h-5 w-5" />}
               tone="teal"
