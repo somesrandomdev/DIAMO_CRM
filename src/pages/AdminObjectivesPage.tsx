@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { KiosqueSearchSelect } from '@/components/KiosqueSearchSelect'
 import { PosInput, PosLabel } from '@/components/pos'
@@ -58,7 +59,8 @@ export default function AdminObjectivesPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [deletingKiosqueId, setDeletingKiosqueId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [objectiveSearch, setObjectiveSearch] = useState('')
+  const [objectiveSearchInput, setObjectiveSearchInput] = useState('')
+  const objectiveSearch = useDebouncedValue(objectiveSearchInput, 300)
 
   const filteredKiosques = useMemo(() => {
     const needle = objectiveSearch.trim().toLowerCase()
@@ -281,7 +283,7 @@ export default function AdminObjectivesPage() {
               <div className="mb-3 sm:w-80">
                 <SearchBar
                   value={objectiveSearch}
-                  onChange={setObjectiveSearch}
+                  onChange={setObjectiveSearchInput}
                   placeholder="Rechercher un kiosque"
                   resultCount={filteredKiosques.length}
                 />

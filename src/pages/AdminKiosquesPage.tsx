@@ -14,6 +14,7 @@ import {
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { KiosqueImportDialog } from '@/components/admin/KiosqueImportDialog'
 import { PosInput, PosLabel } from '@/components/pos'
@@ -36,7 +37,8 @@ export default function AdminKiosquesPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [deleting, setDeleting] = useState<KiosqueRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [kiosqueSearch, setKiosqueSearch] = useState('')
+  const [kiosqueSearchInput, setKiosqueSearchInput] = useState('')
+  const kiosqueSearch = useDebouncedValue(kiosqueSearchInput, 300)
 
   const filteredRows = useMemo(() => {
     const needle = kiosqueSearch.trim().toLowerCase()
@@ -208,7 +210,7 @@ export default function AdminKiosquesPage() {
               <div className="mb-3 sm:w-80">
                 <SearchBar
                   value={kiosqueSearch}
-                  onChange={setKiosqueSearch}
+                  onChange={setKiosqueSearchInput}
                   placeholder="Rechercher un kiosque"
                   resultCount={filteredRows.length}
                 />

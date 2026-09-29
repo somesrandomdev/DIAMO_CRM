@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { PosChip, PosInput, PosLabel, PosSelect } from '@/components/pos'
@@ -61,7 +62,8 @@ export default function AdminUsersPage() {
   const [isTrashing, setIsTrashing] = useState(false)
   const [assignedKiosqueIds, setAssignedKiosqueIds] = useState<string[]>([])
   const [initialAssignedIds, setInitialAssignedIds] = useState<string[]>([])
-  const [userSearch, setUserSearch] = useState('')
+  const [userSearchInput, setUserSearchInput] = useState('')
+  const userSearch = useDebouncedValue(userSearchInput, 300)
   const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all')
 
   const filteredProfiles = useMemo(() => {
@@ -540,7 +542,7 @@ export default function AdminUsersPage() {
               <div className="mb-3 grid gap-3 sm:grid-cols-[1fr_220px]">
                 <SearchBar
                   value={userSearch}
-                  onChange={setUserSearch}
+                  onChange={setUserSearchInput}
                   placeholder="Rechercher un utilisateur"
                   resultCount={filteredProfiles.length}
                 />

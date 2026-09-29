@@ -14,6 +14,7 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { PosInput, PosLabel, PosTextarea } from '@/components/pos'
 import { useToast } from '@/components/Toast'
@@ -39,7 +40,8 @@ export default function AdminOffresPage() {
   const [deleting, setDeleting] = useState<OffreRow | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [offreSearch, setOffreSearch] = useState('')
+  const [offreSearchInput, setOffreSearchInput] = useState('')
+  const offreSearch = useDebouncedValue(offreSearchInput, 300)
 
   const filteredRows = useMemo(() => {
     const needle = offreSearch.trim().toLowerCase()
@@ -205,7 +207,7 @@ export default function AdminOffresPage() {
               <div className="mb-3 sm:w-80">
                 <SearchBar
                   value={offreSearch}
-                  onChange={setOffreSearch}
+                  onChange={setOffreSearchInput}
                   placeholder="Rechercher une offre"
                   resultCount={filteredRows.length}
                 />
