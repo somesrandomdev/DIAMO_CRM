@@ -16,6 +16,8 @@ import { KiosqueTable } from '@/components/dashboard/KiosqueTable'
 import { TopClientsCard } from '@/components/TopClientsCard'
 import { OnboardingTip } from '@/components/OnboardingTip'
 import { KioskMultiSelect } from '@/components/KioskMultiSelect'
+import { InsightsSection } from '@/components/dashboard/InsightsSection'
+import { useAdminInsights } from '@/components/dashboard/useAdminInsights'
 import { useAdminDashboard, type AdminTimePeriod } from '@/components/dashboard/useAdminDashboard'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
 import { KioskComparisonChart } from '@/components/charts/KioskComparisonChart'
@@ -34,6 +36,35 @@ const PERIOD_OPTIONS: { value: AdminTimePeriod; label: string }[] = [
   { value: 'month', label: 'Ce mois' },
   { value: 'custom', label: 'Date précise' },
 ]
+
+/** Fenêtre [start, end] de la période sélectionnée (insights RPC). */
+function periodWindow(timePeriod: AdminTimePeriod, customDate: string): { start: string; end: string; label: string } {
+  const now = new Date()
+  const iso = (date: Date) => {
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${date.getFullYear()}-${month}-${day}`
+  }
+  const today = iso(now)
+  switch (timePeriod) {
+    case 'today':
+      return { start: today, end: today, label: "Aujourd'hui" }
+    case 'week': {
+      const start = new Date(now)
+      start.setDate(now.getDate() - 6)
+      return { start: iso(start), end: today, label: '7 derniers jours' }
+    }
+    case 'custom': {
+      const start = customDate || today
+      return { start, end: today, label: `du ${start} à ce jour` }
+    }
+    case 'month':
+    default: {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1)
+      return { start: iso(start), end: today, label: 'Ce mois' }
+    }
+  }
+}
 
 
 function downloadCsv(filename: string, rows: string[][]) {
@@ -70,6 +101,17 @@ export default function AdminDashboardProfessional() {
     error,
     refresh,
   } = useAdminDashboard()
+
+  const insightsWindow = periodWindow(timePeriod, customDate)
+  const {
+    insights,
+    isLoading: insightsLoading,
+    error: insightsError,
+  } = useAdminInsights({
+    kiosqueIds: selectedKiosqueIds,
+    start: insightsWindow.start,
+    end: insightsWindow.end,
+  })
 
   const drawerTitle = useMemo(() => {
     if (activeAction === 'kiosque') return 'Nouveau kiosque'
@@ -287,6 +329,15 @@ export default function AdminDashboardProfessional() {
         </div>
         <AlertsPanel />
       </div>
+
+      {/* ── Insights (heatmap, top offres, santé clients, rétention) ── */}
+      <InsightsSection
+        insights={insights}
+        isLoading={insightsLoading}
+        error={insightsError}
+        kiosqueIds={selectedKiosqueIds}
+        periodLabel={periodWindow(timePeriod, customDate).label}
+      />
 
       {/* ── Drawer ── */}
       <SlideOverDrawer
