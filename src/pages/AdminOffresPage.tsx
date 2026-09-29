@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Edit, Plus, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,6 +34,7 @@ function formatVolume(volumeMl: number | null) {
 
 export default function AdminOffresPage() {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [rows, setRows] = useState<OffreRow[]>([])
   const [form, setForm] = useState({ id: '', nom: '', volume_ml: '', description: '' })
   const [isLoading, setIsLoading] = useState(true)
@@ -185,10 +187,19 @@ export default function AdminOffresPage() {
           <h1 className="text-[15px] font-semibold text-text">Offres</h1>
           <p className="text-[12px] text-text-secondary">Catalogue des volumes vendus par les kiosques.</p>
         </div>
-        <Button type="button" variant="primary" onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          Nouvelle offre
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="pos-secondary"
+            onClick={() => navigate('/admin/tarifs')}
+          >
+            Prix par kiosque
+          </Button>
+          <Button type="button" variant="primary" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Nouvelle offre
+          </Button>
+        </div>
       </div>
 
       <Card>

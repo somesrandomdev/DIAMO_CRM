@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Edit, Plus, Save, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -172,6 +173,12 @@ export default function AdminKiosquesPage() {
           <p className="text-[12px] text-text-secondary">Gestion des points de vente du reseau.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
+          <Link
+            to="/admin/tarifs"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-[#DCE1E5] bg-white px-4 text-sm font-semibold text-[#12364D] transition-colors hover:border-[#12364D]"
+          >
+            Tarifs
+          </Link>
           <Button
             type="button"
             variant="pos-secondary"

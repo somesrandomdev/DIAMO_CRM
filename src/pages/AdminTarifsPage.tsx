@@ -516,7 +516,7 @@ export default function AdminTarifsPage() {
         <div>
           <h1 className="text-[15px] font-semibold text-text">Tarifs</h1>
           <p className="text-[12px] text-text-secondary">
-            Matrice offres × kiosques — cliquez une cellule pour définir le prix.
+            Prix par kiosque — cliquez une cellule pour définir ou modifier un prix
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -591,9 +591,10 @@ export default function AdminTarifsPage() {
             <button
               type="button"
               onClick={() => {
-                setHighlightKiosques(
-                  highlightKiosques ? null : new Set(kiosquesSansOffre.map((k) => k.id))
-                )
+                // Spec: le badge active le TOGGLE "kiosques sans offre"
+                const next = !onlyKiosquesSansOffre
+                setOnlyKiosquesSansOffre(next)
+                setHighlightKiosques(next ? new Set(kiosquesSansOffre.map((k) => k.id)) : null)
                 setHighlightOffres(null)
               }}
               className={
@@ -609,9 +610,11 @@ export default function AdminTarifsPage() {
             <button
               type="button"
               onClick={() => {
+                // Spec: le badge filtre les LIGNES sur les offres non assignées
                 setHighlightOffres(
                   highlightOffres ? null : new Set(offresSansKiosque.map((o) => o.id))
                 )
+                setOnlyKiosquesSansOffre(false)
                 setHighlightKiosques(null)
               }}
               className={

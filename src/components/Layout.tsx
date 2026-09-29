@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
+  Tags,
   Building2,
   Droplets,
   FileText,
@@ -41,6 +42,7 @@ const navigationItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <Home className="h-4 w-4" />, path: '/admin/dashboard', roles: ['administrateur'], section: 'Principal' },
   { id: 'kiosques', label: 'Kiosques', icon: <Store className="h-4 w-4" />, path: '/admin/kiosques', roles: ['administrateur'], section: 'Principal' },
   { id: 'offres', label: 'Offres', icon: <Droplets className="h-4 w-4" />, path: '/admin/offres', roles: ['administrateur'], section: 'Principal' },
+  { id: 'tarifs', label: 'Tarifs', icon: <Tags className="h-4 w-4" />, path: '/admin/tarifs', roles: ['administrateur'], section: 'Principal' },
   { id: 'utilisateurs', label: 'Utilisateurs', icon: <Users className="h-4 w-4" />, path: '/admin/utilisateurs', roles: ['administrateur'], section: 'Principal' },
   { id: 'clients-par-kiosque', label: 'Clients par kiosque', icon: <Building2 className="h-4 w-4" />, path: '/admin/clients-par-kiosque', roles: ['administrateur'], section: 'Principal' },
   { id: 'objectifs', label: 'Objectifs', icon: <Target className="h-4 w-4" />, path: '/admin/objectifs', roles: ['administrateur'], section: 'Rapports' },
