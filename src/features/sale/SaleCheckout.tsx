@@ -33,10 +33,19 @@ export function SaleCheckout({
         type="submit"
         variant="pos-primary"
         className="h-14 w-full text-base"
-        loading={isSubmitting}
-        disabled={!canSubmit}
+        // isSubmitting keeps the button disabled from the FIRST click (the
+        // hook also guards synchronously against double-submits).
+        disabled={isSubmitting || !canSubmit}
       >
-        {isSuccess ? (
+        {isSubmitting ? (
+          <>
+            <span
+              className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+              aria-hidden="true"
+            />
+            Enregistrement en cours…
+          </>
+        ) : isSuccess ? (
           <>
             <Check className="h-5 w-5" />
             Vente enregistree

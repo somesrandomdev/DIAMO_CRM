@@ -15,3 +15,12 @@ export function formatVolume(volumeMl: number): string {
   if (volumeMl >= 1000 && volumeMl % 1000 === 0) return `${formatFrenchNumber(volumeMl / 1000)}L`
   return `${formatFrenchNumber(volumeMl)} ml`
 }
+
+/**
+ * Storage path for a sale's ticket PDF. The storage RLS policy checks that
+ * the FIRST path segment equals the uploader's kiosque_id — a root-level
+ * file would be rejected.
+ */
+export function ticketPath(kiosqueId: string, saleId: string): string {
+  return `${kiosqueId}/ticket-${saleId}.pdf`
+}

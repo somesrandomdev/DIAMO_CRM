@@ -45,14 +45,12 @@ export default defineConfig({
             handler: 'NetworkOnly',
           },
           {
+            // Supabase REST API: STRICT network pass-through — never cached,
+            // never answered from cache (a cached read or a cache fallback on
+            // a flaky network once surfaced stale data as "the filters don't
+            // work"). Offline sales go through the IndexedDB queue instead.
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-              networkTimeoutSeconds: 5,
-              cacheableResponse: { statuses: [0, 200] },
-            },
+            handler: 'NetworkOnly',
           },
           {
             // Public storage objects are stable and safe to cache.

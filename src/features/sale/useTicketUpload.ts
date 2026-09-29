@@ -1,21 +1,10 @@
 import { useCallback, useState } from 'react'
 import { useToast } from '@/components/Toast'
 import { generateTicket } from '@/lib/ticketGenerator'
+import { ticketPath } from '@/lib/ticketFormat'
 import { supabase } from '@/lib/supabase'
 
-export { formatFrenchNumber, formatVolume } from '@/lib/ticketFormat'
-
-/**
- * Storage path for a sale's ticket PDF.
- *
- * The storage RLS policy checks that the FIRST path segment equals the
- * uploader's kiosque_id: (storage.foldername(name))[1] = kiosque_id.
- * A root-level file has no folder segment, so the upload is rejected —
- * the file MUST be nested under the kiosque folder.
- */
-export function ticketPath(kiosqueId: string, saleId: string): string {
-  return `${kiosqueId}/ticket-${saleId}.pdf`
-}
+export { formatFrenchNumber, formatVolume, ticketPath } from '@/lib/ticketFormat'
 
 export interface TicketUploadInput {
   saleId: string

@@ -77,6 +77,13 @@ export default function AdminTarifsPage() {
     offres: new Map(offres.map((item) => [item.id, item.nom])),
   }), [kiosques, offres])
 
+  /** Kiosques with zero ACTIVE tarif: they cannot record any sale. */
+  const kiosquesSansTarifActif = useMemo(() => {
+    return kiosques.filter(
+      (kiosque) => !tarifs.some((tarif) => tarif.kiosque_id === kiosque.id && tarif.est_actif)
+    )
+  }, [kiosques, tarifs])
+
   const resetForm = () => setForm({ id: '', kiosque_id: '', offre_id: '', prix: '', est_actif: true })
 
   const openCreate = () => {
@@ -208,6 +215,21 @@ export default function AdminTarifsPage() {
           Nouveau tarif
         </Button>
       </div>
+
+      {/* Guard-rail: kiosques with no ACTIVE tarif cannot sell — make them
+          impossible to miss while the per-kiosque pricing is being configured. */}
+      {!isLoading && kiosquesSansTarifActif.length > 0 && (
+        <div className="rounded-lg border-2 border-[#EB4D5E] bg-[#FDF1F2] p-3">
+          <p className="text-[13px] font-semibold text-[#EB4D5E]">
+            ⚠ {kiosquesSansTarifActif.length} kiosque{kiosquesSansTarifActif.length > 1 ? 's' : ''} sans
+            tarif actif — vente impossible
+          </p>
+          <p className="mt-1 text-[12px] text-[#1C5376]">
+            {kiosquesSansTarifActif.map((kiosque) => kiosque.nom).join(' · ')} — définissez leurs
+            prix ci-dessous pour activer la vente.
+          </p>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
