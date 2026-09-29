@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PosInput, PosLabel, PosSelect } from '@/components/pos'
+import { KiosqueSearchSelect } from '@/components/KiosqueSearchSelect'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
@@ -326,16 +327,14 @@ export default function AdminTarifsPage() {
           >
             <div className="space-y-1.5">
               <PosLabel htmlFor="tarif-kiosque">Kiosque *</PosLabel>
-              <PosSelect
+              <KiosqueSearchSelect
                 id="tarif-kiosque"
+                kiosques={kiosques}
                 value={form.kiosque_id}
-                onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}
-              >
-                <option value="">Choisir un kiosque...</option>
-                {kiosques.map((kiosque) => (
-                  <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
-                ))}
-              </PosSelect>
+                onChange={(value) => setForm((current) => ({ ...current, kiosque_id: value }))}
+                emptyLabel="Choisir un kiosque..."
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <PosLabel htmlFor="tarif-offre">Offre *</PosLabel>

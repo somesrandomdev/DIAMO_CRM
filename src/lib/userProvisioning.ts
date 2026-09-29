@@ -18,6 +18,8 @@ export interface ProvisionEmployeeResult {
   success: boolean
   /** Plain-French message, safe to show a non-technical admin. */
   message: string
+  /** Id of the created user (null when creation failed). */
+  userId?: string | null
   /** True when the account exists but the employee must confirm their e-mail. */
   needsEmailConfirmation?: boolean
   /** True when the signUp e-mail is already registered (caller may retry with a different synthetic address). */
@@ -159,6 +161,7 @@ export async function provisionEmployee(
 
   return {
     success: true,
+    userId: newUser.id,
     needsEmailConfirmation,
     message: needsEmailConfirmation
       ? `${input.fullName} doit confirmer son adresse e-mail avant de pouvoir se connecter.`

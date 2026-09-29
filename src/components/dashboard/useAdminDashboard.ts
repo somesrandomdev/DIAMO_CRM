@@ -303,6 +303,10 @@ export function useAdminDashboard() {
     )
   }, [])
 
+  const selectAllKiosques = useCallback(() => {
+    setSelectedKiosqueIds(allKiosques.map((kiosque) => kiosque.id))
+  }, [allKiosques])
+
   /** "Tous les kiosques": empty selection => the RPC call sends NULL. */
   const clearKiosques = useCallback(() => setSelectedKiosqueIds([]), [])
 
@@ -422,11 +426,12 @@ export function useAdminDashboard() {
       selectedKiosqueIds,
       toggleKiosk,
       clearKiosques,
+      selectAllKiosques,
       allKiosques,
       isLoading,
       error,
       refresh: load,
     }),
-    [data, toggleKiosk, clearKiosques, timePeriod, customDate, selectedKiosqueIds, allKiosques, isLoading, error, load]
+    [data, toggleKiosk, clearKiosques, selectAllKiosques, timePeriod, customDate, selectedKiosqueIds, allKiosques, isLoading, error, load]
   )
 }

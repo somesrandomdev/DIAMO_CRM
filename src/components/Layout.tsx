@@ -9,7 +9,9 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  ScrollText,
   ShoppingCart,
+  Trash2,
   Store,
   Target,
   TrendingUp,
@@ -43,6 +45,8 @@ const navigationItems: NavItem[] = [
   { id: 'objectifs', label: 'Objectifs', icon: <Target className="h-4 w-4" />, path: '/admin/objectifs', roles: ['administrateur'], section: 'Rapports' },
   { id: 'performance', label: 'Performance', icon: <TrendingUp className="h-4 w-4" />, path: '/admin/performance', roles: ['administrateur'], section: 'Rapports' },
   { id: 'rapports', label: 'Rapports', icon: <FileText className="h-4 w-4" />, path: '/admin/rapports', roles: ['administrateur'], section: 'Rapports' },
+  { id: 'corbeille', label: 'Corbeille', icon: <Trash2 className="h-4 w-4" />, path: '/admin/corbeille', roles: ['administrateur'], section: 'Systeme' },
+  { id: 'logs', label: "Logs d'audit", icon: <ScrollText className="h-4 w-4" />, path: '/admin/logs', roles: ['administrateur'], section: 'Systeme' },
   { id: 'profil-admin', label: 'Profil', icon: <Target className="h-4 w-4" />, path: '/profil', roles: ['administrateur'], section: 'Systeme' },
 
   { id: 'supervision', label: 'Supervision', icon: <LayoutDashboard className="h-4 w-4" />, path: '/commercial', roles: ['commercial'], section: 'Principal' },

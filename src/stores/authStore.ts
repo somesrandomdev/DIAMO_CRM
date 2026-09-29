@@ -20,6 +20,8 @@ export interface Profile {
   phone?: string
   /** True => the user is blocked on a password-change dialog before any route. */
   must_change_password?: boolean
+  /** Non-null => compte désactivé (corbeille admin) : gate + signOut. */
+  deleted_at?: string | null
   role: UserRole
   kiosque_id?: string | null
   kiosques?: { nom: string }

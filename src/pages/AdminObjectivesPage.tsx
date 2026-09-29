@@ -9,7 +9,8 @@ import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SearchBar } from '@/components/SearchBar'
-import { PosInput, PosLabel, PosSelect } from '@/components/pos'
+import { KiosqueSearchSelect } from '@/components/KiosqueSearchSelect'
+import { PosInput, PosLabel } from '@/components/pos'
 import { monthKey } from '@/lib/commercialStats'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
@@ -315,21 +316,19 @@ export default function AdminObjectivesPage() {
           >
             <div className="space-y-1.5">
               <PosLabel htmlFor="objectif-kiosque">Kiosque *</PosLabel>
-              <PosSelect
+              <KiosqueSearchSelect
                 id="objectif-kiosque"
+                kiosques={kiosques}
                 value={form.kiosqueId}
-                onChange={(event) =>
+                onChange={(value) =>
                   setForm({
-                    kiosqueId: event.target.value,
-                    caCible: objectives[event.target.value]?.ca_cible?.toString() ?? '',
+                    kiosqueId: value,
+                    caCible: objectives[value]?.ca_cible?.toString() ?? '',
                   })
                 }
-              >
-                <option value="">Selectionner un kiosque</option>
-                {kiosques.map((kiosque) => (
-                  <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
-                ))}
-              </PosSelect>
+                emptyLabel="Selectionner un kiosque"
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <PosLabel htmlFor="objectif-cible">CA cible (CFA) *</PosLabel>

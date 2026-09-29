@@ -12,6 +12,8 @@ import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/Toast'
 import { normalizePhone } from '@/lib/phone'
+import { KiosqueSearchSelect } from '@/components/KiosqueSearchSelect'
+import { logAudit } from '@/lib/audit'
 import {
   generateTemporaryPassword,
   provisionEmployee,
@@ -183,6 +185,13 @@ export function AddEmployeeDialog({
       setFormError(result.message)
       return
     }
+
+    await logAudit('user.create', 'profiles', result.userId ?? null, {
+      username: fullName.trim(),
+      role,
+      kiosqueId: needsKiosque ? kiosqueId : null,
+      emailSynthetique: !submittedEmail,
+    })
 
     onCreated(result.message)
     onOpenChange(false)
@@ -364,23 +373,15 @@ export function AddEmployeeDialog({
               <Label htmlFor={`${fieldId}-kiosque`} className="text-[13px]">
                 Kiosque assigné
               </Label>
-              <FormSelect
+              <KiosqueSearchSelect
                 id={`${fieldId}-kiosque`}
+                kiosques={kiosques.map((kiosque) => ({ id: kiosque.id, nom: kiosque.nom }))}
                 value={kiosqueId}
-                onChange={(event) => setKiosqueId(event.target.value)}
-                error={!!errors.kiosqueId}
-                aria-invalid={!!errors.kiosqueId}
-                aria-describedby={
-                  errors.kiosqueId ? `${fieldId}-kiosque-error` : undefined
-                }
-              >
-                <option value="">Choisir un kiosque...</option>
-                {kiosques.map((kiosque) => (
-                  <option key={kiosque.id} value={kiosque.id}>
-                    {kiosque.nom}
-                  </option>
-                ))}
-              </FormSelect>
+                onChange={(value) => setKiosqueId(value)}
+                emptyLabel="Choisir un kiosque..."
+                required
+                invalid={!!errors.kiosqueId}
+              />
               {kiosques.length === 0 && (
                 <p className="text-[12px] text-amber">
                   Aucun kiosque n'existe encore. Créez d'abord un kiosque.

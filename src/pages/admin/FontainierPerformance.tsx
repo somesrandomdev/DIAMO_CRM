@@ -65,7 +65,7 @@ export default function FontainierPerformance() {
   const load = useCallback(async () => {
     setIsLoading(true)
     const [profilesResult, ventesResult, objectifsResult] = await Promise.all([
-      supabase.from('profiles').select('id, username, kiosque_id, kiosques(nom)').eq('role', 'fontainier'),
+      supabase.from('profiles').select('id, username, kiosque_id, kiosques(nom)').eq('role', 'fontainier').is('deleted_at', null),
       supabase
         .from('ventes')
         .select('kiosque_id, client_id, montant_total')

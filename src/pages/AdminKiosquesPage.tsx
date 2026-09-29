@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit, Plus, Save, Trash2 } from 'lucide-react'
+import { Edit, Plus, Save, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { SearchBar } from '@/components/SearchBar'
+import { KiosqueImportDialog } from '@/components/admin/KiosqueImportDialog'
 import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
@@ -30,6 +31,7 @@ export default function AdminKiosquesPage() {
   const [rows, setRows] = useState<KiosqueRow[]>([])
   const [form, setForm] = useState({ id: '', nom: '', adresse: '' })
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [deleting, setDeleting] = useState<KiosqueRow | null>(null)
@@ -167,11 +169,28 @@ export default function AdminKiosquesPage() {
           <h1 className="text-[15px] font-semibold text-text">Kiosques</h1>
           <p className="text-[12px] text-text-secondary">Gestion des points de vente du reseau.</p>
         </div>
-        <Button type="button" variant="primary" onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          Nouveau kiosque
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="pos-secondary"
+            onClick={() => setIsImportOpen(true)}
+          >
+            <Upload className="h-4 w-4" />
+            Importer
+          </Button>
+          <Button type="button" variant="primary" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Nouveau kiosque
+          </Button>
+        </div>
       </div>
+
+      <KiosqueImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        baseNames={rows.map((row) => row.nom)}
+        onImported={load}
+      />
 
       <Card>
         <CardHeader>

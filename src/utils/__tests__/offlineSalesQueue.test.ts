@@ -69,6 +69,10 @@ beforeEach(() => {
   mockInsertVentes.mockImplementation(() => ({
     select: () => Promise.resolve({ data: [{ id: 'sale-real-1' }], error: null }),
   }))
+  // Node's test env lacks fetch; the sync ticket step is best-effort.
+  ;(global as { fetch?: unknown }).fetch = jest.fn(
+    async () => new Response(new Blob(['pdf']), { status: 200 })
+  )
 })
 
 describe('flushOfflineSales — idempotence à la synchronisation', () => {

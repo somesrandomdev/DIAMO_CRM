@@ -14,6 +14,7 @@ import { BigKPICard } from '@/components/dashboard/BigKPICard'
 import { ChurnAlertCard } from '@/components/dashboard/ChurnAlertCard'
 import { KiosqueTable } from '@/components/dashboard/KiosqueTable'
 import { TopClientsCard } from '@/components/TopClientsCard'
+import { KioskMultiSelect } from '@/components/KioskMultiSelect'
 import { useAdminDashboard, type AdminTimePeriod } from '@/components/dashboard/useAdminDashboard'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
 import { KioskComparisonChart } from '@/components/charts/KioskComparisonChart'
@@ -62,6 +63,7 @@ export default function AdminDashboardProfessional() {
     selectedKiosqueIds,
     toggleKiosk,
     clearKiosques,
+    selectAllKiosques,
     allKiosques,
     isLoading,
     error,
@@ -128,34 +130,14 @@ export default function AdminDashboardProfessional() {
             />
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={clearKiosques}
-            aria-pressed={selectedKiosqueIds.length === 0}
-            className={
-              selectedKiosqueIds.length === 0
-                ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
-            }
-          >
-            Tous les kiosques
-          </button>
-          {allKiosques.map((kiosque) => (
-            <button
-              key={kiosque.id}
-              type="button"
-              onClick={() => toggleKiosk(kiosque.id)}
-              aria-pressed={selectedKiosqueIds.includes(kiosque.id)}
-              className={
-                selectedKiosqueIds.includes(kiosque.id)
-                  ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
-              }
-            >
-              {kiosque.nom}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <KioskMultiSelect
+            allKiosques={allKiosques}
+            selectedKiosqueIds={selectedKiosqueIds}
+            onToggle={toggleKiosk}
+            onClear={clearKiosques}
+            onSelectAll={selectAllKiosques}
+          />
         </div>
       </div>
 

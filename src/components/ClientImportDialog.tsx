@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { PosLabel, PosSelect } from '@/components/pos'
 import { normalizePhone } from '@/lib/phone'
+import { logAudit } from '@/lib/audit'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 
@@ -205,6 +206,12 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
         (duplicateCount > 0 && skipDuplicates ? `, ${duplicateCount} doublon(s) ignoré(s)` : '') +
         (invalidCount > 0 ? `, ${invalidCount} ligne(s) invalide(s) ignorée(s)` : '') +
         '.',
+    })
+    await logAudit('clients.import', 'clients', kiosqueId, {
+      nb: inserted,
+      doublonsIgnores: duplicateCount,
+      invalidesIgnores: invalidCount,
+      fichier: fileName,
     })
     onOpenChange(false)
     onImported()

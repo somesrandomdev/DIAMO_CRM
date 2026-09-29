@@ -1,5 +1,6 @@
-import { useEffect, useState, Suspense, lazy, useCallback } from 'react'
+import { useEffect, useState, Suspense, lazy, useCallback, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { ShieldAlert } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ForcePasswordChangeDialog } from '@/components/ForcePasswordChangeDialog'
@@ -23,6 +24,8 @@ const AdminTarifsPage = lazy(() => import('@/pages/AdminTarifsPage'))
 const AdminUsersPage = lazy(() => import('@/pages/AdminUsersPage'))
 const ClientsByKiosk = lazy(() => import('@/pages/admin/ClientsByKiosk'))
 const FontainierPerformance = lazy(() => import('@/pages/admin/FontainierPerformance'))
+const AdminCorbeillePage = lazy(() => import('@/pages/admin/AdminCorbeillePage'))
+const AdminLogsPage = lazy(() => import('@/pages/admin/AdminLogsPage'))
 const KiosqueDetailPage = lazy(() => import('@/pages/KiosqueDetailPage'))
 const RapportsPage = lazy(() => import('@/pages/RapportsPage'))
 const VenteUltraSimple = lazy(() => import('@/pages/VenteUltraSimple'))
@@ -37,6 +40,32 @@ function PageLoader() {
 }
 
 // Error fallback component
+/**
+ * Disabled account (admin corbeille): signs the session out once, then shows
+ * why. The screen stays up — after signOut the profile is null and the login
+ * route takes over; the message remains the honest explanation either way.
+ */
+function DisabledAccountScreen({ onDone }: { onDone: () => Promise<void> }) {
+  const signedOutRef = useRef(false)
+
+  useEffect(() => {
+    if (signedOutRef.current) return
+    signedOutRef.current = true
+    void onDone()
+  }, [onDone])
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-4 text-center">
+      <img src="/logo-principal.png" alt="Diam'o" className="mb-4 h-16 w-auto object-contain" />
+      <ShieldAlert className="mb-3 h-10 w-10 text-[#EB4D5E]" aria-hidden="true" />
+      <h1 className="text-lg font-bold text-text">Compte désactivé</h1>
+      <p className="mt-2 max-w-sm text-[13px] text-text-secondary">
+        Contactez votre administrateur.
+      </p>
+    </div>
+  )
+}
+
 function ErrorFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -54,7 +83,7 @@ function ErrorFallback() {
 
 /* Diam'o Franchise Management System - Modern UI */
 export default function App() {
-  const { profile, loadProfile } = useAuthStore()
+  const { profile, loadProfile, signOut } = useAuthStore()
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
   const [hasMounted, setHasMounted] = useState(false)
@@ -120,6 +149,12 @@ export default function App() {
     )
   }
 
+  // Disabled account (admin corbeille): sign out immediately and show why.
+  // Checked BEFORE the password-change gate — a deleted account changes nothing.
+  if (profile.deleted_at) {
+    return <DisabledAccountScreen onDone={signOut} />
+  }
+
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>
       <ToastProvider>
@@ -157,6 +192,8 @@ export default function App() {
                 <Route path="/admin/utilisateurs" element={<AdminUsersPage />} />
                 <Route path="/admin/clients-par-kiosque" element={<ClientsByKiosk />} />
                 <Route path="/admin/performance" element={<FontainierPerformance />} />
+                <Route path="/admin/corbeille" element={<AdminCorbeillePage />} />
+                <Route path="/admin/logs" element={<AdminLogsPage />} />
                 <Route path="/admin/rapports" element={<RapportsPage />} />
               </Route>
 

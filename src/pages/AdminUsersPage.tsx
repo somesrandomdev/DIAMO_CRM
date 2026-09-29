@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Edit, KeyRound, Save, UserPlus } from 'lucide-react'
+import { Edit, KeyRound, Save, Trash2, UserPlus } from 'lucide-react'
 import { AddEmployeeDialog } from '@/components/admin/AddEmployeeDialog'
 import { PasswordResetDialog } from '@/components/admin/PasswordResetDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { KiosqueSearchSelect } from '@/components/KiosqueSearchSelect'
+import { logAudit } from '@/lib/audit'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -12,8 +15,9 @@ import { SearchBar } from '@/components/SearchBar'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { PosChip, PosInput, PosLabel, PosSelect } from '@/components/pos'
 import { useToast } from '@/components/Toast'
+import { useAuthStore } from '@/stores/authStore'
 import { normalizePhone } from '@/lib/phone'
-import { supabase } from '@/lib/supabase'
+import { handleSupabaseError, supabase } from '@/lib/supabase'
 import type { UserRole } from '@/stores/authStore'
 
 interface KiosqueRow {
@@ -27,6 +31,7 @@ interface ProfileRow {
   role: UserRole
   phone: string | null
   kiosque_id: string | null
+  deleted_at?: string | null
 }
 
 const roleLabels: Record<UserRole, string> = {
@@ -43,6 +48,7 @@ function roleVariant(role: UserRole) {
 
 export default function AdminUsersPage() {
   const { showToast } = useToast()
+  const { profile } = useAuthStore()
   const [profiles, setProfiles] = useState<ProfileRow[]>([])
   const [kiosques, setKiosques] = useState<KiosqueRow[]>([])
   const [form, setForm] = useState({ id: '', username: '', phone: '', role: 'fontainier' as UserRole, kiosque_id: '' })
@@ -51,6 +57,8 @@ export default function AdminUsersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [resettingUser, setResettingUser] = useState<ProfileRow | null>(null)
+  const [trashingUser, setTrashingUser] = useState<ProfileRow | null>(null)
+  const [isTrashing, setIsTrashing] = useState(false)
   const [assignedKiosqueIds, setAssignedKiosqueIds] = useState<string[]>([])
   const [initialAssignedIds, setInitialAssignedIds] = useState<string[]>([])
   const [userSearch, setUserSearch] = useState('')
@@ -68,7 +76,11 @@ export default function AdminUsersPage() {
   const load = useCallback(async () => {
     setIsLoading(true)
     const [profilesResult, kiosquesResult] = await Promise.all([
-      supabase.from('profiles').select('id, username, role, phone, kiosque_id').order('username'),
+      supabase
+        .from('profiles')
+        .select('id, username, role, phone, kiosque_id')
+        .is('deleted_at', null)
+        .order('username'),
       supabase.from('kiosques').select('id, nom').order('nom'),
     ])
 
@@ -111,6 +123,40 @@ export default function AdminUsersPage() {
       kiosque_id: row.kiosque_id ?? '',
     })
     setIsEditOpen(true)
+  }
+
+  // Soft delete: profiles.deleted_at = now(). Réversible via la corbeille.
+  const confirmTrash = async () => {
+    if (!trashingUser) return
+    setIsTrashing(true)
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', trashingUser.id)
+
+    setIsTrashing(false)
+
+    if (error) {
+      console.error('Soft delete failed:', error.code, error.message)
+      showToast({
+        type: 'error',
+        title: 'Suppression impossible',
+        message: handleSupabaseError(error),
+      })
+      return
+    }
+
+    await logAudit('user.soft_delete', 'profiles', trashingUser.id, {
+      username: trashingUser.username,
+    })
+    showToast({
+      type: 'success',
+      title: 'Utilisateur déplacé dans la corbeille',
+      message: `${trashingUser.username} est désactivé. Restauration possible dans la corbeille.`,
+    })
+    setTrashingUser(null)
+    await load()
   }
 
   // Whenever the edit form targets a commercial, load their current kiosk
@@ -204,6 +250,11 @@ export default function AdminUsersPage() {
       return
     }
 
+    await logAudit('user.update', 'profiles', form.id, {
+      username: trimmedUsername,
+      role: form.role,
+    })
+
     showToast({
       type: 'success',
       title: 'Utilisateur mis à jour',
@@ -295,6 +346,22 @@ export default function AdminUsersPage() {
       align: 'right',
       render: (row) => (
         <div className="flex justify-end gap-2">
+          {row.id !== profile?.id && (
+            <Button
+              type="button"
+              variant="default"
+              size="icon"
+              className="h-12 w-12 min-h-12"
+              aria-label={`Supprimer ${row.username}`}
+              title={`Supprimer ${row.username}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                setTrashingUser(row)
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="default"
@@ -407,16 +474,14 @@ export default function AdminUsersPage() {
             {form.role === 'fontainier' && (
               <div className="space-y-1.5">
                 <PosLabel htmlFor="edit-kiosque">Kiosque assigné *</PosLabel>
-                <PosSelect
+                <KiosqueSearchSelect
                   id="edit-kiosque"
+                  kiosques={kiosques}
                   value={form.kiosque_id}
-                  onChange={(event) => setForm((current) => ({ ...current, kiosque_id: event.target.value }))}
-                >
-                  <option value="">Choisir un kiosque...</option>
-                  {kiosques.map((kiosque) => (
-                    <option key={kiosque.id} value={kiosque.id}>{kiosque.nom}</option>
-                  ))}
-                </PosSelect>
+                  onChange={(value) => setForm((current) => ({ ...current, kiosque_id: value }))}
+                  emptyLabel="Choisir un kiosque..."
+                  required
+                />
               </div>
             )}
             {form.role === 'commercial' && (
@@ -526,6 +591,18 @@ export default function AdminUsersPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
+                      {row.id !== profile?.id && (
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="icon"
+                          className="h-12 w-12 min-h-12"
+                          aria-label={`Supprimer ${row.username}`}
+                          onClick={() => setTrashingUser(row)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant="default"
@@ -561,6 +638,18 @@ export default function AdminUsersPage() {
         userId={resettingUser?.id ?? ''}
         username={resettingUser?.username ?? ''}
         telephone={resettingUser?.phone}
+      />
+
+      <ConfirmDialog
+        open={trashingUser !== null}
+        onOpenChange={(open) => !open && setTrashingUser(null)}
+        title="Supprimer cet utilisateur ?"
+        description={`${
+          trashingUser?.username ?? ''
+        } sera déplacé dans la corbeille : son compte sera immédiatement désactivé. La restauration reste possible depuis la corbeille.`}
+        confirmLabel="Déplacer dans la corbeille"
+        isBusy={isTrashing}
+        onConfirm={confirmTrash}
       />
     </div>
   )

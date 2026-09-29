@@ -96,7 +96,7 @@ export default function KiosqueDetailPage() {
 
       const [kiosqueResult, usersResult, salesResult] = await Promise.all([
         supabase.from('kiosques').select('id, nom, adresse').eq('id', id).single(),
-        supabase.from('profiles').select('id, username, role').eq('kiosque_id', id).order('username'),
+        supabase.from('profiles').select('id, username, role').eq('kiosque_id', id).is('deleted_at', null).order('username'),
         supabase
           .from('ventes')
           .select('id, created_at, montant_total, client_id, offre_id, offres(nom)')

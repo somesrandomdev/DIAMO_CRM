@@ -13,6 +13,7 @@ import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import { formatPhone } from '@/lib/phone'
+import { logAudit } from '@/lib/audit'
 
 interface PasswordResetDialogProps {
   open: boolean
@@ -85,6 +86,10 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
     if (!data) return
 
     showToast({ type: 'success', title: 'Mot de passe réinitialisé', message: 'Mot de passe réinitialisé avec succès' })
+    await logAudit('password.reset', 'profiles', userId, {
+      username,
+      type: 'temporaire généré',
+    })
     if (data.newPassword) {
       setGenerated(data.newPassword)
       setMode('revealed')
@@ -103,6 +108,10 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
     if (!data) return
 
     showToast({ type: 'success', title: 'Mot de passe réinitialisé', message: `Le mot de passe de ${username} a été réinitialisé avec succès.` })
+    await logAudit('password.reset', 'profiles', userId, {
+      username,
+      type: 'défini par l\'admin',
+    })
     onOpenChange(false)
   }
 
