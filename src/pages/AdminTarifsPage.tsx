@@ -290,9 +290,12 @@ export default function AdminTarifsPage() {
   }, [applyCellValue, showToast])
 
   // Le flush est appelé via une ref pour éviter les cycles de dépendances.
+  // flushPending est lu via flushRef: le timer lit toujours la dernière
+  // version, on évite délibérément de recréer le timer à chaque changement.
   const scheduleFlush = useCallback((delay = 600) => {
     if (flushTimerRef.current) window.clearTimeout(flushTimerRef.current)
     flushTimerRef.current = window.setTimeout(() => void void flushPending(), delay)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ── Ctrl+Z ────────────────────────────────────────────────────────── */
@@ -334,7 +337,9 @@ export default function AdminTarifsPage() {
       }
     }
     return ids
-    // pendingCount en dépendance: recalcule après chaque édition optimiste.
+    // pendingCount intentionnel: les refs ne déclenchent pas de re-render,
+    // le compteur force le recalcul après chaque édition optimiste.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kiosques, offres, pendingCount])
 
   const offresAvecKiosque = useMemo(() => {
@@ -347,6 +352,8 @@ export default function AdminTarifsPage() {
       }
     }
     return ids
+    // pendingCount intentionnel (refs muettes) — voir ci-dessus.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kiosques, offres, pendingCount])
 
   const visibleKiosques = useMemo(() => {
