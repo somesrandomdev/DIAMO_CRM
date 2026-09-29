@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useToast } from '@/components/Toast'
+import { describeSaleError, logSaleError } from '@/lib/saleErrors'
 import { supabase } from '@/lib/supabase'
 import type { QueuedSale } from '@/utils/offlineSalesQueue'
 import type { TicketUploadInput } from './useTicketUpload'
@@ -91,7 +92,10 @@ export function useSubmitSale({
             .select('id')
             .single()
 
-          if (saleError) throw saleError
+          if (saleError) {
+            logSaleError('échec insert ventes', saleError)
+            throw saleError
+          }
           sales.push({ ...sale, ...item, montant_total: total })
         }
 
@@ -126,15 +130,18 @@ export function useSubmitSale({
           setSaleSaved(false)
           reloadSummary()
         }, 2000)
-      } catch (error: unknown) {
-        showToast({
-          type: 'error',
-          title: 'Erreur lors de la vente',
-          message: error instanceof Error ? error.message : 'Erreur inconnue',
-        })
-        setLoading(false)
-        setSaleSaved(false)
-      }
+    } catch (error: unknown) {
+      // Surface the REAL reason — PostgrestError is a plain object, so it used
+      // to collapse into a generic "Erreur inconnue" popup.
+      logSaleError('échec soumission', error)
+      showToast({
+        type: 'error',
+        title: 'Erreur lors de la vente',
+        message: describeSaleError(error),
+      })
+      setLoading(false)
+      setSaleSaved(false)
+    }
     },
     [enqueueOfflineSale, reloadSummary, resetForm, showToast, uploadTicket]
   )

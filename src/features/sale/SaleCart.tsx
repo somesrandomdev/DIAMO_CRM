@@ -10,6 +10,8 @@ import type { CartItem } from './useVenteForm'
 interface SaleCartProps {
   offres: OfferRow[]
   isLoading: boolean
+  /** Non-null when loading the offers failed — shown instead of an empty grid. */
+  loadError?: string | null
   cartItems: CartItem[]
   onAddItem: (offer: OfferRow) => void
   onRemoveItem: (offreId: string) => void
@@ -21,6 +23,7 @@ interface SaleCartProps {
 export function SaleCart({
   offres,
   isLoading,
+  loadError,
   cartItems,
   onAddItem,
   onRemoveItem,
@@ -37,6 +40,21 @@ export function SaleCart({
         <div className="space-y-2" aria-live="polite">
           <Skeleton className="h-12 w-full" />
           <p className="text-xs text-[#1C5376]">Chargement des offres disponibles...</p>
+        </div>
+      ) : loadError ? (
+        <div className="rounded-md border-2 border-[#FF4949] bg-[#FDF1F2] p-3">
+          <p className="text-sm font-semibold text-[#FF4949]">
+            Impossible de charger les offres de ce kiosque
+          </p>
+          <p className="mt-1 text-xs text-[#1C5376]">{loadError}</p>
+        </div>
+      ) : offres.length === 0 ? (
+        <div className="rounded-md border-2 border-dashed border-[#DCE1E5] bg-[#F6F9FB] p-3">
+          <p className="text-sm font-semibold text-[#12364D]">Aucune offre active pour ce kiosque</p>
+          <p className="mt-1 text-xs text-[#1C5376]">
+            L'administrateur doit définir les tarifs de ce kiosque (page Tarifs) pour activer la
+            vente.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

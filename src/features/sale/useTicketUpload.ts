@@ -48,13 +48,27 @@ export function useTicketUpload() {
       setIsUploading(true)
 
       try {
-        const ticket = await generateTicket({
-          saleId: input.saleId,
-          client: input.client,
-          offres: input.offres,
-          montant_total: input.montantTotal,
-          kiosque: { nom: input.kiosqueNom },
-        })
+        let ticket: string
+        try {
+          ticket = await generateTicket({
+            saleId: input.saleId,
+            client: input.client,
+            offres: input.offres,
+            montant_total: input.montantTotal,
+            kiosque: { nom: input.kiosqueNom },
+          })
+        } catch (generationError) {
+          // A ticket-generation crash must NOT surface as a sale error: the
+          // ventes rows are already recorded at this point. Log the real
+          // reason and degrade gracefully like an upload failure does.
+          console.error('[ticket] génération échouée:', generationError)
+          showToast({
+            type: 'error',
+            title: 'Vente enregistrée, ticket non disponible',
+            message: "La vente est bien enregistrée. Le ticket n'a pas pu être généré.",
+          })
+          return false
+        }
 
         const pdfBlob = await (await fetch(ticket)).blob()
         const fileName = ticketPath(input.kiosqueId, input.saleId)
@@ -64,6 +78,8 @@ export function useTicketUpload() {
           .upload(fileName, pdfBlob, { upsert: false, contentType: 'application/pdf' })
 
         if (uploadError) {
+          const err = uploadError as { code?: string; message?: string }
+          console.error('[ticket] échec upload:', err.code, err.message)
           showToast({
             type: 'error',
             title: 'Vente enregistrée, ticket non disponible',
@@ -82,6 +98,7 @@ export function useTicketUpload() {
           .createSignedUrl(fileName, 60, { download: true })
 
         if (!signedData?.signedUrl) {
+          console.error('[ticket] signed URL indisponible pour', fileName)
           showToast({
             type: 'error',
             title: 'Lien ticket indisponible',

@@ -22,8 +22,15 @@ import { useVenteForm } from './useVenteForm'
  */
 export default function VentePage({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
-  const { clients, offres, clientsLoading, offresLoading, loadClients, loadOffres } =
-    useVenteStore()
+  const {
+    clients,
+    offres,
+    clientsLoading,
+    offresLoading,
+    error: storeError,
+    loadClients,
+    loadOffres,
+  } = useVenteStore()
 
   const form = useVenteForm()
   const { dailyStats, recentSales, dailyGoal, loadVenteSummary } = useSaleSummary()
@@ -133,6 +140,7 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
         <SaleCart
           offres={safeOffers}
           isLoading={offresLoading}
+          loadError={offresLoading ? null : storeError}
           cartItems={form.cartItems}
           onAddItem={(offer) => form.addItem(offer, 1)}
           onRemoveItem={form.removeItem}
