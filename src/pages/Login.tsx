@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { looksLikePhone, normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
+import { logWarn } from '@/lib/telemetry'
 import { useToast } from '@/components/Toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,6 +52,7 @@ export default function Login() {
         // The RPC RAISES 'Identifiant non trouvé' when nothing matches — that
         // is a "no account" answer, not a technical failure.
         if (error.code === 'P0001' && error.message.toLowerCase().includes('identifiant')) {
+          logWarn('login', 'identifiant non trouvé', { pIdentifier })
           showToast({
             type: 'error',
             title: 'Identifiant non trouvé',
@@ -115,6 +117,7 @@ export default function Login() {
         // `profile` and App.tsx swaps to the authenticated routes on its own.
         const result = await signIn(email, password)
         if (!result.success) {
+          logWarn('login', 'connexion échouée (mot de passe ou session)', { emailDomain: email.split('@')[1] ?? '' })
           setError(friendlyAuthError(result.error))
         }
       } catch (err: unknown) {

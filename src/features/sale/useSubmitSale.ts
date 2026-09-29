@@ -7,6 +7,7 @@ import {
   logSaleError,
 } from '@/lib/saleErrors'
 import { supabase } from '@/lib/supabase'
+import { logInfo } from '@/lib/telemetry'
 import type { QueuedSale } from '@/utils/offlineSalesQueue'
 import type { TicketUploadInput } from './useTicketUpload'
 import type { CartItem } from './useVenteForm'
@@ -125,6 +126,11 @@ export function useSubmitSale({
         // fresh key to the next sale.
         finishAttempt()
         setSaleSaved(true)
+        logInfo('sync', 'vente mise en file hors-ligne', {
+          idempotencyKey,
+          kiosqueId,
+          items: cartItems.length,
+        })
         showToast({
           type: 'success',
           title: 'Vente enregistrée',

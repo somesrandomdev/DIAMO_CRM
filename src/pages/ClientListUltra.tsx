@@ -11,6 +11,7 @@ import { useToast } from '@/components/Toast'
 import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
+import { logError } from '@/lib/telemetry'
 import { useAuthStore } from '@/stores/authStore'
 import { toCFA } from '@/utils/price'
 
@@ -99,6 +100,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
       const { data, count, error } = await query
       if (cancelled) return
       if (error) {
+        logError('clients', 'chargement paginé des clients échoué', { code: error.code, message: error.message })
         console.error('Error loading clients page:', error.code, error.message)
         setClients([])
         setTotalCount(0)

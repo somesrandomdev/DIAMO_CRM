@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
 import { PosSelect } from '@/components/pos'
+import { TechLogsTab } from './TechLogsTab'
 import { supabase } from '@/lib/supabase'
 
 interface AuditRow {
@@ -68,6 +69,7 @@ function detailsSummary(details: Record<string, unknown> | null): string {
 
 /** Admin audit trail: filterable, paginated (25/page, date desc). */
 export default function AdminLogsPage() {
+  const [tab, setTab] = useState<'audit' | 'tech'>('audit')
   const [rows, setRows] = useState<AuditRow[]>([])
   const [actorNames, setActorNames] = useState<Map<string, string>>(new Map())
   const [selected, setSelected] = useState<AuditRow | null>(null)
@@ -173,6 +175,32 @@ export default function AdminLogsPage() {
         </Button>
       </div>
 
+      <div className="inline-flex rounded-md border border-border bg-surface text-[12px] font-semibold">
+        {(
+          [
+            ['audit', 'Audit'],
+            ['tech', 'Techniques'],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTab(value)}
+            aria-pressed={tab === value}
+            className={
+              tab === value
+                ? 'min-h-11 rounded-md bg-primary px-4 text-white'
+                : 'min-h-11 px-4 text-text-secondary hover:text-text'
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'tech' && <TechLogsTab />}
+
+      {tab === 'audit' && (
       <Card>
         <CardHeader>
           <CardTitle>Journal</CardTitle>
@@ -254,6 +282,8 @@ export default function AdminLogsPage() {
           )}
         </CardContent>
       </Card>
+
+      )}
 
       <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
         <DialogContent className="max-w-lg">

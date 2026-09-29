@@ -21,6 +21,7 @@ import { KiosqueImportDialog } from '@/components/admin/KiosqueImportDialog'
 import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
+import { logError } from '@/lib/telemetry'
 
 interface KiosqueRow {
   id: string
@@ -50,7 +51,10 @@ export default function AdminKiosquesPage() {
   const load = useCallback(async () => {
     setIsLoading(true)
     const { data, error } = await supabase.from('kiosques').select('id, nom, adresse').order('nom')
-    if (error) console.error('Error loading kiosques:', error)
+    if (error) {
+      logError('kiosques', 'chargement des kiosques échoué', { code: error.code, message: error.message })
+      console.error('Error loading kiosques:', error)
+    }
     setRows((data ?? []) as KiosqueRow[])
     setIsLoading(false)
   }, [])

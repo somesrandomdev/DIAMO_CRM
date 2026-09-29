@@ -2,6 +2,7 @@ import { openDB, type DBSchema } from 'idb'
 import { supabase } from '@/lib/supabase'
 import { generateTicket } from '@/lib/ticketGenerator'
 import { ticketPath } from '@/lib/ticketFormat'
+import { logError, logWarn } from '@/lib/telemetry'
 import type { QueuedClient } from './offlineClientQueue'
 
 export interface QueuedSaleItem {
@@ -108,6 +109,9 @@ export async function flushOfflineSales(
 
     if (!clientId) {
       failed += 1
+      logWarn('sync', 'vente hors-ligne bloquée: client non synchronisé', {
+        idempotencyKey: sale.idempotency_key,
+      })
       console.warn('Offline sale skipped: its offline client has not synced yet', sale.id)
       continue
     }
@@ -141,6 +145,11 @@ export async function flushOfflineSales(
         continue
       }
       failed += 1
+      logError('sync', 'sync hors-ligne échouée', {
+        code: (error as { code?: string }).code,
+        message: (error as { message?: string }).message,
+        idempotencyKey: sale.idempotency_key,
+      })
       console.error('Offline sale sync failed:', error)
       continue
     }

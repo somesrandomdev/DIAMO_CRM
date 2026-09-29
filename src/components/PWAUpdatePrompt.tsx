@@ -1,5 +1,7 @@
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import { logError, logInfo } from '@/lib/telemetry'
 import { RefreshCw, X } from 'lucide-react'
+import { useEffect } from 'react'
 
 /**
  * Version-update prompt (registerType: 'prompt'). The service worker never
@@ -19,8 +21,17 @@ export function PWAUpdatePrompt() {
     },
     onRegisterError(error) {
       console.error('SW registration error:', error)
+      logError('sw', "échec d'enregistrement du service worker", {
+        message: error instanceof Error ? error.message : String(error),
+      })
     },
   })
+
+  useEffect(() => {
+    if (needRefresh) {
+      logInfo('sw', 'nouvelle version disponible')
+    }
+  }, [needRefresh])
 
   if (!needRefresh) return null
 
@@ -51,7 +62,10 @@ export function PWAUpdatePrompt() {
 
         <button
           type="button"
-          onClick={() => updateServiceWorker(true)}
+          onClick={() => {
+            logInfo('sw', 'mise à jour appliquée par l utilisateur')
+            void updateServiceWorker(true)
+          }}
           className="w-full rounded-lg bg-white py-3 text-sm font-semibold text-[#009EFB] transition-all hover:bg-white/90 active:scale-[0.98]"
         >
           Mettre à jour maintenant

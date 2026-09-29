@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useToast } from '@/components/Toast'
 import { generateTicket } from '@/lib/ticketGenerator'
 import { ticketPath } from '@/lib/ticketFormat'
+import { logError } from '@/lib/telemetry'
 import { supabase } from '@/lib/supabase'
 
 export { formatFrenchNumber, formatVolume, ticketPath } from '@/lib/ticketFormat'
@@ -69,6 +70,7 @@ export function useTicketUpload() {
         if (uploadError) {
           const err = uploadError as { code?: string; message?: string }
           console.error('[ticket] échec upload:', err.code, err.message)
+          logError('ticket', 'échec upload', { code: err.code, message: err.message, kiosqueId: input.kiosqueId })
           showToast({
             type: 'error',
             title: 'Vente enregistrée, ticket non disponible',
@@ -88,6 +90,7 @@ export function useTicketUpload() {
 
         if (!signedData?.signedUrl) {
           console.error('[ticket] signed URL indisponible pour', fileName)
+          logError('ticket', 'URL signée refusée', { fileName })
           showToast({
             type: 'error',
             title: 'Lien ticket indisponible',

@@ -7,6 +7,7 @@ import {
   type QueuedSale,
 } from '@/utils/offlineSalesQueue'
 import { flushOfflineClients } from '@/utils/offlineClientQueue'
+import { logInfo, logWarn } from '@/lib/telemetry'
 
 interface UseOfflineQueueOptions {
   /** Called after a successful flush so the caller can refresh its summary. */
@@ -58,6 +59,7 @@ export function useOfflineQueue({ onFlushed }: UseOfflineQueueOptions = {}) {
       await refreshQueuedCount()
 
       if (result.flushed > 0) {
+        logInfo('sync', `${result.flushed} vente(s) synchronisée(s)`)
         showToast({
           type: 'success',
           title: 'Ventes synchronisees',
@@ -67,6 +69,7 @@ export function useOfflineQueue({ onFlushed }: UseOfflineQueueOptions = {}) {
       }
 
       if (result.failed > 0) {
+        logWarn('sync', `${result.failed} vente(s) en échec de synchronisation`)
         showToast({
           type: 'warning',
           title: 'Synchronisation partielle',

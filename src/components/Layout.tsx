@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { CommandPalette } from '@/components/CommandPalette'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, type UserRole } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
@@ -93,6 +94,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [techErrorCount, setTechErrorCount] = useState(0)
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine
   )
@@ -116,6 +118,24 @@ export default function Layout({ children }: LayoutProps) {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
+
+  // Badge rouge sur Logs: erreurs techniques dans les dernières 24h (admin seulement)
+  useEffect(() => {
+    if (role !== 'administrateur') return
+    let cancelled = false
+    const since = new Date(Date.now() - 86400000).toISOString()
+    void supabase
+      .from('tech_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('level', 'error')
+      .gte('created_at', since)
+      .then(({ count }) => {
+        if (!cancelled) setTechErrorCount(count ?? 0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [role, location.pathname])
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
@@ -194,7 +214,17 @@ export default function Layout({ children }: LayoutProps) {
                   )}
                   onClick={() => handleNavigation(item.path)}
                 >
-                  <span className="flex w-5 items-center justify-center">{item.icon}</span>
+                  <span className="relative flex w-5 items-center justify-center">
+                    {item.icon}
+                    {item.id === 'logs' && techErrorCount > 0 && (
+                      <span
+                        className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF4949] px-1 text-[9px] font-bold text-white [font-variant-numeric:tabular-nums]"
+                        aria-label={`${techErrorCount} erreurs techniques`}
+                      >
+                        {techErrorCount > 99 ? '99+' : techErrorCount}
+                      </span>
+                    )}
+                  </span>
                   <span className="truncate">{item.label}</span>
                 </button>
               ))}

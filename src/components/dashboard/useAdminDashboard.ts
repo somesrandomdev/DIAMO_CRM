@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { scopedKiosqueIds, startOfMonth } from '@/lib/commercialStats'
+import { logError } from '@/lib/telemetry'
 import { supabase } from '@/lib/supabase'
 
 /**
@@ -278,6 +279,9 @@ export function useAdminDashboard() {
       setAllKiosques(kiosqueRows)
       setOffreNames(new Map((offresResult.data ?? []).map((row) => [row.id, row.nom])))
     } catch (caught) {
+      logError('dashboard', 'chargement du dashboard échoué', {
+        message: caught instanceof Error ? caught.message : String(caught),
+      })
       console.error('Error loading admin dashboard:', caught)
       setError(
         caught instanceof Error

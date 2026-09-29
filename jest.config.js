@@ -30,6 +30,8 @@ export default {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // import.meta.env est illisible sous ts-jest CJS — stub pour les tests
+    '^@/lib/restConfig$': '<rootDir>/src/lib/__tests__/restConfig.stub.ts',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],

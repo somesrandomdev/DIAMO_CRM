@@ -5,6 +5,8 @@
  * reason instead, and never claims the network is down while online.
  */
 
+import { logError, logWarn } from '@/lib/telemetry'
+
 const online = () => (typeof navigator !== 'undefined' ? navigator.onLine : true)
 
 export function describeSaleError(error: unknown): string {
@@ -71,7 +73,7 @@ export function logSaleError(context: string, error: unknown): void {
     hint?: string
     name?: string
   }
-  console.error(`[vente] ${context}:`, {
+  const payload = {
     code: e.code,
     name: e.name,
     message: e.message,
@@ -81,5 +83,12 @@ export function logSaleError(context: string, error: unknown): void {
     serviceWorkerState:
       (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller?.state) ?? null,
     at: new Date().toISOString(),
-  })
+  }
+  console.error(`[vente] ${context}:`, payload)
+  // Telemetry: chaque échec de vente avec le code Postgres
+  if (e.code) {
+    logWarn('vente', context, payload)
+  } else {
+    logError('vente', context, payload)
+  }
 }

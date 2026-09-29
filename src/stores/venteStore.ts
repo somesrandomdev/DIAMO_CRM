@@ -1,6 +1,7 @@
 // src/stores/venteStore.ts
 import { create } from 'zustand'
 import { supabase, handleSupabaseError } from '../lib/supabase'
+import { logError } from '@/lib/telemetry'
 
 /**
  * Type definitions for vente store
@@ -88,6 +89,7 @@ export const useVenteStore = create<VenteStore>((set) => ({
         .order('nom')
 
       if (error) {
+        logError('clients', 'chargement des clients échoué', { code: error.code, message: error.message })
         const errorMessage = handleSupabaseError(error)
         set({ clientsLoading: false, error: errorMessage })
         return { success: false, error: errorMessage }
@@ -133,6 +135,7 @@ export const useVenteStore = create<VenteStore>((set) => ({
         .order('offres(nom)')
 
       if (error) {
+        logError('offres', 'chargement des offres échoué', { code: error.code, message: error.message })
         const errorMessage = handleSupabaseError(error)
         set({ offresLoading: false, error: errorMessage })
         return { success: false, error: errorMessage }
