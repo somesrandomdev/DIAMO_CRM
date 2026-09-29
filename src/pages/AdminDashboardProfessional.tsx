@@ -14,6 +14,7 @@ import { BigKPICard } from '@/components/dashboard/BigKPICard'
 import { ChurnAlertCard } from '@/components/dashboard/ChurnAlertCard'
 import { KiosqueTable } from '@/components/dashboard/KiosqueTable'
 import { TopClientsCard } from '@/components/TopClientsCard'
+import { OnboardingTip } from '@/components/OnboardingTip'
 import { KioskMultiSelect } from '@/components/KioskMultiSelect'
 import { useAdminDashboard, type AdminTimePeriod } from '@/components/dashboard/useAdminDashboard'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
@@ -140,6 +141,8 @@ export default function AdminDashboardProfessional() {
           />
         </div>
       </div>
+
+      <OnboardingTip role="administrateur" message="Commencez par créer vos kiosques et vos offres, puis définissez leurs tarifs dans la matrice." />
 
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

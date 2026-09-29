@@ -9,6 +9,7 @@ import { SaleClientPicker } from './SaleClientPicker'
 import { SaleRecentList } from './SaleRecentList'
 import { SaleStatusBanners } from './SaleStatusBanners'
 import { SaleSummary } from './SaleSummary'
+import { OnboardingTip } from '@/components/OnboardingTip'
 import { useOfflineQueue } from './useOfflineQueue'
 import { useSaleSummary } from './useSaleSummary'
 import { useSubmitSale } from './useSubmitSale'
@@ -120,6 +121,7 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
         onSync={queue.flushQueue}
       />
 
+      <OnboardingTip role="fontainier" message="Bienvenue ! Sélectionnez un client, touchez les offres à vendre, puis validez — le ticket se télécharge tout seul." />
       <SaleSummary
         todaySalesCount={dailyStats.ventes}
         todayRevenue={dailyStats.ca}

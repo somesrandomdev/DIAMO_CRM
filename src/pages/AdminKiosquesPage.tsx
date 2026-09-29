@@ -204,7 +204,20 @@ export default function AdminKiosquesPage() {
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-12" />)}
             </div>
           ) : rows.length === 0 ? (
-            <EmptyState title="Aucun kiosque" description="Creez le premier kiosque du reseau." />
+            <EmptyState
+              title="Aucun kiosque"
+              description="Importez des kiosques via CSV ou ajoutez-les manuellement."
+              action={
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button type="button" variant="primary" onClick={openCreate}>
+                    Ajouter manuellement
+                  </Button>
+                  <Button type="button" variant="pos-secondary" onClick={() => setIsImportOpen(true)}>
+                    Importer via CSV
+                  </Button>
+                </div>
+              }
+            />
           ) : (
             <>
               <div className="mb-3 sm:w-80">

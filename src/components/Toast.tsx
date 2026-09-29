@@ -41,7 +41,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       const newToast: Toast = {
         ...toast,
         id,
-        duration: toast.duration ?? 5000,
+        // Succès 3s; les erreurs restent jusqu'à fermeture manuelle.
+        duration: toast.duration ?? (toast.type === 'error' ? 0 : 3000),
       }
 
       setToasts((prev) => [...prev, newToast])

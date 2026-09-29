@@ -22,6 +22,7 @@ export function SearchBar({ value, onChange, placeholder, resultCount, label }: 
           aria-hidden="true"
         />
         <input
+          data-page-search
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}

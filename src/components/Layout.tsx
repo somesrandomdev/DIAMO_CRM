@@ -19,6 +19,7 @@ import {
   WifiOff,
   X,
 } from 'lucide-react'
+import { CommandPalette } from '@/components/CommandPalette'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, type UserRole } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
@@ -89,10 +90,30 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine
   )
   const role = profile?.role
+
+  // Cmd/Ctrl+K: command palette. Ctrl/Cmd+/: focus the page's search field.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setPaletteOpen(true)
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === '/') {
+        event.preventDefault()
+        const input = document.querySelector<HTMLInputElement>(
+          '[data-page-search] input, [data-page-search]'
+        )
+        input?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
@@ -246,6 +267,7 @@ export default function Layout({ children }: LayoutProps) {
           )}
         </header>
 
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
         <main className="min-h-0 flex-1 overflow-auto bg-bg p-3 sm:p-4">
           <div className="mx-auto w-full max-w-[1200px]">{children}</div>
         </main>

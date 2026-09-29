@@ -201,7 +201,15 @@ export default function AdminOffresPage() {
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-12" />)}
             </div>
           ) : rows.length === 0 ? (
-            <EmptyState title="Aucune offre" description="Ajoutez une offre pour activer les ventes." />
+            <EmptyState
+              title="Aucune offre"
+              description="Créez votre première offre pour activer les ventes."
+              action={
+                <Button type="button" variant="primary" onClick={openCreate}>
+                  Créer votre première offre
+                </Button>
+              }
+            />
           ) : (
             <>
               <div className="mb-3 sm:w-80">

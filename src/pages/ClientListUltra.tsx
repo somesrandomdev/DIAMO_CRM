@@ -212,7 +212,17 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
           {[1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-24" />)}
         </div>
       ) : clients.length === 0 ? (
-        <EmptyState title="Aucun client" description="Les clients crees depuis les ventes apparaitront ici." />
+        <EmptyState
+          title="Aucun client"
+          description="Importez vos clients via CSV ou ajoutez-les manuellement pendant les ventes."
+          action={
+            profile?.kiosque_id ? (
+              <Button type="button" variant="primary" onClick={() => setIsImportOpen(true)}>
+                Importer via CSV
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <>
           <div className="sm:w-80">
