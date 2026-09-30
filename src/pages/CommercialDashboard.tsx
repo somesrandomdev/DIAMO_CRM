@@ -402,7 +402,7 @@ export default function CommercialDashboard() {
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Supervision</h1>
+          <h1 className="text-[15px] font-semibold text-text">Supervision</h1>
           <p className="text-sm text-[#1C5376]">Performance des kiosques que vous supervisez.</p>
         </div>
         <EmptyState
@@ -417,7 +417,7 @@ export default function CommercialDashboard() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Supervision</h1>
+        <h1 className="text-[15px] font-semibold text-text">Supervision</h1>
         <p className="text-sm text-[#1C5376]">
           Performance de vos {kiosques.length} kiosque{kiosques.length > 1 ? 's' : ''} — cumul du mois.
         </p>

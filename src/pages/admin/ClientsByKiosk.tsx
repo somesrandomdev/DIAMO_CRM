@@ -254,7 +254,7 @@ export default function ClientsByKiosk() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Clients par kiosque</h1>
+        <h1 className="text-[15px] font-semibold text-text">Clients par kiosque</h1>
         <p className="text-sm text-[#1C5376]">Répartition et activité des clients à travers le réseau.</p>
       </div>
 

@@ -189,7 +189,7 @@ export default function AdminDashboardProfessional() {
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[16px] font-semibold text-text">Tableau de bord</h1>
+          <h1 className="text-[15px] font-semibold text-text">Tableau de bord</h1>
           <p className="text-[12px] text-text-secondary">
             Vue d'ensemble du réseau — {activeKiosqueLabel.toLowerCase()}.
           </p>
