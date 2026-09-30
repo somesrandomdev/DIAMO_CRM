@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Download, RotateCcw } from 'lucide-react'
+import { Download, RotateCcw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
@@ -9,10 +9,12 @@ import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
 import { useToast } from '@/components/Toast'
+import { DeleteVenteDialog, type VenteDeleteTarget } from '@/components/DeleteVenteDialog'
+import { canDeleteVente } from '@/lib/venteDeleteRules'
+import { useAuthStore } from '@/stores/authStore'
 import { openTicketDownload } from '@/lib/ticketDownload'
 import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/authStore'
 import { exportRowsCSV } from '@/utils/exportCSV'
 import { toCFA } from '@/utils/price'
 
@@ -44,6 +46,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   const { profile } = useAuthStore()
   const { showToast } = useToast()
   const [sales, setSales] = useState<Sale[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<VenteDeleteTarget | null>(null)
+
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [dateFilter, setDateFilter] = useState('')
@@ -142,6 +146,10 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     )
   }
 
+  const reloadAfterDelete = () => {
+    if (profile) void loadSalesHistory()
+  }
+
   const downloadTicket = async (lien: string) => {
     const ok = await openTicketDownload(lien)
     if (!ok) {
@@ -198,6 +206,44 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
           </Button>
         ) : null,
       sortValue: (sale) => (sale.lien_ticket ? 1 : 0),
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (sale) => {
+        const deletable = canDeleteVente(sale.created_at, profile?.role ?? 'fontainier')
+        return deletable ? (
+          <Button
+            type="button"
+            variant="default"
+            size="icon"
+            className="h-12 w-12 min-h-12"
+            aria-label="Supprimer la vente"
+            title="Supprimer la vente"
+            onClick={(event) => {
+              event.stopPropagation()
+              setDeleteTarget({
+                id: sale.id,
+                date: sale.created_at,
+                clientNom: sale.client?.nom || 'Client anonyme',
+                offresResume: sale.offre?.nom || 'Offre inconnue',
+                montant: sale.montant_total,
+                lienTicket: sale.lien_ticket,
+              })
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : (
+          <span
+            className="inline-flex h-12 w-12 items-center justify-center text-[#8AA3B5]"
+            title="Suppression admin au-delà de 24 h"
+          >
+            <Trash2 className="h-4 w-4 opacity-30" />
+          </span>
+        )
+      },
     },
   ]
 
@@ -357,6 +403,12 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
           )}
         </CardContent>
       </Card>
+      <DeleteVenteDialog
+        target={deleteTarget}
+        role={profile?.role ?? 'fontainier'}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onDeleted={reloadAfterDelete}
+      />
     </div>
   )
 }
