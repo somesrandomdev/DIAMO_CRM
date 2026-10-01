@@ -1,6 +1,8 @@
 // Edge Function: admin-delete-user
-// Déploiement: supabase functions deploy admin-delete-user --project-ref <ref>
-// SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont auto-injectées.
+// Supprime définitivement un utilisateur (profil + compte auth + junctions)
+// Déploiement : Dashboard Supabase → Edge Functions → Create
+// SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont auto-injectées (pas de secret à ajouter)
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CORS_HEADERS = {
@@ -9,21 +11,33 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+function json(body: Record<string, unknown>, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  })
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    // Vérification des variables d'environnement
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+      console.error('Variables d\'environnement manquantes')
+      return json({ error: 'Configuration serveur invalide' }, 500)
+    }
 
-    // Admin client (service role): bypasses RLS for the destructive steps.
+    // Admin client (service role) : contourne RLS pour les opérations destructives
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
-    // 1. Authenticate the caller from their JWT.
+    // 1. Authentifier le caller via son JWT
     const authHeader = req.headers.get('Authorization') ?? ''
     const jwt = authHeader.replace('Bearer ', '')
     if (!jwt) {
@@ -35,8 +49,9 @@ Deno.serve(async (req: Request) => {
     }
     const callerId = userData.user.id
 
-    // 2. Verify the caller is an ACTIVE administrator (a trashed admin keeps a
-    //    valid session until it expires, but no longer has any right).
+    // 2. Vérifier que le caller est un administrateur ACTIF (un admin mis à la
+    //    corbeille garde une session valide jusqu'à expiration, mais n'a plus
+    //    aucun droit)
     const { data: callerProfile, error: callerError } = await adminClient
       .from('profiles')
       .select('role, username, deleted_at')
@@ -51,8 +66,9 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Accès refusé' }, 403)
     }
 
-    // 3. Target user.
-    const { userId } = await req.json()
+    // 3. Récupérer l'utilisateur cible
+    const body = await req.json()
+    const { userId } = body
     if (!userId || typeof userId !== 'string') {
       return json({ error: 'userId requis' }, 400)
     }
@@ -67,18 +83,8 @@ Deno.serve(async (req: Request) => {
       .maybeSingle()
     const username = targetProfile?.username ?? null
 
-    // 4. Cleanup: junction rows are supervisor grants, never wanted orphaned.
-    const { error: junctionError } = await adminClient
-      .from('commercials_kiosques')
-      .delete()
-      .eq('commercial_id', userId)
-    if (junctionError) {
-      return json({ error: 'Nettoyage des affectations impossible', details: junctionError.message }, 409)
-    }
-
-    // 5. Delete the profile row FIRST: any other FK pointing at profiles
-    //    surfaces here as 23503 -> 409 with the constraint detail, and we
-    //    delete NOTHING (the junction cleanup is harmless to keep).
+    // 4. Suppression du profil EN PREMIER — si FK violation (23503) on s'arrête
+    //    sans rien supprimer (atomicité : soit tout passe, soit rien n'est touché)
     const { error: profileError } = await adminClient
       .from('profiles')
       .delete()
@@ -98,11 +104,27 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Suppression du profil impossible', details: profileError.message }, 500)
     }
 
-    // 6. Delete the auth account (after the profile row succeeded).
+    // 5. Cleanup des junctions commercials_kiosques (safe maintenant que le profil est supprimé)
+    const { error: junctionError } = await adminClient
+      .from('commercials_kiosques')
+      .delete()
+      .eq('commercial_id', userId)
+    if (junctionError) {
+      // Le profil est déjà supprimé — on log pour cleanup manuel
+      await adminClient.from('audit_logs').insert({
+        actor_id: callerId,
+        action: 'user.permanent_delete_junction_orphan',
+        entity_type: 'profiles',
+        entity_id: userId,
+        details: { username, junction_error: junctionError.message },
+      })
+    }
+
+    // 6. Suppression du compte auth
     const { error: authError } = await adminClient.auth.admin.deleteUser(userId)
     if (authError) {
-      // Profile is gone; without the auth account the user cannot sign in.
-      // Surface it so the admin knows cleanup is partial.
+      // Le profil est déjà supprimé, l'utilisateur ne peut plus se connecter
+      // mais son compte auth reste — on log ce cas partiel
       await adminClient.from('audit_logs').insert({
         actor_id: callerId,
         action: 'user.permanent_delete_partial',
@@ -116,7 +138,7 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // 7. Audit (actor = the calling admin).
+    // 7. Audit de succès (actor = l'admin appelant)
     await adminClient.from('audit_logs').insert({
       actor_id: callerId,
       action: 'user.permanent_delete',
@@ -125,16 +147,11 @@ Deno.serve(async (req: Request) => {
       details: { username },
     })
 
+    console.log(`Admin ${callerProfile.username} a supprimé définitivement ${username} (${userId})`)
+
     return json({ success: true, username })
   } catch (caught) {
     console.error('admin-delete-user crashed:', caught)
     return json({ error: 'Erreur serveur', details: String(caught) }, 500)
   }
 })
-
-function json(body: Record<string, unknown>, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-  })
-}
