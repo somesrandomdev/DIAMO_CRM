@@ -35,13 +35,19 @@ Deno.serve(async (req: Request) => {
     }
     const callerId = userData.user.id
 
-    // 2. Verify the caller is an administrator.
+    // 2. Verify the caller is an ACTIVE administrator (a trashed admin keeps a
+    //    valid session until it expires, but no longer has any right).
     const { data: callerProfile, error: callerError } = await adminClient
       .from('profiles')
-      .select('role, username')
+      .select('role, username, deleted_at')
       .eq('id', callerId)
       .single()
-    if (callerError || !callerProfile || callerProfile.role !== 'administrateur') {
+    if (
+      callerError ||
+      !callerProfile ||
+      callerProfile.role !== 'administrateur' ||
+      callerProfile.deleted_at !== null
+    ) {
       return json({ error: 'Accès refusé' }, 403)
     }
 

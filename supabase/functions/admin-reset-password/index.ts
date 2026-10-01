@@ -83,14 +83,19 @@ serve(async (req) => {
       );
     }
 
-    // 2. Vérification du rôle administrateur
+    // 2. Vérification du rôle administrateur (un admin mis à la corbeille
+    //    n'a plus aucun droit, même avec une session encore valide)
     const { data: callerProfile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("role")
+      .select("role, deleted_at")
       .eq("id", caller.id)
       .single();
-    
-    if (profileError || callerProfile?.role !== "administrateur") {
+
+    if (
+      profileError ||
+      callerProfile?.role !== "administrateur" ||
+      callerProfile?.deleted_at !== null
+    ) {
       return new Response(
         JSON.stringify({ error: "Accès administrateur requis" }),
         { status: 403, headers: jsonHeaders }
@@ -105,6 +110,27 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "userId requis et doit être une chaîne" }),
         { status: 400, headers: jsonHeaders }
+      );
+    }
+
+    // Compte cible désactivé (corbeille) : pas de réinitialisation — elle lui
+    // redonnerait des identifiants valides. Le restaurer d'abord.
+    const { data: targetProfile, error: targetError } = await supabaseAdmin
+      .from("profiles")
+      .select("deleted_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (targetError || !targetProfile) {
+      return new Response(
+        JSON.stringify({ error: "Utilisateur introuvable" }),
+        { status: 404, headers: jsonHeaders }
+      );
+    }
+    if (targetProfile.deleted_at !== null) {
+      return new Response(
+        JSON.stringify({ error: "Ce compte est désactivé" }),
+        { status: 410, headers: jsonHeaders }
       );
     }
 
