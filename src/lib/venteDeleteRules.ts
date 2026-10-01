@@ -6,11 +6,24 @@
 const WINDOW_MS = 24 * 3600_000
 
 /**
- * Fenêtre de suppression : fontainier/commercial limités à 24 h ;
- * l'administrateur n'a pas de limite.
+ * Fenêtre de suppression (miroir de la RPC delete_vente):
+ *  - administrateur : tout, sans limite de fenêtre
+ *  - commercial     : ventes des kiosques supervisés de moins de 24 h
+ *  - fontainier     : jamais (suppression réservée commerciaux + admin)
+ *
+ * `inSupervisedScope` reflète le contrôle kiosque de la RPC ; l'écran
+ * d'historique liste déjà uniquement des ventes dans le périmètre du rôle,
+ * donc la valeur y est toujours true — le paramètre reste explicite pour
+ * que le miroir soit vérifiable et testé.
  */
-export function canDeleteVente(createdAt: string, role: string): boolean {
+export function canDeleteVente(
+  createdAt: string,
+  role: string,
+  inSupervisedScope = true
+): boolean {
   if (role === 'administrateur') return true
+  if (role !== 'commercial') return false
+  if (!inSupervisedScope) return false
   return Date.now() - new Date(createdAt).getTime() < WINDOW_MS
 }
 

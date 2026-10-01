@@ -169,6 +169,11 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
   const totalPages = Math.ceil(filteredSales.length / itemsPerPage)
   const totalCA = filteredSales.reduce((sum, sale) => sum + sale.montant_total, 0)
 
+  // Suppression réservée commerciaux + admin (règle métier, miroir de la RPC
+  // delete_vente) : la colonne n'existe pas du tout pour le fontainier — sur
+  // mobile un tooltip ne s'affiche pas, masquer est plus propre que griser.
+  const canSeeDeleteAction = (profile?.role ?? 'fontainier') !== 'fontainier'
+
   const columns: DataTableColumn<Sale>[] = [
     {
       key: 'date',
@@ -207,44 +212,51 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
         ) : null,
       sortValue: (sale) => (sale.lien_ticket ? 1 : 0),
     },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      render: (sale) => {
-        const deletable = canDeleteVente(sale.created_at, profile?.role ?? 'fontainier')
-        return deletable ? (
-          <Button
-            type="button"
-            variant="default"
-            size="icon"
-            className="h-12 w-12 min-h-12"
-            aria-label="Supprimer la vente"
-            title="Supprimer la vente"
-            onClick={(event) => {
-              event.stopPropagation()
-              setDeleteTarget({
-                id: sale.id,
-                date: sale.created_at,
-                clientNom: sale.client?.nom || 'Client anonyme',
-                offresResume: sale.offre?.nom || 'Offre inconnue',
-                montant: sale.montant_total,
-                lienTicket: sale.lien_ticket,
-              })
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        ) : (
-          <span
-            className="inline-flex h-12 w-12 items-center justify-center text-[#8AA3B5]"
-            title="Suppression admin au-delà de 24 h"
-          >
-            <Trash2 className="h-4 w-4 opacity-30" />
-          </span>
-        )
-      },
-    },
+    ...(canSeeDeleteAction
+      ? [
+          {
+            key: 'actions',
+            header: '',
+            align: 'right' as const,
+            render: (sale: Sale) => {
+              // La requête est déjà scopée (commercial = kiosques supervisés
+              // uniquement) : le contrôle kiosque de la RPC est satisfait ici,
+              // seul le rôle et la fenêtre 24 h varient.
+              const deletable = canDeleteVente(sale.created_at, profile?.role ?? 'fontainier', true)
+              return deletable ? (
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="h-12 w-12 min-h-12"
+                  aria-label="Supprimer la vente"
+                  title="Supprimer la vente"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setDeleteTarget({
+                      id: sale.id,
+                      date: sale.created_at,
+                      clientNom: sale.client?.nom || 'Client anonyme',
+                      offresResume: sale.offre?.nom || 'Offre inconnue',
+                      montant: sale.montant_total,
+                      lienTicket: sale.lien_ticket,
+                    })
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              ) : (
+                <span
+                  className="inline-flex h-12 w-12 items-center justify-center text-[#8AA3B5]"
+                  title="Suppression admin au-delà de 24 h"
+                >
+                  <Trash2 className="h-4 w-4 opacity-30" />
+                </span>
+              )
+            },
+          },
+        ]
+      : []),
   ]
 
   return (
