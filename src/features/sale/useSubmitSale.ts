@@ -44,12 +44,15 @@ const newIdempotencyKey = (): string =>
  * The sale submission flow, hardened against double-submits and network blips:
  *
  * click → ONE idempotency key per attempt (reused by every retry and kept by
- * the offline queue) → insert with idempotency_key →
+ * the offline queue) → one insert per cart line, all with idempotency_key
+ * (unique index: idempotency_key + offre_id) →
  *   success            → ticket + toast + reset
- *   23505 idempotency  → the sale ALREADY exists: success toast, reset, no dupe
- *   retryable failure  → wait → SELECT by idempotency_key →
- *       found          → success (ticket on the real sale id)
- *       not found      → retry ×2 (same key) → still failing → offline queue
+ *   23505 idempotency  → THAT line already exists: reuse it, continue the cart;
+ *                        every line already there → success toast, no dupe
+ *   retryable failure  → wait → SELECT lines by idempotency_key →
+ *       all offers     → success (ticket on the real first line id)
+ *       missing offers → retry ×2 (same key, recorded lines skipped) → still
+ *                        failing → offline queue
  *   non-retryable      → explicit toast, no retry, no queue
  */
 export function useSubmitSale({
@@ -148,8 +151,27 @@ export function useSubmitSale({
       // ── Online: insert (with retry + idempotency verification) ─────────
       setLoading(true)
 
+      type RecordedLine = { id: string; offre_id: string; lien_ticket?: string | null }
+
+      // Every ventes line already recorded under this attempt's key (one per
+      // offer: the unique index is (idempotency_key, offre_id)).
+      const fetchRecordedLines = async (): Promise<RecordedLine[]> => {
+        const { data } = await supabase
+          .from('ventes')
+          .select('id, offre_id, lien_ticket')
+          .eq('idempotency_key', idempotencyKey)
+        return (data as RecordedLine[] | null) ?? []
+      }
+
+      // Cart order is kept: the ticket hangs off the first line.
+      const linesForCart = (lines: RecordedLine[]): RecordedLine[] | null => {
+        const ordered = cartItems.map((item) => lines.find((line) => line.offre_id === item.offreId))
+        return ordered.every(Boolean) ? (ordered as RecordedLine[]) : null
+      }
+
       const insertOnce = async () => {
-        const sales = []
+        const lines: RecordedLine[] = []
+        let alreadyRecorded = 0
         for (const item of cartItems) {
           const total = item.prix * item.qty
 
@@ -167,21 +189,25 @@ export function useSubmitSale({
             .single()
 
           if (saleError) {
+            // 23505 on (idempotency_key, offre_id) concerns THIS line only: an
+            // earlier attempt recorded it. Reuse it and go on with the rest of
+            // the cart — never abandon the sibling offers.
+            if (isDuplicateIdempotencyError(saleError)) {
+              const existing = (await fetchRecordedLines()).find(
+                (line) => line.offre_id === item.offreId
+              )
+              if (existing) {
+                lines.push(existing)
+                alreadyRecorded += 1
+                continue
+              }
+            }
             logSaleError('échec insert ventes', saleError)
             throw saleError
           }
-          sales.push({ ...sale, ...item, montant_total: total })
+          lines.push({ id: (sale as { id: string }).id, offre_id: item.offreId, lien_ticket: null })
         }
-        return sales as Array<{ id: string } & (typeof cartItems)[number] & { montant_total: number }>
-      }
-
-      const verifyByIdempotencyKey = async () => {
-        const { data } = await supabase
-          .from('ventes')
-          .select('id, lien_ticket')
-          .eq('idempotency_key', idempotencyKey)
-          .maybeSingle()
-        return (data as { id: string; lien_ticket?: string | null } | null) ?? null
+        return { lines, allAlreadyRecorded: alreadyRecorded === cartItems.length }
       }
 
       const reportSaleError = (error: unknown) => {
@@ -194,19 +220,16 @@ export function useSubmitSale({
       }
 
       try {
-        let recordedSaleIds: Array<{ id: string }> | null = null
-        let skipTicket = false
+        let recordedLines: RecordedLine[] | null = null
         let attempt = 0
 
         while (true) {
           attempt += 1
           try {
-            recordedSaleIds = await insertOnce()
-            break
-          } catch (insertError) {
-            // 23505 on idx_ventes_idempotency_key = the sale is ALREADY there
-            // (double-click or retried request). Success, never a duplicate.
-            if (isDuplicateIdempotencyError(insertError)) {
+            const result = await insertOnce()
+            // Every line of the cart was ALREADY there (double-click or
+            // retried request): success, never a duplicate.
+            if (result.allAlreadyRecorded) {
               setLoading(false)
               setSaleSaved(true)
               showToast({
@@ -218,7 +241,9 @@ export function useSubmitSale({
               finishWithReset(resetDelayMs)
               return
             }
-
+            recordedLines = result.lines
+            break
+          } catch (insertError) {
             // Non-retryable (RLS, FK, NOT NULL, other uniques): explicit toast,
             // no retry, no queue.
             if (!isRetryableSaleError(insertError)) {
@@ -229,12 +254,14 @@ export function useSubmitSale({
               return
             }
 
-            // Retryable: maybe the request landed anyway — verify by key.
+            // Retryable: maybe the requests landed anyway — verify by key.
+            // Success only when EVERY offer of the cart is recorded; a partial
+            // cart goes back through insertOnce, which skips the lines
+            // already there.
             await sleep(verifyDelayMs)
-            const existing = await verifyByIdempotencyKey()
-            if (existing) {
-              recordedSaleIds = [{ id: existing.id }]
-              skipTicket = Boolean(existing.lien_ticket)
+            const complete = linesForCart(await fetchRecordedLines())
+            if (complete) {
+              recordedLines = complete
               break
             }
 
@@ -251,7 +278,9 @@ export function useSubmitSale({
           }
         }
 
-        const firstSaleId = recordedSaleIds![0].id
+        const firstSaleId = recordedLines![0].id
+        // A ticket already uploaded by an earlier attempt: don't redo it.
+        const skipTicket = recordedLines!.some((line) => Boolean(line.lien_ticket))
 
         const ticketOk = skipTicket
           ? true

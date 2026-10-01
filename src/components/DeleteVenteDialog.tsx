@@ -60,7 +60,7 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
     const lienTicket = (row as { lien_ticket?: string | null } | null)?.lien_ticket ?? null
 
     setIsDeleting(true)
-    const { error: rpcError } = await supabase.rpc('delete_vente', {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('delete_vente', {
       p_vente_id: target.id,
       p_reason: motif,
       p_comment: comment.trim() || null,
@@ -91,8 +91,12 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
       role,
     })
 
+    // Vente multi-offres : le ticket couvre encore les lignes restantes (la RPC
+    // l'a reporté sur une ligne sœur) — surtout ne pas le supprimer.
+    const hadSiblings = (rpcData as { had_siblings?: boolean } | null)?.had_siblings === true
+
     // Best-effort: suppression de l'objet ticket en storage (orphelin acceptable).
-    if (lienTicket) {
+    if (lienTicket && !hadSiblings) {
       try {
         const { error: storageError } = await supabase.storage
           .from('private_tickets')

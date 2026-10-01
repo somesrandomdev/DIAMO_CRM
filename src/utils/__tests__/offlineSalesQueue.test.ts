@@ -7,6 +7,7 @@
 const mockGetAll = jest.fn()
 const mockDelete = jest.fn(async () => undefined)
 const mockInsertVentes = jest.fn()
+const mockLookupVentes = jest.fn()
 
 jest.mock('idb', () => ({
   openDB: jest.fn(async () => ({
@@ -35,7 +36,7 @@ jest.mock('@/lib/supabase', () => ({
       if (table === 'ventes') {
         return {
           insert: mockInsertVentes,
-          select: () => Promise.resolve({ data: [{ id: 'sale-real-1' }], error: null }),
+          select: () => ({ eq: mockLookupVentes }),
           update: () => ({ eq: async () => ({ data: null, error: null }) }),
         }
       }
@@ -69,6 +70,7 @@ beforeEach(() => {
   mockInsertVentes.mockImplementation(() => ({
     select: () => Promise.resolve({ data: [{ id: 'sale-real-1' }], error: null }),
   }))
+  mockLookupVentes.mockResolvedValue({ data: [{ offre_id: 'offre-1' }], error: null })
   // Node's test env lacks fetch; the sync ticket step is best-effort.
   ;(global as { fetch?: unknown }).fetch = jest.fn(
     async () => new Response(new Blob(['pdf']), { status: 200 })
@@ -92,7 +94,7 @@ describe('flushOfflineSales — idempotence à la synchronisation', () => {
           error: {
             code: '23505',
             message: 'duplicate key value violates unique constraint "idx_ventes_idempotency_key"',
-            details: 'Key (idempotency_key)=(11111111-2222-3333-4444-555555555555) already exists.',
+            details: 'Key (idempotency_key, offre_id)=(11111111-2222-3333-4444-555555555555, offre-1) already exists.',
           },
         }),
     }))
@@ -109,5 +111,54 @@ describe('flushOfflineSales — idempotence à la synchronisation', () => {
     const result = await flushOfflineSales({})
     expect(result.flushed).toBe(1)
     expect(mockDelete).toHaveBeenCalledWith('sales', 'queued-1')
+  })
+  it('panier partiellement présent (23505) : insère SEULEMENT l’offre manquante puis dépile', async () => {
+    mockGetAll.mockResolvedValue([
+      {
+        ...queuedSale,
+        items: [
+          { offre_id: 'offre-1', quantite: 2, montant_total: 600 },
+          { offre_id: 'offre-2', quantite: 1, montant_total: 500 },
+        ],
+      },
+    ])
+    const duplicate = {
+      code: '23505',
+      message: 'duplicate key value violates unique constraint "idx_ventes_idempotency_key_offre"',
+    }
+    mockInsertVentes
+      .mockImplementationOnce(() => ({ select: () => Promise.resolve({ data: null, error: duplicate }) }))
+      .mockImplementationOnce(() => Promise.resolve({ data: null, error: null }))
+    mockLookupVentes.mockResolvedValue({ data: [{ offre_id: 'offre-1' }], error: null })
+
+    const result = await flushOfflineSales({})
+
+    const missingInsert = mockInsertVentes.mock.calls[1][0] as Array<{ offre_id: string; idempotency_key: string }>
+    expect(missingInsert.map((row) => row.offre_id)).toEqual(['offre-2'])
+    expect(missingInsert[0].idempotency_key).toBe(queuedSale.idempotency_key)
+    expect(result).toEqual({ flushed: 1, failed: 0 })
+    expect(mockDelete).toHaveBeenCalledWith('sales', 'queued-1')
+  })
+
+  it('offre manquante non insérable : l’entrée RESTE en file (jamais de perte)', async () => {
+    mockGetAll.mockResolvedValue([
+      {
+        ...queuedSale,
+        items: [
+          { offre_id: 'offre-1', quantite: 2, montant_total: 600 },
+          { offre_id: 'offre-2', quantite: 1, montant_total: 500 },
+        ],
+      },
+    ])
+    mockInsertVentes
+      .mockImplementationOnce(() => ({
+        select: () => Promise.resolve({ data: null, error: { code: '23505', message: 'idx_ventes_idempotency_key_offre' } }),
+      }))
+      .mockImplementationOnce(() => Promise.resolve({ data: null, error: { code: '42501', message: 'rls' } }))
+
+    const result = await flushOfflineSales({})
+
+    expect(result).toEqual({ flushed: 0, failed: 1 })
+    expect(mockDelete).not.toHaveBeenCalled()
   })
 })
