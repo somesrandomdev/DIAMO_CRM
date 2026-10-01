@@ -193,3 +193,116 @@ CREATE POLICY tickets_select_supervised ON storage.objects
 -- simple oui/non). Note : l'ACL contient aussi PUBLIC (=X/postgres), un
 -- REVOKE ... FROM anon seul n'aurait rien changé. Correctif hors périmètre
 -- « bug » (connexion côté serveur via edge function) : voir le rapport.
+
+
+-- ── A5. Ventes : un fontainier ne peut plus modifier montant/quantité ─────
+-- ventes_fontainier_update autorisait la modification de n'importe quelle
+-- colonne d'une vente du kiosque (montant_total à 0…) sans aucune trace,
+-- alors que la suppression est réservée et auditée. La policy ne peut pas être
+-- supprimée : le fontainier écrit légitimement lien_ticket après l'upload du
+-- ticket (useTicketUpload, sync hors-ligne). Un trigger limite donc l'UPDATE
+-- non admin / non commercial à la seule colonne lien_ticket.
+-- auth.uid() NULL (service role, éditeur SQL) : pas de restriction.
+CREATE OR REPLACE FUNCTION public.ventes_guard_update()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL OR public.is_admin() OR public.is_commercial() THEN
+    RETURN NEW;
+  END IF;
+
+  IF (to_jsonb(NEW) - 'lien_ticket') IS DISTINCT FROM (to_jsonb(OLD) - 'lien_ticket') THEN
+    RAISE EXCEPTION 'Modification de vente réservée aux commerciaux et administrateurs'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.ventes_guard_update() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS ventes_guard_update ON public.ventes;
+CREATE TRIGGER ventes_guard_update
+  BEFORE UPDATE ON public.ventes
+  FOR EACH ROW EXECUTE FUNCTION public.ventes_guard_update();
+
+
+-- ── A8. delete_vente : ne plus orpheliner le ticket d'un panier multi-offres
+-- Une vente multi-offres = plusieurs lignes ventes (même idempotency_key),
+-- mais le ticket PDF n'est rattaché (lien_ticket) qu'à la 1re ligne. Supprimer
+-- cette ligne faisait supprimer le PDF côté client alors qu'il couvre encore
+-- les autres offres. Désormais :
+--  - had_siblings = d'autres lignes partagent la clé ;
+--  - si oui et que la ligne supprimée portait le ticket, il est reporté sur
+--    une ligne sœur (il reste accessible) ;
+--  - le client ne supprime l'objet storage que si had_siblings = false.
+-- Contrôles d'accès et audit inchangés.
+CREATE OR REPLACE FUNCTION public.delete_vente(
+  p_vente_id uuid,
+  p_reason text,
+  p_comment text DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_row public.ventes%ROWTYPE;
+  v_kiosques uuid[];
+  v_sibling_id uuid;
+  v_had_siblings boolean := false;
+BEGIN
+  IF COALESCE(p_reason, '') = '' THEN
+    RAISE EXCEPTION 'Motif de suppression obligatoire';
+  END IF;
+
+  SELECT * INTO v_row FROM public.ventes WHERE id = p_vente_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Vente introuvable'; END IF;
+
+  IF public.is_admin() THEN
+    NULL;  -- admin : aucune limite
+  ELSIF public.is_commercial() THEN
+    v_kiosques := ARRAY(SELECT public.get_my_supervised_kiosques());
+    IF NOT (v_row.kiosque_id = ANY(v_kiosques)) THEN
+      RAISE EXCEPTION 'Cette vente ne fait pas partie de vos kiosques';
+    END IF;
+    IF v_row.created_at < now() - interval '24 hours' THEN
+      RAISE EXCEPTION 'Vente de plus de 24 h : suppression réservée à un administrateur';
+    END IF;
+  ELSE
+    RAISE EXCEPTION 'Suppression réservée aux commerciaux et aux administrateurs';
+  END IF;
+
+  IF v_row.idempotency_key IS NOT NULL THEN
+    SELECT id INTO v_sibling_id
+    FROM public.ventes
+    WHERE idempotency_key = v_row.idempotency_key AND id <> v_row.id
+    ORDER BY created_at, id
+    LIMIT 1;
+    v_had_siblings := v_sibling_id IS NOT NULL;
+  END IF;
+
+  -- Snapshot complet dans l'audit AVANT suppression
+  INSERT INTO public.audit_logs (actor_id, action, entity_type, entity_id, details)
+  VALUES (auth.uid(), 'vente.delete', 'ventes', p_vente_id::text,
+          json_build_object('reason', p_reason, 'comment', p_comment,
+                            'snapshot', to_jsonb(v_row),
+                            'had_siblings', v_had_siblings));
+
+  DELETE FROM public.ventes WHERE id = p_vente_id;
+
+  -- Le ticket couvre encore les offres restantes : on le garde rattaché.
+  IF v_had_siblings AND v_row.lien_ticket IS NOT NULL THEN
+    UPDATE public.ventes
+    SET lien_ticket = v_row.lien_ticket
+    WHERE id = v_sibling_id AND lien_ticket IS NULL;
+  END IF;
+
+  RETURN json_build_object('success', true, 'had_siblings', v_had_siblings);
+END;
+$$;
