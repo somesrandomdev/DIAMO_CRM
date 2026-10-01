@@ -9,7 +9,7 @@ import type { QueuedSale } from '@/utils/offlineSalesQueue'
 
 const mockShowToast = jest.fn()
 const mockInsertSingle: jest.Mock = jest.fn()
-const mockVerifyMaybeSingle = jest.fn()
+const mockVerifyLines = jest.fn()
 const mockEnqueue: jest.Mock = jest.fn(async () => undefined)
 const mockUploadTicket = jest.fn(async () => true)
 const mockResetForm = jest.fn()
@@ -35,9 +35,7 @@ jest.mock('@/lib/supabase', () => ({
             }
           },
           select: () => ({
-            eq: () => ({
-              maybeSingle: () => mockVerifyMaybeSingle(),
-            }),
+            eq: () => mockVerifyLines(),
           }),
         }
       }
@@ -113,14 +111,19 @@ describe('useSubmitSale — correctifs production', () => {
     expect(mockResetForm).toHaveBeenCalledTimes(1)
   })
 
-  it('23505 sur idx_ventes_idempotency_key = succès (aucune duplication, pas de file)', async () => {
+  it('23505 sur (idempotency_key, offre_id) pour tout le panier = succès (aucune duplication, pas de file)', async () => {
     mockInsertSingle.mockResolvedValue({
       data: null,
       error: {
         code: '23505',
-        message: 'duplicate key value violates unique constraint "idx_ventes_idempotency_key"',
-        details: 'Key (idempotency_key)=(abc) already exists.',
+        message: 'duplicate key value violates unique constraint "idx_ventes_idempotency_key_offre"',
+        details: 'Key (idempotency_key, offre_id)=(abc, offre-1) already exists.',
       },
+    })
+    // La ligne existe déjà (tentative précédente) : relue par clé.
+    mockVerifyLines.mockResolvedValue({
+      data: [{ id: 'sale-1', offre_id: 'offre-1', lien_ticket: null }],
+      error: null,
     })
 
     const { result } = setupHook()
@@ -145,9 +148,9 @@ describe('useSubmitSale — correctifs production', () => {
       .mockRejectedValueOnce(new TypeError('Failed to fetch')) // 1ère tentative perte de réseau
       .mockRejectedValueOnce(new TypeError('Failed to fetch')) // retry 1
       .mockResolvedValue({ data: { id: 'sale-2' }, error: null }) // retry 2 OK
-    mockVerifyMaybeSingle
-      .mockResolvedValueOnce({ data: null, error: null }) // pas encore en base
-      .mockResolvedValueOnce({ data: null, error: null }) // pas encore en base
+    mockVerifyLines
+      .mockResolvedValueOnce({ data: [], error: null }) // pas encore en base
+      .mockResolvedValueOnce({ data: [], error: null }) // pas encore en base
 
     const { result } = setupHook()
     await act(async () => {
@@ -169,7 +172,7 @@ describe('useSubmitSale — correctifs production', () => {
 
   it('échec retryable épuisé → file hors-ligne avec la MÊME clé, pas de toast d’erreur', async () => {
     mockInsertSingle.mockRejectedValue(new TypeError('Failed to fetch'))
-    mockVerifyMaybeSingle.mockResolvedValue({ data: null, error: null }) // jamais en base
+    mockVerifyLines.mockResolvedValue({ data: [], error: null }) // jamais en base
 
     const { result } = setupHook()
     await act(async () => {

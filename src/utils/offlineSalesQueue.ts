@@ -2,6 +2,7 @@ import { openDB, type DBSchema } from 'idb'
 import { supabase } from '@/lib/supabase'
 import { generateTicket } from '@/lib/ticketGenerator'
 import { ticketPath } from '@/lib/ticketFormat'
+import { isDuplicateIdempotencyError } from '@/lib/saleErrors'
 import { logError, logWarn } from '@/lib/telemetry'
 import type { QueuedClient } from './offlineClientQueue'
 
@@ -136,12 +137,18 @@ export async function flushOfflineSales(
       .select('id')
 
     if (error) {
-      // 23505 on the idempotency index = the sale was already synced by an
-      // earlier flush: keep it (never delete data), just drop the queue entry.
-      const err = error as { code?: string; message?: string; details?: string }
-      if (err.code === '23505' && `${err.message ?? ''} ${err.details ?? ''}`.toLowerCase().includes('idempotency')) {
-        await removeQueuedSale(sale.id)
-        flushed += 1
+      // 23505 on the idempotency index (idempotency_key, offre_id) = SOME lines
+      // already exist (earlier flush, or an online attempt that landed
+      // partially before the sale was queued). The batch insert is atomic, so
+      // nothing was written: insert only the missing offers, then drop the
+      // queue entry. Never drop it while an offer is still missing.
+      if (isDuplicateIdempotencyError(error)) {
+        if (await insertMissingLines(rows, sale.idempotency_key)) {
+          await removeQueuedSale(sale.id)
+          flushed += 1
+        } else {
+          failed += 1
+        }
         continue
       }
       failed += 1
@@ -176,6 +183,43 @@ export async function flushOfflineSales(
   }
 
   return { flushed, failed }
+}
+
+/**
+ * Inserts the queued lines whose offer is not yet recorded under this key.
+ * Returns true once every offer of the sale exists in ventes.
+ */
+async function insertMissingLines(
+  rows: Array<{ offre_id: string }>,
+  idempotencyKey: string
+): Promise<boolean> {
+  const { data: existing, error: lookupError } = await supabase
+    .from('ventes')
+    .select('offre_id')
+    .eq('idempotency_key', idempotencyKey)
+  if (lookupError) {
+    logError('sync', 'sync hors-ligne: lecture des lignes existantes échouée', {
+      code: (lookupError as { code?: string }).code,
+      idempotencyKey,
+    })
+    return false
+  }
+
+  const recorded = new Set(((existing ?? []) as Array<{ offre_id: string }>).map((row) => row.offre_id))
+  const missing = rows.filter((row) => !recorded.has(row.offre_id))
+  if (missing.length === 0) return true
+
+  const { error } = await supabase.from('ventes').insert(missing)
+  if (error && !isDuplicateIdempotencyError(error)) {
+    logError('sync', 'sync hors-ligne: insertion des offres manquantes échouée', {
+      code: (error as { code?: string }).code,
+      message: (error as { message?: string }).message,
+      idempotencyKey,
+    })
+    return false
+  }
+  // A concurrent flush may have won the race (23505): the next flush re-checks.
+  return !error
 }
 
 /** Names needed to draw a synced sale's ticket, fetched once per flush batch. */

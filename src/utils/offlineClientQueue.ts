@@ -63,16 +63,46 @@ export async function flushOfflineClients(): Promise<FlushOfflineClientsResult> 
       .select('id')
       .single()
 
-    if (error || !data) {
+    let realId = data?.id as string | undefined
+
+    // UNIQUE (kiosque_id, telephone): the client already exists — created by an
+    // earlier flush whose response was lost, or on another device. Reuse its
+    // id instead of leaving it (and its sales) stuck in the queue forever.
+    if (error && (error as { code?: string }).code === '23505') {
+      const { data: existing } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('kiosque_id', client.kiosque_id)
+        .eq('telephone', client.telephone)
+        .maybeSingle()
+      realId = (existing as { id: string } | null)?.id
+    }
+
+    if (!realId) {
       result.failed += 1
       console.error('Offline client sync failed:', error)
       continue
     }
 
-    result.clientIdMap[client.offline_id] = data.id
+    result.clientIdMap[client.offline_id] = realId
+    // Re-point the queued sales BEFORE dropping the client entry: the
+    // offline_id -> uuid mapping only lives for this flush, so a sale that
+    // fails to sync now would otherwise never find its client again.
+    await repointQueuedSales(client.offline_id, realId)
     await db.delete('offlineClients', client.offline_id)
     result.flushed += 1
   }
 
   return result
+}
+
+/** Rewrites client_id on every queued sale recorded against an offline client. */
+async function repointQueuedSales(offlineId: string, realId: string): Promise<void> {
+  const db = await getDb()
+  const sales = await db.getAll('sales')
+  for (const sale of sales) {
+    if (sale.client_id === offlineId) {
+      await db.put('sales', { ...sale, client_id: realId })
+    }
+  }
 }

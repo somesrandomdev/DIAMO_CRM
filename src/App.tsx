@@ -137,6 +137,12 @@ export default function App() {
     )
   }
 
+  // Disabled account (admin corbeille): sign out immediately and show why.
+  // Checked BEFORE the password-change gate — a deleted account changes nothing.
+  if (profile.deleted_at) {
+    return <DisabledAccountScreen onDone={signOut} />
+  }
+
   // Forced first-login password change: a blocking full-screen gate instead of
   // the authenticated routes. Clearing the flag unmounts it and the app continues.
   if (profile.must_change_password) {
@@ -147,12 +153,6 @@ export default function App() {
         </ToastProvider>
       </ErrorBoundary>
     )
-  }
-
-  // Disabled account (admin corbeille): sign out immediately and show why.
-  // Checked BEFORE the password-change gate — a deleted account changes nothing.
-  if (profile.deleted_at) {
-    return <DisabledAccountScreen onDone={signOut} />
   }
 
   return (
