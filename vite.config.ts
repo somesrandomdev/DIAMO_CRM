@@ -33,7 +33,7 @@ try {
 
 export default defineConfig({
   define: {
-    __APP_BUILD__: JSON.stringify(BUILD_ID),
+    'globalThis.__APP_BUILD__': JSON.stringify(BUILD_ID),
   },
   plugins: [
     react(),

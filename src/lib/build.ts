@@ -1,9 +1,8 @@
 /**
  * Build marker — source unique de vérité pour la version déployée.
  * main.tsx l'affiche en console ; telemetry l'embarque dans chaque log.
- * Incrémenter à chaque release.
+ * La valeur est injectée par le define Vite 'globalThis.__APP_BUILD__'
+ * (voir vite.config.ts) : en Jest, absent → fallback 'dev'.
  */
-// Valeur injectée par Vite (sha de build) — voir vite.config.ts.
-// typeof-safe: en Jest (pas de define), retombe sur 'dev'.
-export const APP_BUILD: string =
-  typeof __APP_BUILD__ === 'string' ? __APP_BUILD__ : 'dev'
+const globalScope = globalThis as { __APP_BUILD__?: string }
+export const APP_BUILD: string = globalScope.__APP_BUILD__ ?? 'dev'
