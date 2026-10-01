@@ -4,7 +4,7 @@ import { ShieldAlert } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ForcePasswordChangeDialog } from '@/components/ForcePasswordChangeDialog'
-import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
+import { AppUpdateManager } from '@/components/AppUpdateManager'
 import { ToastProvider } from '@/components/Toast'
 import { Loading } from '@/components/Loading'
 import Layout from '@/components/Layout'
@@ -131,7 +131,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </Suspense>
-          <PWAUpdatePrompt />
+          <AppUpdateManager />
         </ToastProvider>
       </ErrorBoundary>
     )
@@ -205,7 +205,7 @@ export default function App() {
             </Routes>
           </Suspense>
         </Layout>
-        <PWAUpdatePrompt />
+        <AppUpdateManager />
       </ToastProvider>
     </ErrorBoundary>
   )

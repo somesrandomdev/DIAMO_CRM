@@ -15,6 +15,7 @@ import { useSaleSummary } from './useSaleSummary'
 import { useSubmitSale } from './useSubmitSale'
 import { useTicketUpload } from './useTicketUpload'
 import { useVenteForm } from './useVenteForm'
+import { setUpdateUnsafeGuard } from '@/lib/updateCoordinator'
 
 /**
  * Thin orchestrator for the sale flow: pick a client, build the cart,
@@ -35,6 +36,14 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
 
   const form = useVenteForm()
   const { dailyStats, recentSales, dailyGoal, loadVenteSummary } = useSaleSummary()
+
+  // Mise à jour forcée: un panier non vide = moment non sûr. La bannière
+  // s'affiche, l'UpdateGate attend que le panier soit vidé (vente validée
+  // ou annulée) ou que l'écran soit quitté. Jamais de perte de saisie.
+  useEffect(() => {
+    setUpdateUnsafeGuard(() => form.cartItems.length > 0)
+    return () => setUpdateUnsafeGuard(null)
+  }, [form.cartItems])
   const { uploadTicket } = useTicketUpload()
 
   const [showAddClient, setShowAddClient] = useState(false)

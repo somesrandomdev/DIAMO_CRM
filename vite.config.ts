@@ -1,3 +1,5 @@
+import { execSync } from 'node:child_process'
+import fs from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from "@tailwindcss/vite"
@@ -5,7 +7,34 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // https://vite.dev/config/
+
+// ── Identité de build ──────────────────────────────────────────────────
+// sha court du commit (fallback timestamp si git indisponible). Écrit dans
+// public/version.json (servi tel quel, fetché avec cache: 'no-store') et
+// injecté dans le bundle via __APP_BUILD__ pour la comparaison de version.
+let BUILD_ID = ''
+try {
+  BUILD_ID = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+    .toString()
+    .trim()
+} catch {
+  BUILD_ID = `t${Date.now()}`
+}
+try {
+  fs.mkdirSync('public', { recursive: true })
+  fs.writeFileSync(
+    'public/version.json',
+    JSON.stringify({ build: BUILD_ID, generated_at: new Date().toISOString() }, null, 2)
+  )
+} catch {
+  // environnement sans fs writable: la vérification de version se replie sur
+  // le controllerchange du SW.
+}
+
 export default defineConfig({
+  define: {
+    __APP_BUILD__: JSON.stringify(BUILD_ID),
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -34,9 +63,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // SPA fallback so deep links work offline
         navigateFallback: '/index.html',
-        // The USER activates updates via the prompt (never silently)
-        skipWaiting: false,
-        clientsClaim: false,
+        // Auto-guérison: le nouveau SW s'active dès téléchargé et prend le
+        // contrôle; la page détecte le controllerchange -> UpdateGate bloquant.
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             // Auth must never be cached: a replayed /token or /user response
