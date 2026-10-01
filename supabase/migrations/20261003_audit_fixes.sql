@@ -142,3 +142,54 @@ AS $$
       AND p.deleted_at IS NULL
   );
 $$;
+
+
+-- ── A6. Storage private_tickets : fin de l'accès « tout utilisateur connecté »
+-- kiosk_read_ticket / kiosk_insert_ticket n'exigeaient que auth.uid() IS NOT
+-- NULL. Les policies permissives s'additionnant (OR), elles annulaient les
+-- policies scopées par kiosque : tout compte lisait/écrivait tous les tickets
+-- (noms et téléphones clients). On les supprime et on réécrit les policies
+-- scopées via get_my_kiosque_id() (tient compte de la corbeille, A4).
+-- Comparaison en texte : pas de cast ::uuid qui planterait sur un nom de
+-- dossier non-uuid.
+DROP POLICY IF EXISTS kiosk_read_ticket ON storage.objects;
+DROP POLICY IF EXISTS kiosk_insert_ticket ON storage.objects;
+
+DROP POLICY IF EXISTS tickets_select_own_kiosque ON storage.objects;
+CREATE POLICY tickets_select_own_kiosque ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'private_tickets'
+    AND (storage.foldername(name))[1] = public.get_my_kiosque_id()::text
+  );
+
+DROP POLICY IF EXISTS tickets_insert_own_kiosque ON storage.objects;
+CREATE POLICY tickets_insert_own_kiosque ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'private_tickets'
+    AND (storage.foldername(name))[1] = public.get_my_kiosque_id()::text
+  );
+
+-- Les commerciaux n'ont pas de profiles.kiosque_id : sans kiosk_read_ticket
+-- ils perdraient l'accès aux tickets de leurs kiosques supervisés (historique).
+DROP POLICY IF EXISTS tickets_select_supervised ON storage.objects;
+CREATE POLICY tickets_select_supervised ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'private_tickets'
+    AND public.is_commercial()
+    AND (storage.foldername(name))[1] IN (
+      SELECT k::text FROM public.get_my_supervised_kiosques() AS k
+    )
+  );
+
+-- tickets_admin_all (bucket private_tickets AND is_admin()) est conservée.
+
+-- ── A7. resolve_login_identifier — VOLONTAIREMENT NON MODIFIÉ ─────────────
+-- Le REVOKE anon casserait la connexion par téléphone/identifiant : la page
+-- de login appelle cette fonction AVANT toute authentification (le client est
+-- anon à ce moment-là), et la fonction RENVOIE l'email du compte (pas un
+-- simple oui/non). Note : l'ACL contient aussi PUBLIC (=X/postgres), un
+-- REVOKE ... FROM anon seul n'aurait rien changé. Correctif hors périmètre
+-- « bug » (connexion côté serveur via edge function) : voir le rapport.
