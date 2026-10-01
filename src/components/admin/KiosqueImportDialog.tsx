@@ -14,6 +14,7 @@ import {
 import { PosLabel } from '@/components/pos'
 import { logAudit } from '@/lib/audit'
 import { validateKiosqueRows, type KiosqueImportRow } from '@/lib/kiosqueImport'
+import { resolveTypeCode, type KiosqueType } from '@/lib/kiosqueTypes'
 import { supabase } from '@/lib/supabase'
 
 interface KiosqueImportDialogProps {
@@ -21,20 +22,28 @@ interface KiosqueImportDialogProps {
   onOpenChange: (open: boolean) => void
   /** Noms des kiosques déjà en base (détection de doublons). */
   baseNames: string[]
+  /** Types disponibles (résolution type_code du CSV). */
+  types: KiosqueType[]
   /** Called after a successful import so the parent can refresh. */
   onImported: () => void
 }
 
+interface ParsedRow extends KiosqueImportRow {
+  typeRaw: string
+}
+
 /**
- * CSV import for kiosques: template-driven (nom, adresse), per-file and
- * per-base duplicate detection on normalized names, "ignorer les doublons"
- * by default, audit-logged on success.
+ * CSV import v2 for kiosques: colonnes nom, adresse, type_code.
+ * - type vide → NULL ; code inconnu → essai par label insensible à la casse ;
+ *   toujours inconnu → ligne rouge (à créer d'abord via Créer un kiosque).
+ * - doublons (fichier + base) en rouge, "ignorer les doublons" par défaut.
+ * - audit 'kiosques.import' {nb, nb_sans_type}.
  */
-export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported }: KiosqueImportDialogProps) {
+export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onImported }: KiosqueImportDialogProps) {
   const { showToast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [fileName, setFileName] = useState('')
-  const [rows, setRows] = useState<KiosqueImportRow[]>([])
+  const [rows, setRows] = useState<ParsedRow[]>([])
   const [skipDuplicates, setSkipDuplicates] = useState(true)
   const [error, setError] = useState('')
   const [isImporting, setIsImporting] = useState(false)
@@ -66,6 +75,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
           .map((raw) => ({
             nom: String(raw['nom'] ?? raw['Nom'] ?? '').trim(),
             adresse: String(raw['adresse'] ?? raw['Adresse'] ?? '').trim(),
+            typeRaw: String(raw['type_code'] ?? raw['type'] ?? '').trim(),
           }))
           .filter((row) => row.nom !== '' || row.adresse !== '')
         setRows(mapped)
@@ -78,9 +88,19 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
 
   const validation = validateKiosqueRows(rows, baseNames)
   const { duplicateFlags, invalidCount, duplicateCount } = validation
-  const insertableRows = skipDuplicates
-    ? validation.valid.filter((_, index) => !duplicateFlags[rows.indexOf(validation.valid[index])])
-    : validation.valid
+
+  /** Résolution de type par ligne (flags alignés sur rows). */
+  const typeResolutions = rows.map((row) => resolveTypeCode(row.typeRaw, types))
+  const unknownTypeFlags = typeResolutions.map((r) => r.unknown)
+  const unknownTypeCount = rows.filter((_, index) => unknownTypeFlags[index]).length
+
+  const insertable = rows.filter((_, index) => {
+    if (!rows[index].nom) return false
+    if (skipDuplicates && duplicateFlags[index]) return false
+    if (unknownTypeFlags[index]) return false
+    return true
+  })
+  const sansTypeCount = insertable.filter((row) => !resolveTypeCode(row.typeRaw, types).code).length
 
   const importKiosques = async () => {
     if (rows.length === 0) {
@@ -97,11 +117,24 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
       )
       return
     }
+    const firstUnknown = rows.find((_, index) => unknownTypeFlags[index])
+    if (firstUnknown) {
+      setError(
+        `Type inconnu : ${firstUnknown.typeRaw} — ajoutez-le d'abord via Créer un kiosque.`
+      )
+      return
+    }
 
     setIsImporting(true)
     const { error: insertError } = await supabase
       .from('kiosques')
-      .insert(insertableRows.map((row) => ({ nom: row.nom, adresse: row.adresse || null })))
+      .insert(
+        insertable.map((row) => ({
+          nom: row.nom,
+          adresse: row.adresse || null,
+          type_code: resolveTypeCode(row.typeRaw, types).code,
+        }))
+      )
     setIsImporting(false)
 
     if (insertError) {
@@ -111,7 +144,8 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
     }
 
     await logAudit('kiosques.import', 'kiosques', null, {
-      nb: insertableRows.length,
+      nb: insertable.length,
+      nb_sans_type: sansTypeCount,
       doublonsIgnores: skipDuplicates ? duplicateCount : 0,
       fichier: fileName,
     })
@@ -119,7 +153,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
     showToast({
       type: 'success',
       title: 'Import réussi',
-      message: `${insertableRows.length} kiosque(s) importé(s), ${duplicateCount} ignoré(s), ${invalidCount} erreur(s).`,
+      message: `${insertable.length} kiosque(s) importé(s), ${duplicateCount} ignoré(s), ${invalidCount + unknownTypeCount} erreur(s).`,
     })
     onOpenChange(false)
     onImported()
@@ -131,8 +165,9 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
         <DialogHeader>
           <DialogTitle>Importer des kiosques (CSV)</DialogTitle>
           <DialogDescription>
-            Colonnes : <span className="font-semibold">nom</span> (obligatoire) et{' '}
-            <span className="font-semibold">adresse</span>.
+            Colonnes : <span className="font-semibold">nom</span> (obligatoire),{' '}
+            <span className="font-semibold">adresse</span> et{' '}
+            <span className="font-semibold">type_code</span> (KEP, KEF… — vide = sans type).
           </DialogDescription>
         </DialogHeader>
 
@@ -158,34 +193,51 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
               {fileName || 'Choisir un fichier CSV'}
             </Button>
             <Button type="button" variant="default" onClick={downloadTemplate}>
-            <Save className="h-4 w-4" />
+              <Save className="h-4 w-4" />
               Télécharger le modèle
             </Button>
           </div>
 
           {rows.length > 0 && (
             <div className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
-              <PosLabel className="mb-2">Apercu</PosLabel>
+              <PosLabel className="mb-2">Apercu (5 premieres lignes)</PosLabel>
               <div className="space-y-1 text-[13px]">
-                {rows.slice(0, 5).map((row, index) => (
-                  <p key={index} className="truncate">
-                    <span
-                      className={
-                        !row.nom || duplicateFlags[index]
-                          ? 'font-semibold text-[#FF4949]'
-                          : 'font-semibold text-[#12364D]'
-                      }
-                    >
-                      {row.nom || '(nom manquant — sera ignorée)'}
-                      {duplicateFlags[index] ? ' — doublon' : ''}
-                    </span>
-                    {row.adresse ? <span className="text-[#1C5376]"> - {row.adresse}</span> : null}
-                  </p>
-                ))}
+                {rows.slice(0, 5).map((row, index) => {
+                  const unknownType = unknownTypeFlags[index]
+                  return (
+                    <p key={index} className="truncate">
+                      <span
+                        className={
+                          !row.nom || duplicateFlags[index]
+                            ? 'font-semibold text-[#FF4949]'
+                            : 'font-semibold text-[#12364D]'
+                        }
+                      >
+                        {row.nom || '(nom manquant — sera ignorée)'}
+                        {duplicateFlags[index] ? ' — doublon' : ''}
+                      </span>
+                      {row.adresse ? <span className="text-[#1C5376]"> - {row.adresse}</span> : null}
+                      {unknownType ? (
+                        <span className="font-semibold text-[#FF4949]">
+                          {' '}
+                          — Type inconnu : {row.typeRaw} — ajoutez-le d'abord via Créer un kiosque
+                        </span>
+                      ) : row.typeRaw ? (
+                        <span className="text-[#1C5376]">
+                          {' '}
+                          [{resolveTypeCode(row.typeRaw, types).code}]
+                        </span>
+                      ) : (
+                        <span className="text-[#7D94A6]"> — (sans type)</span>
+                      )}
+                    </p>
+                  )
+                })}
               </div>
               <p className="mt-2 text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
                 {validation.valid.length} ligne(s) valide(s), {invalidCount} invalide(s)
-                {duplicateCount > 0 ? `, ${duplicateCount} doublon(s)` : ''}.
+                {duplicateCount > 0 ? `, ${duplicateCount} doublon(s)` : ''}
+                {unknownTypeCount > 0 ? `, ${unknownTypeCount} type(s) inconnu(s)` : ''}.
               </p>
               {duplicateCount > 0 && (
                 <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
@@ -224,9 +276,9 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, onImported 
 }
 
 function downloadTemplate() {
-  // UTF-8 BOM so Excel opens accents correctly.
+  // UTF-8 BOM so Excel opens accents correctly. 2 lignes d'exemple dont une KEF.
   const bom = '\uFEFF'
-  const csv = `${bom}nom,adresse\nKeur Massar En Propre,Keur massar\nSacre coeur En Propre,Sacre coeur\n`
+  const csv = `${bom}nom,adresse,type_code\nKeur Massar En Propre,Keur massar,KEP\nKiosque Sacre coeur Franchise,Sacre coeur,KEF\n`
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')

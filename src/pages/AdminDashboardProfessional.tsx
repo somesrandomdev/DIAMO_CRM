@@ -175,7 +175,11 @@ export default function AdminDashboardProfessional() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <KioskMultiSelect
-            allKiosques={allKiosques}
+            allKiosques={allKiosques.map((kiosque) => ({
+              id: kiosque.id,
+              nom: kiosque.nom,
+              typeCode: kiosque.type_code,
+            }))}
             selectedKiosqueIds={selectedKiosqueIds}
             onToggle={toggleKiosk}
             onClear={clearKiosques}

@@ -201,7 +201,7 @@ export function useAdminDashboard() {
   const [raw, setRaw] = useState<RpcPayload | null>(null)
   const [kiosqueNames, setKiosqueNames] = useState<Map<string, string>>(new Map())
   const [offreNames, setOffreNames] = useState<Map<string, string>>(new Map())
-  const [allKiosques, setAllKiosques] = useState<{ id: string; nom: string }[]>([])
+  const [allKiosques, setAllKiosques] = useState<{ id: string; nom: string; type_code?: string | null }[]>([])
   const [timePeriod, setTimePeriod] = useState<AdminTimePeriod>('month')
   const [customDate, setCustomDate] = useState(() => toDateParam(new Date()))
   const [selectedKiosqueIds, setSelectedKiosqueIds] = useState<string[]>([])
@@ -259,7 +259,7 @@ export function useAdminDashboard() {
           // Requires the 20260919 migration; NULL = all kiosques.
           p_kiosque_ids: selectedKiosqueIds.length > 0 ? selectedKiosqueIds : null,
         }),
-        supabase.from('kiosques').select('id, nom').order('nom'),
+        supabase.from('kiosques').select('id, nom, type_code').order('nom'),
         supabase.from('offres').select('id, nom'),
       ])
 
@@ -274,7 +274,7 @@ export function useAdminDashboard() {
         previous: payload.previous ?? [],
         daily: payload.daily ?? [],
       })
-      const kiosqueRows = (kiosquesResult.data ?? []) as { id: string; nom: string }[]
+      const kiosqueRows = (kiosquesResult.data ?? []) as { id: string; nom: string; type_code?: string | null }[]
       setKiosqueNames(new Map(kiosqueRows.map((row) => [row.id, row.nom])))
       setAllKiosques(kiosqueRows)
       setOffreNames(new Map((offresResult.data ?? []).map((row) => [row.id, row.nom])))

@@ -5,6 +5,7 @@ import { normalizeKiosqueName } from '@/lib/kiosqueImport'
 interface KioskOption {
   id: string
   nom: string
+  typeCode?: string | null
 }
 
 interface KioskMultiSelectProps {
@@ -125,7 +126,14 @@ export function KioskMultiSelect({
                       onChange={() => onToggle(kiosque.id)}
                       className="h-4 w-4"
                     />
-                    <span className="truncate text-[13px] text-[#12364D]">{kiosque.nom}</span>
+                    <span className="truncate text-[13px] text-[#12364D]">
+                      {kiosque.typeCode ? (
+                        <span className="mr-1.5 inline-block rounded bg-[#F6F9FB] px-1 text-[10px] font-bold text-[#1C5376]">
+                          {kiosque.typeCode}
+                        </span>
+                      ) : null}
+                      {kiosque.nom}
+                    </span>
                     {checked && (
                       <Check className="ml-auto h-4 w-4 shrink-0 text-[#009EFB]" aria-hidden="true" />
                     )}
