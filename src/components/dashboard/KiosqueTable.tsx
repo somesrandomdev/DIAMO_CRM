@@ -84,7 +84,7 @@ export function KiosqueTable({ rows }: KiosqueTableProps) {
                 <span className="font-medium text-text">{row.nom}</span>
                 <StatusBadge status={row.statut}>{statusLabel(row.statut)}</StatusBadge>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-text-secondary">
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-secondary">
                 <span>CA mois</span>
                 <span className="text-right font-mono text-text">{toCFA(row.caMois)}</span>
                 <span>Ventes</span>
@@ -95,7 +95,7 @@ export function KiosqueTable({ rows }: KiosqueTableProps) {
             </button>
           ))}
           {rows.length === 0 && (
-            <p className="py-8 text-center text-[12px] text-text-tertiary">Aucun kiosque a afficher.</p>
+            <p className="py-8 text-center text-xs text-text-tertiary">Aucun kiosque à afficher.</p>
           )}
         </div>
         <DataTable
@@ -104,7 +104,7 @@ export function KiosqueTable({ rows }: KiosqueTableProps) {
           data={rows}
           getRowKey={(row) => row.id}
           onRowClick={(row) => navigate(`/admin/kiosques/${row.id}`)}
-          emptyMessage="Aucun kiosque a afficher."
+          emptyMessage="Aucun kiosque à afficher."
         />
       </CardContent>
     </Card>

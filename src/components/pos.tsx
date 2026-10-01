@@ -102,7 +102,7 @@ export function PosChip({ active, children, className, ...props }: PosChipProps 
       className={cn(
         'inline-flex min-h-12 items-center justify-center gap-2 rounded-md border-2 px-4 text-sm font-semibold transition-colors active:scale-[0.98]',
         active
-          ? 'border-[#009EFB] bg-[#009EFB] text-white'
+          ? 'border-[#006EBD] bg-[#006EBD] text-white'
           : 'border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#12364D]',
         className
       )}
@@ -126,7 +126,7 @@ export function PosProgress({ value, className, barClassName }: PosProgressProps
   return (
     <div className={cn('h-2.5 w-full overflow-hidden rounded-md bg-[#E3F3FE]', className)}>
       <div
-        className={cn('h-full rounded-md bg-[#009EFB] transition-all', barClassName)}
+        className={cn('h-full rounded-md bg-[#006EBD] transition-all', barClassName)}
         style={{ width: `${width}%` }}
       />
     </div>

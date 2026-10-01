@@ -200,8 +200,8 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
 
           {rows.length > 0 && (
             <div className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
-              <PosLabel className="mb-2">Apercu (5 premieres lignes)</PosLabel>
-              <div className="space-y-1 text-[13px]">
+              <PosLabel className="mb-2">Aperçu (5 premières lignes)</PosLabel>
+              <div className="space-y-1 text-sm">
                 {rows.slice(0, 5).map((row, index) => {
                   const unknownType = unknownTypeFlags[index]
                   return (
@@ -209,7 +209,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
                       <span
                         className={
                           !row.nom || duplicateFlags[index]
-                            ? 'font-semibold text-[#FF4949]'
+                            ? 'font-semibold text-[#C62828]'
                             : 'font-semibold text-[#12364D]'
                         }
                       >
@@ -218,7 +218,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
                       </span>
                       {row.adresse ? <span className="text-[#1C5376]"> - {row.adresse}</span> : null}
                       {unknownType ? (
-                        <span className="font-semibold text-[#FF4949]">
+                        <span className="font-semibold text-[#C62828]">
                           {' '}
                           — Type inconnu : {row.typeRaw} — ajoutez-le d'abord via Créer un kiosque
                         </span>
@@ -228,7 +228,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
                           [{resolveTypeCode(row.typeRaw, types).code}]
                         </span>
                       ) : (
-                        <span className="text-[#7D94A6]"> — (sans type)</span>
+                        <span className="text-[#5C7385]"> — (sans type)</span>
                       )}
                     </p>
                   )
@@ -240,7 +240,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
                 {unknownTypeCount > 0 ? `, ${unknownTypeCount} type(s) inconnu(s)` : ''}.
               </p>
               {duplicateCount > 0 && (
-                <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
+                <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-[#12364D]">
                   <input
                     type="checkbox"
                     checked={skipDuplicates}
@@ -253,7 +253,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
             </div>
           )}
 
-          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
         </div>
 
         <DialogFooter>
@@ -263,7 +263,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
           <Button
             type="button"
             variant="pos-primary"
-            loading={isImporting}
+            loading={isImporting} loadingText="Import…"
             disabled={rows.length === 0}
             onClick={importKiosques}
           >

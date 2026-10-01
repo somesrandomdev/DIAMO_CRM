@@ -68,7 +68,7 @@ export function useAlerts() {
         computed.push({
           type: 'inactif_today',
           kiosque_nom: kiosque.nom,
-          message: "Aucune vente enregistree aujourd'hui",
+          message: "Aucune vente enregistrée aujourd'hui",
           severity: 'warning',
         })
       }
@@ -126,7 +126,7 @@ export function useAlerts() {
       const fallbackAlerts = await loadFallbackAlerts()
       setAlerts(fallbackAlerts)
       if (rpcError) {
-        setError('RPC get_admin_alerts absente ou indisponible; alertes calculees cote client.')
+        setError('RPC get_admin_alerts absente ou indisponible; alertes calculées côté client.')
       }
     } catch (caught) {
       console.error('Error loading alerts:', caught)

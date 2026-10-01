@@ -309,7 +309,7 @@ export function useSubmitSale({
           title: 'Vente enregistrée',
           message: skipTicket
             ? `${cartItems.length} offre(s) enregistrée(s).`
-            : `${cartItems.length} offre(s) - ticket telecharge.`,
+            : `${cartItems.length} offre(s) - ticket téléchargé.`,
         })
         finishAttempt()
         finishWithReset(resetDelayMs + 800)

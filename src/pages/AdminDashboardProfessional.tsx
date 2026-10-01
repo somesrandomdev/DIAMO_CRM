@@ -156,8 +156,8 @@ export default function AdminDashboardProfessional() {
               aria-pressed={timePeriod === option.value}
               className={
                 timePeriod === option.value
-                  ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                  ? 'min-h-11 rounded-md bg-primary px-3 text-xs font-semibold text-white'
+                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-xs font-semibold text-text-secondary hover:border-primary hover:text-primary'
               }
             >
               {option.label}
@@ -169,7 +169,7 @@ export default function AdminDashboardProfessional() {
               value={customDate}
               onChange={(event) => setCustomDate(event.target.value)}
               aria-label="Date précise"
-              className="h-11 rounded-md border border-border bg-surface px-3 text-[13px] text-text"
+              className="h-11 rounded-md border border-border bg-surface px-3 text-sm text-text"
             />
           )}
         </div>
@@ -193,8 +193,8 @@ export default function AdminDashboardProfessional() {
       {/* ── Header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Tableau de bord</h1>
-          <p className="text-[12px] text-text-secondary">
+          <h1 className="text-base font-semibold text-text">Tableau de bord</h1>
+          <p className="text-xs text-text-secondary">
             Vue d'ensemble du réseau — {activeKiosqueLabel.toLowerCase()}.
           </p>
         </div>
@@ -204,7 +204,7 @@ export default function AdminDashboardProfessional() {
             variant="default"
             size="sm"
             onClick={refresh}
-            loading={isLoading}
+            loading={isLoading} loadingText="Actualisation…"
           >
             <RefreshCw className="h-4 w-4" />
             Actualiser
@@ -213,7 +213,7 @@ export default function AdminDashboardProfessional() {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}

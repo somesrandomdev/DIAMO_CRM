@@ -138,12 +138,12 @@ export function EditClientDialog({ open, onOpenChange, client, onSaved }: EditCl
               onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
             />
           </div>
-          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" variant="pos-primary" loading={isSaving}>
+            <Button type="submit" variant="pos-primary" loading={isSaving} loadingText="Enregistrement…">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -293,12 +293,12 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
               />
             </div>
           </div>
-          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" variant="pos-primary" loading={isSaving}>
+            <Button type="submit" variant="pos-primary" loading={isSaving} loadingText="Enregistrement…">
               Enregistrer
             </Button>
           </DialogFooter>

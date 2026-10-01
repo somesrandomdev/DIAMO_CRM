@@ -181,7 +181,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
       render: (sale) => (
         <div>
           <p className="font-medium">{formatSaleDate(sale.created_at)}</p>
-          <p className="text-[11px] text-text-secondary">{formatSaleTime(sale.created_at)}</p>
+          <p className="text-xs text-text-secondary">{formatSaleTime(sale.created_at)}</p>
         </div>
       ),
       sortValue: (sale) => new Date(sale.created_at),
@@ -189,7 +189,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     { key: 'client', header: 'Client', render: (sale) => <span className="font-medium">{sale.client?.nom || 'Client anonyme'}</span>, sortValue: (sale) => sale.client?.nom ?? '' },
     { key: 'offre', header: 'Offre', render: (sale) => sale.offre?.nom || 'Offre inconnue', sortValue: (sale) => sale.offre?.nom ?? '' },
     { key: 'montant', header: 'Montant', align: 'right', render: (sale) => <span className="font-mono">{toCFA(sale.montant_total)}</span>, sortValue: (sale) => sale.montant_total },
-    { key: 'id', header: 'ID vente', render: (sale) => <span className="font-mono text-[11px] text-text-secondary">{sale.id.slice(0, 8)}</span>, sortValue: (sale) => sale.id },
+    { key: 'id', header: 'ID vente', render: (sale) => <span className="font-mono text-xs text-text-secondary">{sale.id.slice(0, 8)}</span>, sortValue: (sale) => sale.id },
     {
       key: 'ticket',
       header: 'Ticket',
@@ -247,7 +247,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 </Button>
               ) : (
                 <span
-                  className="inline-flex h-12 w-12 items-center justify-center text-[#8AA3B5]"
+                  className="inline-flex h-12 w-12 items-center justify-center text-[#5C7385]"
                   title="Suppression admin au-delà de 24 h"
                 >
                   <Trash2 className="h-4 w-4 opacity-30" />
@@ -263,8 +263,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Historique des ventes</h1>
-          <p className="text-[12px] text-text-secondary">Recherche, filtres et export CSV.</p>
+          <h1 className="text-base font-semibold text-text">Historique des ventes</h1>
+          <p className="text-xs text-text-secondary">Recherche, filtres et export CSV.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
@@ -293,7 +293,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
               }}
             >
               <RotateCcw className="h-4 w-4" />
-              Reinitialiser
+              Réinitialiser
             </Button>
           </div>
 
@@ -305,7 +305,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 ['today', "Aujourd'hui"],
                 ['week', '7 derniers jours'],
                 ['month', 'Ce mois'],
-                ['custom', 'Date precise'],
+                ['custom', 'Date précise'],
               ] as const
             ).map(([preset, labelText]) => (
               <button
@@ -315,8 +315,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 aria-pressed={datePreset === preset}
                 className={
                   datePreset === preset
-                    ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                    : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                    ? 'min-h-11 rounded-md bg-primary px-3 text-xs font-semibold text-white'
+                    : 'min-h-11 rounded-md border border-border bg-surface px-3 text-xs font-semibold text-text-secondary hover:border-primary hover:text-primary'
                 }
               >
                 {labelText}
@@ -357,11 +357,11 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 {paginatedSales.map((sale) => (
                   <div key={sale.id} className="rounded-md border border-border bg-surface p-3">
                     <div className="mb-3 rounded-md bg-blue-light px-3 py-2">
-                      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-blue">Date de vente</p>
-                      <p className="mt-1 text-[14px] font-semibold text-text">{formatSaleDate(sale.created_at)}</p>
-                      <p className="text-[12px] text-text-secondary">{formatSaleTime(sale.created_at)}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-blue">Date de vente</p>
+                      <p className="mt-1 text-sm font-semibold text-text">{formatSaleDate(sale.created_at)}</p>
+                      <p className="text-xs text-text-secondary">{formatSaleTime(sale.created_at)}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[12px]">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
                       <span className="text-text-secondary">Client</span>
                       <span className="text-right font-medium text-text">{sale.client?.nom || 'Client anonyme'}</span>
                       <span className="text-text-secondary">Offre</span>
@@ -386,8 +386,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
               <DataTable className="hidden sm:block" columns={columns} data={paginatedSales} getRowKey={(sale) => sale.id} />
               {totalPages > 1 && (
                 <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-[12px] text-text-secondary">
-                    Page {currentPage} sur {totalPages} · {filteredSales.length} resultats
+                  <p className="text-xs text-text-secondary">
+                    Page {currentPage} sur {totalPages} · {filteredSales.length} résultats
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -397,7 +397,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                       onClick={() => setCurrentPage((current) => Math.max(current - 1, 1))}
                       disabled={currentPage === 1}
                     >
-                      Precedent
+                      Précédent
                     </Button>
                     <Button
                       type="button"

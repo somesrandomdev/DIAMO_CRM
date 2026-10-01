@@ -51,8 +51,8 @@ function TrendTooltip({
 
   return (
     <div className="rounded-md border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="text-[12px] font-semibold capitalize text-text">{fullDate}</p>
-      <p className="mt-1 flex items-center gap-2 text-[13px] text-text">
+      <p className="text-xs font-semibold capitalize text-text">{fullDate}</p>
+      <p className="mt-1 flex items-center gap-2 text-sm text-text">
         <span
           className="h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: chartTheme.blue }}
@@ -61,7 +61,7 @@ function TrendTooltip({
         Recette du jour
         <span className="ml-auto font-mono font-semibold">{toCFA(point.ca)}</span>
       </p>
-      <p className="mt-0.5 flex items-center gap-2 text-[12px] text-text-secondary">
+      <p className="mt-0.5 flex items-center gap-2 text-xs text-text-secondary">
         <span
           className="h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: chartTheme.amber }}
@@ -87,7 +87,7 @@ export const DailyTrendChart = memo(function DailyTrendChart({ data }: DailyTren
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-[14px]">Recettes des 30 derniers jours</CardTitle>
+        <CardTitle className="text-sm">Recettes des 30 derniers jours</CardTitle>
         <CardDescription>
           La ligne pleine est la recette de chaque jour. La ligne en pointillés est la
           moyenne des 7 derniers jours.
@@ -150,8 +150,8 @@ export const DailyTrendChart = memo(function DailyTrendChart({ data }: DailyTren
           </ResponsiveContainer>
         ) : (
           <div className="flex h-[300px] flex-col items-center justify-center gap-2 text-center">
-            <p className="text-[13px] font-medium text-text">Aucune vente sur les 30 derniers jours</p>
-            <p className="max-w-xs text-[12px] text-text-secondary">
+            <p className="text-sm font-medium text-text">Aucune vente sur les 30 derniers jours</p>
+            <p className="max-w-xs text-xs text-text-secondary">
               Le graphique s'affichera automatiquement dès la première vente enregistrée.
             </p>
           </div>

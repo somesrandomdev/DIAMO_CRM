@@ -514,14 +514,14 @@ export default function AdminTarifsPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Tarifs</h1>
-          <p className="text-[12px] text-text-secondary">
+          <h1 className="text-base font-semibold text-text">Tarifs</h1>
+          <p className="text-xs text-text-secondary">
             Prix par kiosque — cliquez une cellule pour définir ou modifier un prix
           </p>
         </div>
         <div className="flex items-center gap-2">
           {pendingCount > 0 && (
-            <span className="rounded-full bg-warning-light px-3 py-1 text-[11px] font-semibold text-warning [font-variant-numeric:tabular-nums]">
+            <span className="rounded-full bg-warning-light px-3 py-1 text-xs font-semibold text-warning [font-variant-numeric:tabular-nums]">
               {pendingCount} non sauvegardé{pendingCount > 1 ? 's' : ''}
             </span>
           )}
@@ -541,7 +541,7 @@ export default function AdminTarifsPage() {
             variant="primary"
             size="sm"
             disabled={pendingCount === 0}
-            loading={isFlushing}
+            loading={isFlushing} loadingText="Enregistrement…"
             onClick={() => void flushPending()}
           >
             <Save className="h-4 w-4" />
@@ -561,7 +561,7 @@ export default function AdminTarifsPage() {
               onChange={(event) => setOffreSearch(event.target.value)}
               placeholder="Rechercher une offre (lignes)"
               aria-label="Rechercher une offre"
-              className="h-11 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-[13px] text-text focus:border-primary focus:outline-none"
+              className="h-11 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-text focus:border-primary focus:outline-none"
             />
           </div>
           <div className="relative">
@@ -572,10 +572,10 @@ export default function AdminTarifsPage() {
               onChange={(event) => setKiosqueSearch(event.target.value)}
               placeholder="Rechercher un kiosque (colonnes)"
               aria-label="Rechercher un kiosque"
-              className="h-11 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-[13px] text-text focus:border-primary focus:outline-none"
+              className="h-11 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-text focus:border-primary focus:outline-none"
             />
           </div>
-          <label className="flex min-h-11 items-center gap-2 px-1 text-[12px] font-semibold text-text-secondary">
+          <label className="flex min-h-11 items-center gap-2 px-1 text-xs font-semibold text-text-secondary">
             <input
               type="checkbox"
               checked={onlyKiosquesSansOffre}
@@ -599,8 +599,8 @@ export default function AdminTarifsPage() {
               }}
               className={
                 highlightKiosques
-                  ? 'min-h-11 rounded-md border-2 border-[#EB4D5E] bg-[#FDF1F2] px-3 text-[12px] font-semibold text-[#EB4D5E]'
-                  : 'min-h-11 rounded-md border border-[#EB4D5E]/40 bg-[#FDF1F2] px-3 text-[12px] font-semibold text-[#EB4D5E] hover:border-[#EB4D5E]'
+                  ? 'min-h-11 rounded-md border-2 border-[#C62828] bg-[#FDF1F2] px-3 text-xs font-semibold text-[#C62828]'
+                  : 'min-h-11 rounded-md border border-[#C62828]/40 bg-[#FDF1F2] px-3 text-xs font-semibold text-[#C62828] hover:border-[#C62828]'
               }
             >
               {kiosquesSansOffre.length} kiosque(s) sans offre
@@ -619,8 +619,8 @@ export default function AdminTarifsPage() {
               }}
               className={
                 highlightOffres
-                  ? 'min-h-11 rounded-md border-2 border-warning bg-warning-light px-3 text-[12px] font-semibold text-warning'
-                  : 'min-h-11 rounded-md border border-warning/40 bg-warning-light px-3 text-[12px] font-semibold text-warning hover:border-warning'
+                  ? 'min-h-11 rounded-md border-2 border-warning bg-warning-light px-3 text-xs font-semibold text-warning'
+                  : 'min-h-11 rounded-md border border-warning/40 bg-warning-light px-3 text-xs font-semibold text-warning hover:border-warning'
               }
             >
               {offresSansKiosque.length} offre(s) sans kiosque
@@ -633,7 +633,7 @@ export default function AdminTarifsPage() {
                 setHighlightKiosques(null)
                 setHighlightOffres(null)
               }}
-              className="min-h-11 rounded-md border border-border px-3 text-[12px] font-semibold text-text-secondary hover:border-primary"
+              className="min-h-11 rounded-md border border-border px-3 text-xs font-semibold text-text-secondary hover:border-primary"
             >
               Réinitialiser le filtre
             </button>
@@ -641,7 +641,7 @@ export default function AdminTarifsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex min-h-9 items-center gap-2 text-[12px] font-semibold text-text-secondary">
+          <label className="flex min-h-9 items-center gap-2 text-xs font-semibold text-text-secondary">
             <input
               type="checkbox"
               checked={multiSelect}
@@ -655,7 +655,7 @@ export default function AdminTarifsPage() {
           </label>
           {multiSelect && selectedCells.size > 0 && (
             <>
-              <span className="text-[12px] text-text-secondary [font-variant-numeric:tabular-nums]">
+              <span className="text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                 {selectedCells.size} sélectionnée(s)
               </span>
               <ApplyPriceBar onApply={applyToSelection} />
@@ -673,7 +673,7 @@ export default function AdminTarifsPage() {
             </>
           )}
           {copyBuffer !== null && !multiSelect && (
-            <span className="text-[11px] text-[#1C5376]">
+            <span className="text-xs text-[#1C5376]">
               Prix {formatPrixCell(copyBuffer)} copié — activez la sélection multiple pour coller.
             </span>
           )}
@@ -705,11 +705,11 @@ export default function AdminTarifsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="border-collapse text-[12px]">
+              <table className="border-collapse text-xs">
                 <thead>
                   <tr>
                     <th className="sticky left-0 z-20 border-b border-r-2 border-r-[#DCE1E5] border-b-[#DCE1E5] bg-white p-2 text-left">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#1C5376]">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[#1C5376]">
                         Offre
                       </span>
                     </th>
@@ -718,7 +718,7 @@ export default function AdminTarifsPage() {
                         key={kiosque.id}
                         className="min-w-[96px] border-b border-b-[#DCE1E5] border-l border-l-[#F6F9FB] bg-white p-2 text-center"
                       >
-                        <span className="block text-[11px] font-bold text-[#12364D]">
+                        <span className="block text-xs font-bold text-[#12364D]">
                           {kiosque.nom}
                         </span>
                       </th>
@@ -727,10 +727,10 @@ export default function AdminTarifsPage() {
                       <button
                         type="button"
                         onClick={() => setNewKiosqueOpen(true)}
-                        className="flex min-h-11 w-full flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-[#DCE1E5] text-[#1C5376] hover:border-[#009EFB] hover:text-[#009EFB]"
+                        className="flex min-h-11 w-full flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-[#DCE1E5] text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
                       >
                         <Plus className="h-4 w-4" />
-                        <span className="text-[10px] font-semibold">Ajouter un kiosque</span>
+                        <span className="text-xs font-semibold">Ajouter un kiosque</span>
                       </button>
                     </th>
                   </tr>
@@ -739,11 +739,11 @@ export default function AdminTarifsPage() {
                   {visibleOffres.map((offre) => (
                     <tr key={offre.id} className="group">
                       <td className="sticky left-0 z-10 border-r-2 border-r-[#DCE1E5] border-b border-b-[#F6F9FB] bg-white p-2">
-                        <span className="block text-[12px] font-semibold text-[#12364D]">
+                        <span className="block text-xs font-semibold text-[#12364D]">
                           {offre.nom}
                         </span>
                         {offre.volume_ml ? (
-                          <span className="text-[10px] text-[#7D94A6]">
+                          <span className="text-xs text-[#5C7385]">
                             {offre.volume_ml % 1000 === 0
                               ? `${offre.volume_ml / 1000}L`
                               : `${offre.volume_ml} ml`}
@@ -774,7 +774,7 @@ export default function AdminTarifsPage() {
                                   if (event.key === 'Enter') commitEdit(kiosque.id, offre.id)
                                   if (event.key === 'Escape') setEditingCell(null)
                                 }}
-                                className="h-9 w-full rounded border-2 border-[#009EFB] px-1 text-center text-[12px] font-semibold text-[#12364D] focus:outline-none [font-variant-numeric:tabular-nums]"
+                                className="h-9 w-full rounded border-2 border-[#006EBD] px-1 text-center text-xs font-semibold text-[#12364D] focus:outline-none [font-variant-numeric:tabular-nums]"
                               />
                             ) : (
                               <div
@@ -796,13 +796,13 @@ export default function AdminTarifsPage() {
                                   if (event.key === 'Delete' && prix !== undefined)
                                     deleteCell(kiosque.id, offre.id)
                                 }}
-                                className={`relative flex h-9 min-w-[88px] cursor-pointer items-center justify-center rounded border text-[12px] font-semibold transition-colors [font-variant-numeric:tabular-nums] ${
+                                className={`relative flex h-9 min-w-[88px] cursor-pointer items-center justify-center rounded border text-xs font-semibold transition-colors [font-variant-numeric:tabular-nums] ${
                                   prix === undefined
-                                    ? 'border-dashed border-[#DCE1E5] bg-white text-[#8AA3B5] hover:border-[#009EFB] hover:text-[#009EFB]'
+                                    ? 'border-dashed border-[#DCE1E5] bg-white text-[#5C7385] hover:border-[#006EBD] hover:text-[#006EBD]'
                                     : suspect
-                                      ? 'border-2 border-[#FF4949] bg-[#FDF1F2] text-[#12364D] hover:border-[#009EFB]'
-                                      : 'border border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#009EFB]'
-                                } ${isSelected ? 'ring-2 ring-[#009EFB]' : ''}`}
+                                      ? 'border-2 border-[#C62828] bg-[#FDF1F2] text-[#12364D] hover:border-[#006EBD]'
+                                      : 'border border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#006EBD]'
+                                } ${isSelected ? 'ring-2 ring-[#006EBD]' : ''}`}
                               >
                                 {prix === undefined ? (
                                   '+'
@@ -817,7 +817,7 @@ export default function AdminTarifsPage() {
                                         event.stopPropagation()
                                         setCopyBuffer(prix)
                                       }}
-                                      className="absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#009EFB] text-white group-hover:flex"
+                                      className="absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#006EBD] text-white group-hover:flex"
                                       title="Copier ce prix"
                                     >
                                       <Copy className="h-2.5 w-2.5" />
@@ -830,7 +830,7 @@ export default function AdminTarifsPage() {
                                         event.stopPropagation()
                                         deleteCell(kiosque.id, offre.id)
                                       }}
-                                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#FF4949] text-[9px] font-bold text-white group-hover:flex"
+                                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#C62828] text-xs font-bold text-white group-hover:flex"
                                     >
                                       ×
                                     </button>
@@ -845,7 +845,7 @@ export default function AdminTarifsPage() {
                         <button
                           type="button"
                           onClick={() => setNewKiosqueOpen(true)}
-                          className="flex min-h-9 w-full items-center justify-center rounded-md text-[#8AA3B5] hover:text-[#009EFB]"
+                          className="flex min-h-9 w-full items-center justify-center rounded-md text-[#5C7385] hover:text-[#006EBD]"
                           aria-label="Ajouter un kiosque"
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -858,7 +858,7 @@ export default function AdminTarifsPage() {
                       <button
                         type="button"
                         onClick={() => setNewOffreOpen(true)}
-                        className="flex min-h-11 w-full items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#DCE1E5] text-[11px] font-semibold text-[#1C5376] hover:border-[#009EFB] hover:text-[#009EFB]"
+                        className="flex min-h-11 w-full items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#DCE1E5] text-xs font-semibold text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Ajouter une offre
@@ -981,7 +981,7 @@ function ApplyPriceBar({ onApply }: { onApply: (prix: number) => void }) {
         onChange={(event) => setPrix(event.target.value)}
         placeholder="Prix CFA"
         aria-label="Prix à appliquer à la sélection"
-        className="h-9 w-28 rounded-md border border-[#DCE1E5] px-2 text-[12px] text-[#12364D] focus:border-[#009EFB] focus:outline-none [font-variant-numeric:tabular-nums]"
+        className="h-9 w-28 rounded-md border border-[#DCE1E5] px-2 text-xs text-[#12364D] focus:border-[#006EBD] focus:outline-none [font-variant-numeric:tabular-nums]"
       />
       <Button
         type="button"

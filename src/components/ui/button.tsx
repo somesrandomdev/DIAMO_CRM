@@ -26,9 +26,9 @@ const buttonVariants = cva(
           'border border-warning bg-warning text-warning-foreground shadow-none hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
         // POS design system: Diam'o brand variants (water blue / deep blue / soft red)
         'pos-primary':
-          'min-h-12 bg-[#009EFB] text-white hover:bg-[#007EC8] focus:bg-[#007EC8]',
+          'min-h-12 bg-[#006EBD] text-white hover:bg-[#005FA3] focus:bg-[#005FA3]',
         'pos-destructive':
-          'min-h-12 bg-[#FF4949] text-white hover:bg-[#dc2626] focus:bg-[#dc2626]',
+          'min-h-12 bg-[#C62828] text-white hover:bg-[#A31F1F] focus:bg-[#A31F1F]',
         'pos-secondary':
           'min-h-12 border-2 border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#12364D]',
       },
@@ -54,10 +54,12 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
   loading?: boolean
+  /** Shown next to the spinner while loading — name the action ("Suppression…"). */
+  loadingText?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, loadingText = 'Chargement…', disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     return (
       <Comp
@@ -88,7 +90,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span>Chargement...</span>
+            <span>{loadingText}</span>
           </>
         ) : (
           children

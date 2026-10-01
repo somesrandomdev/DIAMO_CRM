@@ -14,7 +14,7 @@ export interface RecentSale {
 export function SaleRecentList({ sales }: { sales: RecentSale[] }) {
   return (
     <PosCard className="space-y-3">
-      <PosLabel>Dernieres ventes</PosLabel>
+      <PosLabel>Dernières ventes</PosLabel>
       {sales.length > 0 ? (
         <div className="space-y-2">
           {sales.map((sale) => (
@@ -39,7 +39,7 @@ export function SaleRecentList({ sales }: { sales: RecentSale[] }) {
           ))}
         </div>
       ) : (
-        <EmptyState title="Aucune vente recente" className="border-0 bg-[#F6F9FB] p-4" />
+        <EmptyState title="Aucune vente récente" className="border-0 bg-[#F6F9FB] p-4" />
       )}
     </PosCard>
   )

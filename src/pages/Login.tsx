@@ -139,7 +139,7 @@ export default function Login() {
             alt="Diam'o"
             className="mx-auto mb-2 h-20 w-auto object-contain"
           />
-          <p className="text-[12px] text-text-secondary">Client Retention Management</p>
+          <p className="text-xs text-text-secondary">Client Retention Management</p>
         </div>
 
         <Card>
@@ -183,12 +183,12 @@ export default function Login() {
                 </Alert>
               )}
 
-              <Button type="submit" variant="primary" className="w-full" loading={loading}>
+              <Button type="submit" variant="primary" className="w-full" loading={loading} loadingText="Connexion…">
                 Se connecter
               </Button>
             </form>
 
-            <p className="mt-5 text-center text-[12px] leading-relaxed text-text-secondary">
+            <p className="mt-5 text-center text-xs leading-relaxed text-text-secondary">
               Pas encore de compte ? Contactez votre administrateur pour obtenir vos
               identifiants.
             </p>

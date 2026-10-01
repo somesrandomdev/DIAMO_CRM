@@ -30,15 +30,15 @@ function DeltaIcon({ direction }: { direction: DeltaDirection }) {
 export function KPICard({ label, value, unit, delta, className }: KPICardProps) {
   return (
     <Card padding="md" className={cn('min-h-[104px]', className)}>
-      <p className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">
+      <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
         {label}
       </p>
       <div className="mt-1 flex items-baseline gap-1">
-        <p className="font-mono text-[20px] font-bold leading-none text-text">{value}</p>
-        {unit && <span className="text-[9px] text-text-tertiary">{unit}</span>}
+        <p className="font-mono text-xl font-bold leading-none text-text">{value}</p>
+        {unit && <span className="text-xs text-text-tertiary">{unit}</span>}
       </div>
       {delta && (
-        <p className={cn('mt-2 flex items-center gap-1 text-[10.5px] font-medium', deltaClasses[delta.direction])}>
+        <p className={cn('mt-2 flex items-center gap-1 text-xs font-medium', deltaClasses[delta.direction])}>
           <DeltaIcon direction={delta.direction} />
           {delta.value > 0 ? '+' : ''}
           {delta.value.toFixed(1)}%

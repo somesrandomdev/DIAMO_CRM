@@ -176,7 +176,7 @@ export default function AdminObjectivesPage() {
       render: (kiosque) => (
         <div>
           <p className="font-medium">{kiosque.nom}</p>
-          {kiosque.adresse && <p className="text-[11px] text-text-secondary">{kiosque.adresse}</p>}
+          {kiosque.adresse && <p className="text-xs text-text-secondary">{kiosque.adresse}</p>}
         </div>
       ),
       sortValue: (kiosque) => kiosque.nom,
@@ -187,7 +187,7 @@ export default function AdminObjectivesPage() {
       align: 'right',
       render: (kiosque) => {
         const objective = objectives[kiosque.id]
-        return objective ? <span className="font-mono">{toCFA(objective.ca_cible)}</span> : <span className="text-text-tertiary">Non defini</span>
+        return objective ? <span className="font-mono">{toCFA(objective.ca_cible)}</span> : <span className="text-text-tertiary">Non défini</span>
       },
       sortValue: (kiosque) => objectives[kiosque.id]?.ca_cible ?? 0,
     },
@@ -197,7 +197,7 @@ export default function AdminObjectivesPage() {
       align: 'right',
       render: (kiosque) => {
         const objective = objectives[kiosque.id]
-        return objective ? <span className="font-mono">{toCFA(Math.round(objective.ca_cible / daysInMonth()))}</span> : <span className="text-text-tertiary">Non defini</span>
+        return objective ? <span className="font-mono">{toCFA(Math.round(objective.ca_cible / daysInMonth()))}</span> : <span className="text-text-tertiary">Non défini</span>
       },
       sortValue: (kiosque) => objectives[kiosque.id]?.ca_cible ?? 0,
     },
@@ -246,16 +246,16 @@ export default function AdminObjectivesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[15px] font-semibold text-text">Objectifs mensuels</h1>
-        <p className="text-[12px] text-text-secondary">
+        <h1 className="text-base font-semibold text-text">Objectifs mensuels</h1>
+        <p className="text-xs text-text-secondary">
           Cibles de chiffre d'affaires par kiosque pour le mois courant.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <KPICard label="Objectif reseau" value={toCFA(monthlyTotal)} />
+        <KPICard label="Objectif réseau" value={toCFA(monthlyTotal)} />
         <KPICard label="Kiosques cibles" value={Object.keys(objectives).length} />
-        <KPICard label="Moyenne journaliere" value={toCFA(Math.round(monthlyTotal / daysInMonth()))} />
+        <KPICard label="Moyenne journalière" value={toCFA(Math.round(monthlyTotal / daysInMonth()))} />
       </div>
 
       <Card>
@@ -267,7 +267,7 @@ export default function AdminObjectivesPage() {
             </CardTitle>
             <Button type="button" variant="primary" onClick={openCreate}>
               <Plus className="h-4 w-4" />
-              Definir une cible
+              Définir une cible
             </Button>
           </div>
         </CardHeader>
@@ -290,7 +290,7 @@ export default function AdminObjectivesPage() {
               </div>
               {filteredKiosques.length === 0 ? (
                 <EmptyState
-                  title="Aucun resultat"
+                  title="Aucun résultat"
                   description="Essayez un autre nom de kiosque."
                 />
               ) : (
@@ -304,7 +304,7 @@ export default function AdminObjectivesPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{selectedObjective ? 'Mettre a jour la cible' : 'Definir une cible'}</DialogTitle>
+            <DialogTitle>{selectedObjective ? 'Mettre à jour la cible' : 'Définir une cible'}</DialogTitle>
             <DialogDescription>
               Objectif mensuel de chiffre d'affaires pour un kiosque.
             </DialogDescription>
@@ -328,7 +328,7 @@ export default function AdminObjectivesPage() {
                     caCible: objectives[value]?.ca_cible?.toString() ?? '',
                   })
                 }
-                emptyLabel="Selectionner un kiosque"
+                emptyLabel="Sélectionner un kiosque"
                 required
               />
             </div>
@@ -351,11 +351,11 @@ export default function AdminObjectivesPage() {
               <Button
                 type="submit"
                 variant="pos-primary"
-                loading={isSaving}
+                loading={isSaving} loadingText="Enregistrement…"
                 disabled={!form.kiosqueId || !form.caCible}
               >
                 <Save className="h-4 w-4" />
-                {selectedObjective ? 'Mettre a jour' : 'Sauvegarder'}
+                {selectedObjective ? 'Mettre à jour' : 'Sauvegarder'}
               </Button>
             </DialogFooter>
           </form>

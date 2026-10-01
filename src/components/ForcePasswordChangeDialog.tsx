@@ -101,11 +101,11 @@ export function ForcePasswordChangeDialog() {
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-6 w-6 text-[#009EFB]" aria-hidden="true" />
+              <ShieldAlert className="h-6 w-6 text-[#006EBD]" aria-hidden="true" />
               Changement de mot de passe requis
             </DialogTitle>
           </DialogHeader>
-          <p className="text-[13px] text-[#1C5376]">
+          <p className="text-sm text-[#1C5376]">
             Votre mot de passe doit être changé avant de continuer.
           </p>
           <form onSubmit={submit} className="space-y-4">
@@ -132,8 +132,8 @@ export function ForcePasswordChangeDialog() {
                 placeholder="Répétez le mot de passe"
               />
             </div>
-            {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
-            <Button type="submit" variant="pos-primary" className="w-full" loading={isSaving}>
+            {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
+            <Button type="submit" variant="pos-primary" className="w-full" loading={isSaving} loadingText="Changement du mot de passe…">
               <KeyRound className="h-4 w-4" />
               Changer mon mot de passe
             </Button>

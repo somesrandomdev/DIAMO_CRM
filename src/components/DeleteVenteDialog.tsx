@@ -124,7 +124,7 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-[#FF4949]" aria-hidden="true" />
+            <Trash2 className="h-5 w-5 text-[#C62828]" aria-hidden="true" />
             Supprimer la vente
           </DialogTitle>
           <DialogDescription>
@@ -157,17 +157,17 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
               />
             </div>
           )}
-          <p className="rounded-md bg-[#FDF1F2] p-2.5 text-[12px] text-[#EB4D5E]">
+          <p className="rounded-md bg-[#FDF1F2] p-2.5 text-xs text-[#C62828]">
             Action définitive. Elle sera tracée dans le journal d'audit.
           </p>
-          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
         </div>
 
         <DialogFooter>
           <Button variant="pos-secondary" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button variant="pos-destructive" loading={isDeleting} onClick={submit} disabled={!motif}>
+          <Button variant="pos-destructive" loading={isDeleting} loadingText="Suppression…" onClick={submit} disabled={!motif}>
             <Trash2 className="h-4 w-4" />
             Supprimer
           </Button>

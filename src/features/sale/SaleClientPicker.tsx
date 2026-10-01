@@ -64,7 +64,7 @@ export function SaleClientPicker({
               search.handleSearch(event.target.value)
             }}
             onFocus={search.reopenSuggestions}
-            placeholder="Nom ou telephone du client"
+            placeholder="Nom ou téléphone du client"
             readOnly={selectedClient !== null}
             className={selectedClient ? 'bg-[#F6F9FB]' : ''}
             aria-label="Rechercher un client"
@@ -90,18 +90,18 @@ export function SaleClientPicker({
 
       {search.query.trim() && !selectedClient && search.results.length === 0 && (
         <Button type="button" variant="pos-secondary" className="w-full justify-start" onClick={onAddNew}>
-          Creer ce client
+          Créer ce client
         </Button>
       )}
 
       {selectedClient && (
-        <div className="rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] p-3">
+        <div className="rounded-md border-2 border-[#006EBD] bg-[#E3F3FE] p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <PosLabel className="text-[#007EC8]">Client selectionne</PosLabel>
+              <PosLabel className="text-[#006EBD]">Client sélectionné</PosLabel>
               <p className="mt-1 text-sm font-bold text-[#12364D]">{selectedClient.nom}</p>
               <p className="text-xs text-[#1C5376]">
-                {selectedClient.telephone || 'Telephone non renseigne'}
+                {selectedClient.telephone || 'Téléphone non renseigné'}
               </p>
             </div>
             <Button type="button" variant="pos-secondary" size="sm" onClick={clear}>
@@ -112,7 +112,7 @@ export function SaleClientPicker({
       )}
 
       <Button type="button" variant="pos-secondary" className="w-full" onClick={onAddNew}>
-        Creer un nouveau client
+        Créer un nouveau client
       </Button>
     </PosCard>
   )

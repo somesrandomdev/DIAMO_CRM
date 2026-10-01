@@ -21,9 +21,9 @@ interface TechLogRow {
 type Period = '24h' | '7d' | '30d'
 
 const LEVEL_STYLES: Record<string, string> = {
-  error: 'bg-[#FDF1F2] text-[#FF4949] border-[#FF4949]/40',
+  error: 'bg-[#FDF1F2] text-[#C62828] border-[#C62828]/40',
   warn: 'bg-warning-light text-warning border-warning/40',
-  info: 'bg-[#E3F3FE] text-[#007EC8] border-[#009EFB]/40',
+  info: 'bg-[#E3F3FE] text-[#006EBD] border-[#006EBD]/40',
 }
 
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
@@ -170,7 +170,7 @@ export function TechLogsTab() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" variant="pos-secondary" size="sm" loading={isPurging} onClick={purge}>
+        <Button type="button" variant="pos-secondary" size="sm" loading={isPurging} loadingText="Purge…" onClick={purge}>
           <Trash2 className="h-4 w-4" />
           Purger &gt; 30 jours
         </Button>
@@ -193,17 +193,17 @@ export function TechLogsTab() {
                 aria-expanded={expandedId === row.id}
               >
                 <span
-                  className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${
+                  className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-bold uppercase ${
                     LEVEL_STYLES[row.level] ?? 'border-[#DCE1E5] bg-[#F6F9FB] text-[#1C5376]'
                   }`}
                 >
                   {row.level}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-semibold text-[#12364D]">
+                  <span className="block truncate text-sm font-semibold text-[#12364D]">
                     {row.message}
                   </span>
-                  <span className="block truncate text-[11px] text-[#7D94A6]">
+                  <span className="block truncate text-xs text-[#5C7385]">
                     {new Date(row.created_at).toLocaleString('fr-FR')} · {row.source}
                     {row.route ? ` · ${row.route}` : ''} · build {row.build ?? '?'}
                   </span>
@@ -212,14 +212,14 @@ export function TechLogsTab() {
               {expandedId === row.id && (
                 <div className="border-t border-[#F6F9FB] bg-[#F6F9FB] p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#7D94A6]">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#5C7385]">
                       Contexte
                     </p>
                     <Button type="button" variant="default" size="sm" onClick={() => copyContext(row)}>
                       Copier
                     </Button>
                   </div>
-                  <pre className="mt-1 max-h-60 overflow-auto rounded-md border border-[#DCE1E5] bg-white p-2 text-[11px] text-[#12364D]">
+                  <pre className="mt-1 max-h-60 overflow-auto rounded-md border border-[#DCE1E5] bg-white p-2 text-xs text-[#12364D]">
                     {JSON.stringify(
                       {
                         context: row.context,

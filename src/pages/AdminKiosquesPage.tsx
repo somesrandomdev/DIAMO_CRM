@@ -241,7 +241,7 @@ export default function AdminKiosquesPage() {
         <div className="flex items-center gap-2">
           <span className="font-medium">{row.nom}</span>
           <span
-            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeBadgeClass(row.type_code)}`}
+            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${typeBadgeClass(row.type_code)}`}
           >
             {row.type_code ?? 'Sans type'}
           </span>
@@ -249,7 +249,7 @@ export default function AdminKiosquesPage() {
       ),
       sortValue: (row) => row.nom,
     },
-    { key: 'adresse', header: 'Adresse', render: (row) => row.adresse || 'Non renseignee', sortValue: (row) => row.adresse ?? '' },
+    { key: 'adresse', header: 'Adresse', render: (row) => row.adresse || 'Non renseignée', sortValue: (row) => row.adresse ?? '' },
     {
       key: 'type',
       header: 'Type',
@@ -305,8 +305,8 @@ export default function AdminKiosquesPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Kiosques</h1>
-          <p className="text-[12px] text-text-secondary">Gestion des points de vente du reseau.</p>
+          <h1 className="text-base font-semibold text-text">Kiosques</h1>
+          <p className="text-xs text-text-secondary">Gestion des points de vente du réseau.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
@@ -349,12 +349,12 @@ export default function AdminKiosquesPage() {
               aria-pressed={typeFilter === chip.value}
               className={
                 typeFilter === chip.value
-                  ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                  ? 'min-h-11 rounded-md bg-primary px-3 text-xs font-semibold text-white'
+                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-xs font-semibold text-text-secondary hover:border-primary hover:text-primary'
               }
             >
               {chip.label}
-              <span className="ml-1.5 text-[11px] opacity-70 [font-variant-numeric:tabular-nums]">
+              <span className="ml-1.5 text-xs opacity-70 [font-variant-numeric:tabular-nums]">
                 {chip.count}
               </span>
             </button>
@@ -398,7 +398,7 @@ export default function AdminKiosquesPage() {
               </div>
               {filteredRows.length === 0 ? (
                 <EmptyState
-                  title="Aucun resultat"
+                  title="Aucun résultat"
                   description="Essayez un autre nom ou changez de filtre de type."
                 />
               ) : (
@@ -459,7 +459,7 @@ export default function AdminKiosquesPage() {
                   setShowNewType(false)
                   setForm((current) => ({ ...current, type_code: value }))
                 }}
-                className="h-12 w-full rounded-md border-2 border-[#DCE1E5] bg-white px-3 text-base text-[#12364D] focus:border-[#12364D] focus:outline-none sm:h-11 sm:text-[13px]"
+                className="h-12 w-full rounded-md border-2 border-[#DCE1E5] bg-white px-3 text-base text-[#12364D] focus:border-[#12364D] focus:outline-none sm:h-11 sm:text-sm"
               >
                 <option value="">— Sélectionner un type —</option>
                 {types.map((type) => (
@@ -471,7 +471,7 @@ export default function AdminKiosquesPage() {
               </select>
               {/* Édition d'un kiosque sans type : hint */}
               {form.id && !form.type_code && !showNewType && (
-                <p className="text-[12px] text-amber">Pensez à définir le type de ce kiosque</p>
+                <p className="text-xs text-amber">Pensez à définir le type de ce kiosque</p>
               )}
             </div>
             {showNewType && (
@@ -502,7 +502,7 @@ export default function AdminKiosquesPage() {
                   variant="pos-secondary"
                   size="sm"
                   className="w-full"
-                  loading={isCreatingType}
+                  loading={isCreatingType} loadingText="Création du type…"
                   onClick={async () => {
                     const code = await createType()
                     if (code) {
@@ -524,11 +524,11 @@ export default function AdminKiosquesPage() {
               <Button
                 type="submit"
                 variant="pos-primary"
-                loading={isSaving}
+                loading={isSaving} loadingText="Enregistrement…"
                 disabled={!form.nom.trim() || (!form.id && !form.type_code) || isCreatingType}
               >
                 <Save className="h-4 w-4" />
-                {form.id ? 'Mettre a jour' : 'Creer'}
+                {form.id ? 'Mettre à jour' : 'Créer'}
               </Button>
             </DialogFooter>
           </form>

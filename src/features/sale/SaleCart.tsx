@@ -42,8 +42,8 @@ export function SaleCart({
           <p className="text-xs text-[#1C5376]">Chargement des offres disponibles...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-md border-2 border-[#FF4949] bg-[#FDF1F2] p-3">
-          <p className="text-sm font-semibold text-[#FF4949]">
+        <div className="rounded-md border-2 border-[#C62828] bg-[#FDF1F2] p-3">
+          <p className="text-sm font-semibold text-[#C62828]">
             Impossible de charger les offres de ce kiosque
           </p>
           <p className="mt-1 text-xs text-[#1C5376]">{loadError}</p>
@@ -66,7 +66,7 @@ export function SaleCart({
               aria-label={`Ajouter ${offer.offre.nom}`}
               className={
                 inCart(offer.offre_id)
-                  ? 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] px-3 py-2 text-left transition-colors active:scale-[0.98]'
+                  ? 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#006EBD] bg-[#E3F3FE] px-3 py-2 text-left transition-colors active:scale-[0.98]'
                   : 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#DCE1E5] bg-white px-3 py-2 text-left transition-colors hover:border-[#12364D] active:scale-[0.98]'
               }
             >
@@ -96,7 +96,7 @@ export function SaleCart({
                     variant="pos-secondary"
                     size="icon"
                     className="h-12 w-12 min-h-12"
-                    aria-label={`Retirer une unite de ${item.offre.nom}`}
+                    aria-label={`Retirer une unité de ${item.offre.nom}`}
                     disabled={item.qty <= 1}
                     onClick={() => onQuantityChange(item.offreId, item.qty - 1)}
                   >
@@ -113,7 +113,7 @@ export function SaleCart({
                     variant="pos-secondary"
                     size="icon"
                     className="h-12 w-12 min-h-12"
-                    aria-label={`Ajouter une unite de ${item.offre.nom}`}
+                    aria-label={`Ajouter une unité de ${item.offre.nom}`}
                     onClick={() => onQuantityChange(item.offreId, item.qty + 1)}
                   >
                     <Plus className="h-4 w-4" />
@@ -135,7 +135,7 @@ export function SaleCart({
 
           <div className="flex items-center justify-between border-t-2 border-[#DCE1E5] pt-3">
             <PosLabel>Total</PosLabel>
-            <span className="font-mono text-xl font-bold text-[#007EC8] [font-variant-numeric:tabular-nums]">
+            <span className="font-mono text-xl font-bold text-[#006EBD] [font-variant-numeric:tabular-nums]">
               {toCFA(total)}
             </span>
           </div>

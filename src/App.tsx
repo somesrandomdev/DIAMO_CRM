@@ -36,7 +36,7 @@ const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'))
 
 // Loading component for lazy loaded routes
 function PageLoader() {
-  return <Loading size="lg" text="Chargement..." fullScreen />
+  return <Loading size="lg" text="Chargement…" fullScreen />
 }
 
 // Error fallback component
@@ -57,9 +57,9 @@ function DisabledAccountScreen({ onDone }: { onDone: () => Promise<void> }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-4 text-center">
       <img src="/logo-principal.png" alt="Diam'o" className="mb-4 h-16 w-auto object-contain" />
-      <ShieldAlert className="mb-3 h-10 w-10 text-[#EB4D5E]" aria-hidden="true" />
+      <ShieldAlert className="mb-3 h-10 w-10 text-[#C62828]" aria-hidden="true" />
       <h1 className="text-lg font-bold text-text">Compte désactivé</h1>
-      <p className="mt-2 max-w-sm text-[13px] text-text-secondary">
+      <p className="mt-2 max-w-sm text-sm text-text-secondary">
         Contactez votre administrateur.
       </p>
     </div>

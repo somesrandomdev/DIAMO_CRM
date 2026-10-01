@@ -134,7 +134,7 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-[#009EFB]" aria-hidden="true" />
+            <Key className="h-5 w-5 text-[#006EBD]" aria-hidden="true" />
             Réinitialiser le mot de passe
           </DialogTitle>
           <DialogDescription>
@@ -149,9 +149,9 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
               type="button"
               onClick={generateTemp}
               disabled={isBusy}
-              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-[#DCE1E5] bg-white p-3 text-left transition-colors hover:border-[#009EFB] disabled:opacity-60"
+              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-[#DCE1E5] bg-white p-3 text-left transition-colors hover:border-[#006EBD] disabled:opacity-60"
             >
-              <Wand2 className="h-5 w-5 shrink-0 text-[#009EFB]" aria-hidden="true" />
+              <Wand2 className="h-5 w-5 shrink-0 text-[#006EBD]" aria-hidden="true" />
               <span>
                 <span className="block text-sm font-semibold text-[#12364D]">Générer un mot de passe temporaire</span>
                 <span className="block text-xs text-[#1C5376]">Affiché une seule fois, à transmettre à l'utilisateur</span>
@@ -161,7 +161,7 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
               type="button"
               onClick={() => setMode('specific')}
               disabled={isBusy}
-              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-[#DCE1E5] bg-white p-3 text-left transition-colors hover:border-[#009EFB] disabled:opacity-60"
+              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-[#DCE1E5] bg-white p-3 text-left transition-colors hover:border-[#006EBD] disabled:opacity-60"
             >
               <Key className="h-5 w-5 shrink-0 text-[#12364D]" aria-hidden="true" />
               <span>
@@ -169,7 +169,7 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
                 <span className="block text-xs text-[#1C5376]">Vous choisissez la valeur (8 caractères minimum)</span>
               </span>
             </button>
-            {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+            {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
           </div>
         )}
 
@@ -192,12 +192,12 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
                 autoFocus
               />
             </div>
-            {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+            {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
             <DialogFooter>
               <Button type="button" variant="pos-secondary" onClick={() => setMode('choice')}>
                 Retour
               </Button>
-              <Button type="submit" variant="pos-primary" loading={isBusy} disabled={newPassword.length < 8}>
+              <Button type="submit" variant="pos-primary" loading={isBusy} loadingText="Réinitialisation…" disabled={newPassword.length < 8}>
                 Réinitialiser
               </Button>
             </DialogFooter>
@@ -206,7 +206,7 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
 
         {mode === 'revealed' && (
           <div className="space-y-4">
-            <div className="rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] p-4 text-center">
+            <div className="rounded-md border-2 border-[#006EBD] bg-[#E3F3FE] p-4 text-center">
               <p className="text-xs font-semibold uppercase tracking-wider text-[#1C5376]">
                 Mot de passe temporaire
               </p>
@@ -218,7 +218,7 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
               <Copy className="h-4 w-4" />
               {copied ? 'Copié !' : 'Copier'}
             </Button>
-            <p className="text-[13px] leading-relaxed text-[#1C5376]">
+            <p className="text-sm leading-relaxed text-[#1C5376]">
               Transmettez ce mot de passe à l'utilisateur. Il devra le changer à sa prochaine
               connexion.
             </p>

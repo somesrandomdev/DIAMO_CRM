@@ -223,7 +223,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
         <DialogHeader>
           <DialogTitle>Importer des clients (CSV)</DialogTitle>
           <DialogDescription>
-            Colonnes reconnues automatiquement : nom, telephone, email, adresse. Le nom est
+            Colonnes reconnues automatiquement : nom, téléphone, email, adresse. Le nom est
             obligatoire.
           </DialogDescription>
         </DialogHeader>
@@ -275,14 +275,14 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
               </div>
 
               <div className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
-                <PosLabel className="mb-2">Apercu (5 premieres lignes)</PosLabel>
-                <div className="space-y-1 text-[13px]">
+                <PosLabel className="mb-2">Aperçu (5 premières lignes)</PosLabel>
+                <div className="space-y-1 text-sm">
                   {mappedRows.slice(0, 5).map((row, index) => (
                     <p key={index} className="truncate">
                       <span
                         className={
                           !row.nom || duplicateFlags[index]
-                            ? 'font-semibold text-[#FF4949]'
+                            ? 'font-semibold text-[#C62828]'
                             : 'font-semibold text-[#12364D]'
                         }
                       >
@@ -298,7 +298,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
                   {duplicateCount > 0 ? `, ${duplicateCount} doublon(s)` : ''}.
                 </p>
                 {duplicateCount > 0 && (
-                  <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
+                  <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-[#12364D]">
                     <input
                       type="checkbox"
                       checked={skipDuplicates}
@@ -309,7 +309,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
                   </label>
                 )}
                 {invalidCount > 0 && (
-                  <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
+                  <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-[#12364D]">
                     <input
                       type="checkbox"
                       checked={skipInvalid}
@@ -323,7 +323,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
             </>
           )}
 
-          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
         </div>
 
         <DialogFooter>
@@ -333,7 +333,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
           <Button
             type="button"
             variant="pos-primary"
-            loading={isImporting}
+            loading={isImporting} loadingText="Import…"
             disabled={rows.length === 0}
             onClick={importClients}
           >

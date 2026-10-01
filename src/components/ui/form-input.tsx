@@ -10,7 +10,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
     <input
       ref={ref}
       className={cn(
-        'h-11 w-full rounded-sm border border-border bg-surface px-3 py-2 text-[16px] text-text shadow-none transition-colors placeholder:text-text-tertiary focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/15 disabled:cursor-not-allowed disabled:opacity-60 sm:h-9 sm:text-[13px]',
+        'h-11 w-full rounded-sm border border-border bg-surface px-3 py-2 text-base text-text shadow-none transition-colors placeholder:text-text-tertiary focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/15 disabled:cursor-not-allowed disabled:opacity-60 sm:h-9 sm:text-sm',
         error && 'border-red focus:border-red focus:ring-red/15',
         className
       )}
@@ -29,7 +29,7 @@ export const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
     <select
       ref={ref}
       className={cn(
-        'h-11 w-full rounded-sm border border-border bg-surface px-3 py-2 text-[16px] text-text shadow-none transition-colors focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/15 disabled:cursor-not-allowed disabled:opacity-60 sm:h-9 sm:text-[13px]',
+        'h-11 w-full rounded-sm border border-border bg-surface px-3 py-2 text-base text-text shadow-none transition-colors focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/15 disabled:cursor-not-allowed disabled:opacity-60 sm:h-9 sm:text-sm',
         error && 'border-red focus:border-red focus:ring-red/15',
         className
       )}

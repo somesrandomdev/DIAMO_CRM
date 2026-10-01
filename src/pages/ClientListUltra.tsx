@@ -184,8 +184,8 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Mes clients</h1>
-          <p className="text-[12px] text-text-secondary">Fiches clients et historique des achats.</p>
+          <h1 className="text-base font-semibold text-text">Mes clients</h1>
+          <p className="text-xs text-text-secondary">Fiches clients et historique des achats.</p>
         </div>
         <div className="flex gap-2">
           {profile?.kiosque_id && (
@@ -231,15 +231,15 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Nom ou telephone du client"
+              placeholder="Nom ou téléphone du client"
               resultCount={totalCount}
             />
           </div>
 
           {clients.length === 0 && searchDebounced.trim() ? (
             <EmptyState
-              title="Aucun resultat"
-              description="Essayez un autre nom ou numero de telephone."
+              title="Aucun résultat"
+              description="Essayez un autre nom ou numéro de téléphone."
             />
           ) : (
             <>
@@ -248,12 +248,12 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                   <Card key={client.id} padding="md">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-text">{client.nom}</p>
-                        <p className="mt-1 truncate text-[12px] text-text-secondary">
-                          {client.telephone || 'Telephone non renseigne'}
+                        <p className="truncate text-sm font-semibold text-text">{client.nom}</p>
+                        <p className="mt-1 truncate text-xs text-text-secondary">
+                          {client.telephone || 'Téléphone non renseigné'}
                         </p>
-                        <p className="mt-1 truncate text-[11px] text-text-tertiary">
-                          {client.localite || client.adresse || 'Localite non renseignee'}
+                        <p className="mt-1 truncate text-xs text-text-tertiary">
+                          {client.localite || client.adresse || 'Localité non renseignée'}
                         </p>
                       </div>
                       <StatusBadge variant={client.accepte_offres ? 'success' : 'neutral'}>
@@ -261,7 +261,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                       </StatusBadge>
                     </div>
                     <Button type="button" variant="primary" size="sm" className="mt-4 w-full" onClick={() => handleSelect(client)}>
-                      Details
+                      Détails
                     </Button>
                   </Card>
                 ))}
@@ -277,7 +277,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                   >
                     Précédent
                   </Button>
-                  <span className="text-[13px] text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                  <span className="text-sm text-[#1C5376] [font-variant-numeric:tabular-nums]">
                     Page {page + 1} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
                   </span>
                   <Button
@@ -303,8 +303,8 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle>{selected.nom}</CardTitle>
-                  <p className="mt-1 text-[12px] text-text-secondary">
-                    {selected.type_client || 'Particulier'} - {selected.localite || 'Localite non renseignee'}
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {selected.type_client || 'Particulier'} - {selected.localite || 'Localité non renseignée'}
                   </p>
                 </div>
                 <StatusBadge variant={selected.accepte_offres ? 'success' : 'neutral'}>
@@ -315,40 +315,40 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
             <CardContent className="space-y-4">
               <div className="grid gap-2 sm:grid-cols-2">
                 {[
-                  ['Telephone', selected.telephone || 'Non renseigne'],
-                  ['Email', selected.email || 'Non renseigne'],
-                  ['Adresse', selected.adresse || 'Non renseignee'],
-                  ['Situation', selected.situation_familiale || 'Non renseignee'],
+                  ['Téléphone', selected.telephone || 'Non renseigné'],
+                  ['Email', selected.email || 'Non renseigné'],
+                  ['Adresse', selected.adresse || 'Non renseignée'],
+                  ['Situation', selected.situation_familiale || 'Non renseignée'],
                   ['Personnes', String(selected.nombre_personnes || 1)],
                   ['Contenant', selected.contenant_prefere || 'Bouteille 10L'],
                   ['Contact', selected.preference_contact || 'Telephone'],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-md bg-muted p-3">
-                    <p className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">{label}</p>
-                    <p className="mt-1 text-[12px] text-text">{value}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">{label}</p>
+                    <p className="mt-1 text-xs text-text">{value}</p>
                   </div>
                 ))}
               </div>
 
               {selected.notes && (
                 <div className="rounded-md bg-muted p-3">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">Notes</p>
-                  <p className="mt-1 text-[12px] text-text">{selected.notes}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Notes</p>
+                  <p className="mt-1 text-xs text-text">{selected.notes}</p>
                 </div>
               )}
 
               <div>
-                <h2 className="mb-2 text-[12px] font-semibold text-text">Historique des achats</h2>
+                <h2 className="mb-2 text-xs font-semibold text-text">Historique des achats</h2>
                 {ventes.length > 0 ? (
                   <div className="space-y-2">
                     {ventes.slice(0, 5).map((vente) => (
                       <div key={vente.id} className="rounded-md border border-border p-3">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-[12px] text-text-secondary">{vente.created_at.slice(0, 10)}</p>
-                          <p className="font-mono text-[13px] font-semibold text-blue">{toCFA(vente.montant_total)}</p>
+                          <p className="text-xs text-text-secondary">{vente.created_at.slice(0, 10)}</p>
+                          <p className="font-mono text-sm font-semibold text-blue">{toCFA(vente.montant_total)}</p>
                         </div>
-                        <p className="mt-1 text-[12px] font-medium text-text">{vente.offre?.nom || 'Offre inconnue'}</p>
-                        <p className="mt-1 text-[11px] text-text-secondary">
+                        <p className="mt-1 text-xs font-medium text-text">{vente.offre?.nom || 'Offre inconnue'}</p>
+                        <p className="mt-1 text-xs text-text-secondary">
                           Qte {vente.quantite || 1}
                           {vente.offre?.volume_ml ? ` - ${vente.offre.volume_ml / 1000}L` : ''}
                         </p>
@@ -367,7 +367,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                       </div>
                     ))}
                     {ventes.length > 5 && (
-                      <p className="text-center text-[12px] text-text-secondary">
+                      <p className="text-center text-xs text-text-secondary">
                         {ventes.length - 5} autres achats
                       </p>
                     )}

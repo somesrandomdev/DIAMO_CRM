@@ -254,7 +254,7 @@ export default function ClientsByKiosk() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[15px] font-semibold text-text">Clients par kiosque</h1>
+        <h1 className="text-base font-semibold text-text">Clients par kiosque</h1>
         <p className="text-sm text-[#1C5376]">Répartition et activité des clients à travers le réseau.</p>
       </div>
 
@@ -310,11 +310,11 @@ export default function ClientsByKiosk() {
                     <div key={client.id} className="rounded-lg border border-[#DCE1E5] bg-white p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[15px] font-bold text-[#12364D]">{client.nom}</p>
+                          <p className="text-base font-bold text-[#12364D]">{client.nom}</p>
                           {client.telephone ? (
                             <a
                               href={`tel:${client.telephone}`}
-                              className="mt-0.5 inline-flex min-h-12 items-center text-sm font-semibold text-[#009EFB] underline"
+                              className="mt-0.5 inline-flex min-h-12 items-center text-sm font-semibold text-[#006EBD] underline"
                             >
                               {client.telephone}
                             </a>

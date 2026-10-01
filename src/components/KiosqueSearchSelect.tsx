@@ -71,15 +71,15 @@ export function KiosqueSearchSelect({
         aria-expanded={open}
         aria-invalid={invalid || undefined}
         onClick={() => setOpen((current) => !current)}
-        className={`flex min-h-12 w-full items-center justify-between gap-2 rounded-md border-2 px-3 text-left text-[15px] transition-colors focus:outline-none ${
-          invalid ? 'border-[#FF4949]' : 'border-[#DCE1E5]'
+        className={`flex min-h-12 w-full items-center justify-between gap-2 rounded-md border-2 px-3 text-left text-base transition-colors focus:outline-none ${
+          invalid ? 'border-[#C62828]' : 'border-[#DCE1E5]'
         } ${open ? 'border-[#12364D]' : 'hover:border-[#8AA3B5]'}`}
       >
-        <span className={`truncate ${selectedNom ? 'text-[#12364D]' : 'text-[#8AA3B5]'}`}>
+        <span className={`truncate ${selectedNom ? 'text-[#12364D]' : 'text-[#5C7385]'}`}>
           {selectedNom ?? emptyLabel ?? 'Choisir un kiosque...'}
         </span>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-[#8AA3B5] transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 shrink-0 text-[#5C7385] transition-transform ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -89,7 +89,7 @@ export function KiosqueSearchSelect({
           <div className="border-b border-[#DCE1E5] p-2">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8AA3B5]"
+                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5C7385]"
                 aria-hidden="true"
               />
               <input
@@ -98,7 +98,7 @@ export function KiosqueSearchSelect({
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Rechercher..."
                 aria-label="Rechercher un kiosque"
-                className="h-10 w-full rounded-md border border-[#DCE1E5] pl-8 pr-3 text-[13px] text-[#12364D] placeholder:text-[#8AA3B5] focus:border-[#009EFB] focus:outline-none"
+                className="h-10 w-full rounded-md border border-[#DCE1E5] pl-8 pr-3 text-sm text-[#12364D] placeholder:text-[#8AA3B5] focus:border-[#006EBD] focus:outline-none"
                 autoFocus
               />
             </div>
@@ -112,11 +112,11 @@ export function KiosqueSearchSelect({
                 onClick={() => choose('')}
                 className="flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left hover:bg-[#F6F9FB]"
               >
-                <span className="text-[13px] text-[#1C5376]">
+                <span className="text-sm text-[#1C5376]">
                   {emptyLabel ?? 'Aucun'}
                 </span>
                 {value === '' && (
-                  <Check className="ml-auto h-4 w-4 text-[#009EFB]" aria-hidden="true" />
+                  <Check className="ml-auto h-4 w-4 text-[#006EBD]" aria-hidden="true" />
                 )}
               </button>
             )}
@@ -129,9 +129,9 @@ export function KiosqueSearchSelect({
                 onClick={() => choose(kiosque.id)}
                 className="flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left hover:bg-[#F6F9FB]"
               >
-                <span className="truncate text-[13px] text-[#12364D]">{kiosque.nom}</span>
+                <span className="truncate text-sm text-[#12364D]">{kiosque.nom}</span>
                 {value === kiosque.id && (
-                  <Check className="ml-auto h-4 w-4 shrink-0 text-[#009EFB]" aria-hidden="true" />
+                  <Check className="ml-auto h-4 w-4 shrink-0 text-[#006EBD]" aria-hidden="true" />
                 )}
               </button>
             ))}

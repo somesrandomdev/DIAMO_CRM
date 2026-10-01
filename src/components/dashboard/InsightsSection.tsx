@@ -172,7 +172,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
 
   if (error || !insights) {
     return (
-      <div className="rounded-lg border border-warning/30 bg-warning-light p-4 text-[13px] text-warning">
+      <div className="rounded-lg border border-warning/30 bg-warning-light p-4 text-sm text-warning">
         Insights indisponibles — {error ?? 'données vides'}
       </div>
     )
@@ -184,8 +184,8 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-[14px] font-semibold text-text">Insights</h2>
-          <p className="text-[12px] text-text-secondary">Comportement de vente et santé du portefeuille — {periodLabel.toLowerCase()}.</p>
+          <h2 className="text-sm font-semibold text-text">Insights</h2>
+          <p className="text-xs text-text-secondary">Comportement de vente et santé du portefeuille — {periodLabel.toLowerCase()}.</p>
         </div>
         <Button type="button" variant="pos-secondary" size="sm" onClick={exportCsv}>
           <Download className="h-4 w-4" />
@@ -199,12 +199,12 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
           <PosLabel className="mb-3">Affluence par jour et heure</PosLabel>
           {hasHeatData ? (
             <div className="overflow-x-auto">
-              <table className="border-separate border-spacing-0.5 text-[10px]">
+              <table className="border-separate border-spacing-0.5 text-xs">
                 <thead>
                   <tr>
                     <th />
                     {Array.from({ length: 24 }, (_, hour) => (
-                      <th key={hour} className="w-4 font-medium text-[#7D94A6]">
+                      <th key={hour} className="w-4 font-medium text-[#5C7385]">
                         {hour % 3 === 0 ? hour : ''}
                       </th>
                     ))}
@@ -237,7 +237,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
               </table>
             </div>
           ) : (
-            <p className="text-[13px] text-text-secondary">
+            <p className="text-sm text-text-secondary">
               Aucune vente sur la période — la heatmap apparaîtra dès les premières transactions.
             </p>
           )}
@@ -247,20 +247,20 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
         <div className="rounded-lg border border-border bg-surface p-4">
           <PosLabel className="mb-3">Top 5 offres (CA)</PosLabel>
           {insights.top_offres.length === 0 ? (
-            <p className="text-[13px] text-text-secondary">Aucune vente sur la période.</p>
+            <p className="text-sm text-text-secondary">Aucune vente sur la période.</p>
           ) : (
             <div className="space-y-2.5">
               {insights.top_offres.map((offre) => (
                 <div key={offre.offre_id}>
                   <div className="mb-1 flex items-baseline justify-between gap-2">
-                    <span className="truncate text-[13px] font-semibold text-text">{offre.nom}</span>
-                    <span className="shrink-0 text-[12px] text-text-secondary [font-variant-numeric:tabular-nums]">
+                    <span className="truncate text-sm font-semibold text-text">{offre.nom}</span>
+                    <span className="shrink-0 text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                       {toCFA(offre.ca)} · {offre.qty} u.
                     </span>
                   </div>
                   <div className="h-2.5 w-full overflow-hidden rounded-md bg-[#E3F3FE]">
                     <div
-                      className="h-full rounded-md bg-[#009EFB] transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                      className="h-full rounded-md bg-[#006EBD] transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
                       style={{ width: `${Math.max(4, (offre.ca / maxTopCa) * 100)}%` }}
                     />
                   </div>
@@ -280,9 +280,9 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                 type="button"
                 title={category.description}
                 onClick={() => void fetchHealthClients(category)}
-                className="flex min-h-16 flex-col items-start gap-0.5 rounded-md border border-[#DCE1E5] bg-white p-2.5 text-left transition-colors hover:border-[#009EFB] active:scale-[0.98]"
+                className="flex min-h-16 flex-col items-start gap-0.5 rounded-md border border-[#DCE1E5] bg-white p-2.5 text-left transition-colors hover:border-[#006EBD] active:scale-[0.98]"
               >
-                <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#7D94A6]">
+                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#5C7385]">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
                   {category.label}
                 </span>
@@ -292,7 +292,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-[#7D94A6]">
+          <p className="mt-2 text-xs text-[#5C7385]">
             Cliquez un compteur pour voir les clients concernés.
           </p>
         </div>
@@ -302,7 +302,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
           <PosLabel className="mb-3">Rétention &amp; croissance</PosLabel>
           <div className="mb-3 grid grid-cols-2 gap-2">
             <div className="rounded-md bg-[#F6F9FB] p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7D94A6]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#5C7385]">
                 Clients fidèles (≥ 2 achats)
               </p>
               <p className="mt-1 text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
@@ -310,7 +310,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
               </p>
             </div>
             <div className="rounded-md bg-[#F6F9FB] p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#7D94A6]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#5C7385]">
                 Écart moyen entre achats
               </p>
               <p className="mt-1 text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
@@ -339,7 +339,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-[13px] text-text-secondary">Aucune donnée de croissance sur la période.</p>
+            <p className="text-sm text-text-secondary">Aucune donnée de croissance sur la période.</p>
           )}
         </div>
       </div>
@@ -366,8 +366,8 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                   key={client.id}
                   className="flex items-center justify-between gap-3 rounded-md border border-[#DCE1E5] bg-white p-3"
                 >
-                  <p className="truncate text-[13px] font-semibold text-[#12364D]">{client.nom}</p>
-                  <p className="shrink-0 text-[12px] text-[#1C5376]">{client.telephone ?? '—'}</p>
+                  <p className="truncate text-sm font-semibold text-[#12364D]">{client.nom}</p>
+                  <p className="shrink-0 text-xs text-[#1C5376]">{client.telephone ?? '—'}</p>
                 </div>
               ))}
             </div>

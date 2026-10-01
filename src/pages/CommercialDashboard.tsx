@@ -402,7 +402,7 @@ export default function CommercialDashboard() {
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Supervision</h1>
+          <h1 className="text-base font-semibold text-text">Supervision</h1>
           <p className="text-sm text-[#1C5376]">Performance des kiosques que vous supervisez.</p>
         </div>
         <EmptyState
@@ -417,7 +417,7 @@ export default function CommercialDashboard() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[15px] font-semibold text-text">Supervision</h1>
+        <h1 className="text-base font-semibold text-text">Supervision</h1>
         <p className="text-sm text-[#1C5376]">
           Performance de vos {kiosques.length} kiosque{kiosques.length > 1 ? 's' : ''} — cumul du mois.
         </p>
@@ -461,7 +461,7 @@ export default function CommercialDashboard() {
                 {row.pct !== null && (
                   <div className="mt-1.5">
                     <PosProgress value={row.pct} />
-                    <p className="mt-0.5 text-right text-[11px] font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                    <p className="mt-0.5 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
                       {row.pct.toFixed(0)} %
                     </p>
                   </div>
@@ -533,7 +533,7 @@ export default function CommercialDashboard() {
               ) : (
                 <p className="mt-1 text-sm text-[#1C5376]">Aucun objectif défini pour ce mois.</p>
               )}
-              <p className="mt-0.5 text-[11px] text-[#1C5376]">Objectif fixé par l'administrateur.</p>
+              <p className="mt-0.5 text-xs text-[#1C5376]">Objectif fixé par l'administrateur.</p>
             </div>
             {kioskObjectif && (
               <div className="mt-3">
@@ -551,7 +551,7 @@ export default function CommercialDashboard() {
               <SearchBar
                 value={clientSearch}
                 onChange={setClientSearch}
-                placeholder="Nom ou telephone du client"
+                placeholder="Nom ou téléphone du client"
                 resultCount={kioskClients.length}
               />
             </div>
@@ -559,8 +559,8 @@ export default function CommercialDashboard() {
               <EmptyState title="Aucun client pour ce kiosque" className="border-0" />
             ) : kioskClients.length === 0 ? (
               <EmptyState
-                title="Aucun resultat"
-                description="Essayez un autre nom ou numero de telephone."
+                title="Aucun résultat"
+                description="Essayez un autre nom ou numéro de téléphone."
                 className="border-0"
               />
             ) : (
@@ -583,7 +583,7 @@ export default function CommercialDashboard() {
                         className="flex items-start justify-between gap-2 rounded-lg border border-[#DCE1E5] bg-white p-3"
                       >
                         <div className="min-w-0">
-                          <p className="text-[15px] font-bold text-[#12364D]">{client.nom}</p>
+                          <p className="text-base font-bold text-[#12364D]">{client.nom}</p>
                           <p className="mt-0.5 text-xs text-[#1C5376]">
                             {client.telephone || 'Téléphone non renseigné'}
                           </p>
@@ -650,7 +650,7 @@ export default function CommercialDashboard() {
                       className="flex items-start justify-between gap-2 rounded-lg border border-[#DCE1E5] bg-white p-3"
                     >
                       <div className="min-w-0">
-                        <p className="text-[14px] font-semibold text-[#12364D]">
+                        <p className="text-sm font-semibold text-[#12364D]">
                           {new Date(sale.created_at).toLocaleDateString('fr-FR')}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-[#1C5376]">

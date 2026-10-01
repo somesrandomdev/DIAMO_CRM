@@ -183,7 +183,7 @@ export default function RapportsPage() {
   const columns: DataTableColumn<ReportRow>[] = [
     { key: 'kiosque', header: 'Kiosque', render: (row) => <span className="font-medium">{row.kiosque.nom}</span>, sortValue: (row) => row.kiosque.nom },
     { key: 'ca', header: 'CA', align: 'right', render: (row) => <span className="font-mono">{toCFA(row.ca)}</span>, sortValue: (row) => row.ca },
-    { key: 'target', header: 'Objectif', align: 'right', render: (row) => row.target > 0 ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non defini</span>, sortValue: (row) => row.target },
+    { key: 'target', header: 'Objectif', align: 'right', render: (row) => row.target > 0 ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non défini</span>, sortValue: (row) => row.target },
     {
       key: 'progress',
       header: '%',
@@ -191,7 +191,7 @@ export default function RapportsPage() {
       render: (row) => (
         <div className="ml-auto w-24">
           <PosProgress value={row.progress} className="bg-muted" barClassName="bg-primary" />
-          <p className="mt-1 text-right text-[10.5px] text-text-secondary">
+          <p className="mt-1 text-right text-xs text-text-secondary">
             {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'}
           </p>
         </div>
@@ -227,10 +227,10 @@ export default function RapportsPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Rapports</h1>
-          <p className="text-[12px] text-text-secondary">Comparaison des kiosques et exports par periode.</p>
+          <h1 className="text-base font-semibold text-text">Rapports</h1>
+          <p className="text-xs text-text-secondary">Comparaison des kiosques et exports par période.</p>
         </div>
-        <div className="inline-flex rounded-md border border-border bg-surface text-[12px] font-medium">
+        <div className="inline-flex rounded-md border border-border bg-surface text-xs font-medium">
           {periodOptions.map((option) => (
             <button
               key={option.value}
@@ -265,13 +265,13 @@ export default function RapportsPage() {
           </PosCard>
 
           <PosCard>
-            <PosLabel className="mb-3">Realisation des objectifs (%)</PosLabel>
+            <PosLabel className="mb-3">Réalisation des objectifs (%)</PosLabel>
             <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
               <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={(value) => `${value} %`} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
-                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Realisation']} />
+                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Réalisation']} />
                 <Bar dataKey="pct" fill="#12364D" radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
@@ -305,7 +305,7 @@ export default function RapportsPage() {
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-16 rounded-lg" />)}
             </div>
           ) : rows.length === 0 || scoped.length === 0 ? (
-            <EmptyState title="Aucun rapport" description="Les rapports apparaitront apres les premieres ventes de la periode." />
+            <EmptyState title="Aucun rapport" description="Les rapports apparaîtront après les premières ventes de la période." />
           ) : (
             <>
               <div className="hidden sm:block">
@@ -317,7 +317,7 @@ export default function RapportsPage() {
                 {rows.map((row) => (
                   <div key={row.kiosque.id} className="rounded-md border border-border bg-surface p-3">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-[14px] font-semibold text-text">{row.kiosque.nom}</p>
+                      <p className="text-sm font-semibold text-text">{row.kiosque.nom}</p>
                       <Button
                         type="button"
                         variant="default"
@@ -332,20 +332,20 @@ export default function RapportsPage() {
 
                     <div className="mt-2">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="font-mono text-[16px] font-bold text-blue [font-variant-numeric:tabular-nums]">
+                        <span className="font-mono text-base font-bold text-blue [font-variant-numeric:tabular-nums]">
                           {toCFA(row.ca)}
                         </span>
-                        <span className="text-[11px] text-text-secondary [font-variant-numeric:tabular-nums]">
-                          / {row.target > 0 ? toCFA(row.target) : 'Non defini'}
+                        <span className="text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
+                          / {row.target > 0 ? toCFA(row.target) : 'Non défini'}
                         </span>
                       </div>
                       <PosProgress value={row.progress} className="bg-muted" barClassName="bg-primary" />
-                      <p className="mt-1 text-right text-[10.5px] text-text-secondary [font-variant-numeric:tabular-nums]">
+                      <p className="mt-1 text-right text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                         {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'} - {row.ventes} vente(s)
                       </p>
                     </div>
 
-                    <dl className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
+                    <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <dt className="text-text-secondary">Top client</dt>
                         <dd className="font-medium text-text">{row.topClient}</dd>

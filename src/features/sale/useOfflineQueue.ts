@@ -50,8 +50,8 @@ export function useOfflineQueue({ onFlushed }: UseOfflineQueueOptions = {}) {
       if (clientResult.flushed > 0) {
         showToast({
           type: 'success',
-          title: 'Clients synchronises',
-          message: `${clientResult.flushed} client(s) hors ligne synchronise(s).`,
+          title: 'Clients synchronisés',
+          message: `${clientResult.flushed} client(s) hors ligne synchronisé(s).`,
         })
       }
 
@@ -62,8 +62,8 @@ export function useOfflineQueue({ onFlushed }: UseOfflineQueueOptions = {}) {
         logInfo('sync', `${result.flushed} vente(s) synchronisée(s)`)
         showToast({
           type: 'success',
-          title: 'Ventes synchronisees',
-          message: `${result.flushed} vente(s) hors ligne synchronisee(s).`,
+          title: 'Ventes synchronisées',
+          message: `${result.flushed} vente(s) hors ligne synchronisée(s).`,
         })
         onFlushed?.()
       }

@@ -200,8 +200,8 @@ export default function AdminCorbeillePage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[15px] font-semibold text-text">Corbeille</h1>
-        <p className="text-[12px] text-text-secondary">
+        <h1 className="text-base font-semibold text-text">Corbeille</h1>
+        <p className="text-xs text-text-secondary">
           Utilisateurs désactivés. Restaurez-les ou supprimez-les définitivement.
         </p>
       </div>
@@ -229,6 +229,7 @@ export default function AdminCorbeillePage() {
         title="Restaurer cet utilisateur ?"
         description={`${restoring?.username ?? ''} redeviendra immédiatement actif avec son rôle et son kiosque d'origine.`}
         confirmLabel="Restaurer"
+        busyLabel="Restauration…"
         cancelLabel="Annuler"
         isBusy={isRestoring}
         onConfirm={restore}
@@ -244,7 +245,7 @@ export default function AdminCorbeillePage() {
               confirmer.
             </DialogDescription>
           </DialogHeader>
-          {deleteError && <p className="text-sm font-medium text-[#FF4949]">{deleteError}</p>}
+          {deleteError && <p className="text-sm font-medium text-[#C62828]">{deleteError}</p>}
           <PosInput
             value={confirmName}
             onChange={(event) => setConfirmName(event.target.value)}
@@ -256,7 +257,7 @@ export default function AdminCorbeillePage() {
             variant="pos-destructive"
             className="w-full"
             disabled={confirmName.trim().toLowerCase() !== (deleting?.username ?? '').trim().toLowerCase()}
-            loading={isDeleting}
+            loading={isDeleting} loadingText="Suppression…"
             onClick={deletePermanently}
           >
             <Trash2 className="h-4 w-4" />

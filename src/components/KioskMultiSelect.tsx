@@ -61,7 +61,7 @@ export function KioskMultiSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
-        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text hover:border-primary sm:w-auto sm:min-w-56"
+        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-xs font-semibold text-text hover:border-primary sm:w-auto sm:min-w-56"
       >
         <span className="truncate">{label}</span>
         <ChevronDown
@@ -75,7 +75,7 @@ export function KioskMultiSelect({
           <div className="border-b border-[#DCE1E5] p-2">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8AA3B5]"
+                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5C7385]"
                 aria-hidden="true"
               />
               <input
@@ -84,21 +84,21 @@ export function KioskMultiSelect({
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Rechercher un kiosque..."
                 aria-label="Rechercher un kiosque"
-                className="h-10 w-full rounded-md border border-[#DCE1E5] pl-8 pr-3 text-[13px] text-[#12364D] placeholder:text-[#8AA3B5] focus:border-[#009EFB] focus:outline-none"
+                className="h-10 w-full rounded-md border border-[#DCE1E5] pl-8 pr-3 text-sm text-[#12364D] placeholder:text-[#8AA3B5] focus:border-[#006EBD] focus:outline-none"
               />
             </div>
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
                 onClick={onSelectAll}
-                className="min-h-9 flex-1 rounded-md border border-[#DCE1E5] text-[11px] font-semibold text-[#1C5376] hover:border-[#009EFB] hover:text-[#009EFB]"
+                className="min-h-9 flex-1 rounded-md border border-[#DCE1E5] text-xs font-semibold text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
               >
                 Tout
               </button>
               <button
                 type="button"
                 onClick={onClear}
-                className="min-h-9 flex-1 rounded-md border border-[#DCE1E5] text-[11px] font-semibold text-[#1C5376] hover:border-[#009EFB] hover:text-[#009EFB]"
+                className="min-h-9 flex-1 rounded-md border border-[#DCE1E5] text-xs font-semibold text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
               >
                 Aucun
               </button>
@@ -126,16 +126,16 @@ export function KioskMultiSelect({
                       onChange={() => onToggle(kiosque.id)}
                       className="h-4 w-4"
                     />
-                    <span className="truncate text-[13px] text-[#12364D]">
+                    <span className="truncate text-sm text-[#12364D]">
                       {kiosque.typeCode ? (
-                        <span className="mr-1.5 inline-block rounded bg-[#F6F9FB] px-1 text-[10px] font-bold text-[#1C5376]">
+                        <span className="mr-1.5 inline-block rounded bg-[#F6F9FB] px-1 text-xs font-bold text-[#1C5376]">
                           {kiosque.typeCode}
                         </span>
                       ) : null}
                       {kiosque.nom}
                     </span>
                     {checked && (
-                      <Check className="ml-auto h-4 w-4 shrink-0 text-[#009EFB]" aria-hidden="true" />
+                      <Check className="ml-auto h-4 w-4 shrink-0 text-[#006EBD]" aria-hidden="true" />
                     )}
                   </label>
                 )
