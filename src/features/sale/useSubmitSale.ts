@@ -23,11 +23,24 @@ export interface SubmitSaleContext {
   isOnline: boolean
 }
 
+/** What the confirmation screen shows once a sale is recorded or queued. */
+export interface SaleReceipt {
+  total: number
+  clientNom: string
+  items: Array<{ nom: string; qty: number; sousTotal: number }>
+  /** true = kept on the device, synced later (no ticket yet). */
+  queued: boolean
+  /** true = every line already existed (double submit): nothing new recorded. */
+  alreadyRecorded: boolean
+}
+
 interface UseSubmitSaleOptions {
   enqueueOfflineSale: (sale: Omit<QueuedSale, 'id' | 'queued_at'>) => Promise<void>
   uploadTicket: (input: TicketUploadInput) => Promise<boolean>
   resetForm: () => void
   reloadSummary: () => void
+  /** Called once per finished sale (recorded, already there, or queued). */
+  onRecorded?: (receipt: SaleReceipt) => void
   /** Test hook: default 1500ms verify wait / 800 + 2000ms retry backoff. */
   timings?: { verifyDelayMs?: number; retry1Ms?: number; retry2Ms?: number; resetDelayMs?: number }
 }
@@ -60,6 +73,7 @@ export function useSubmitSale({
   uploadTicket,
   resetForm,
   reloadSummary,
+  onRecorded,
   timings,
 }: UseSubmitSaleOptions) {
   const { showToast } = useToast()
@@ -112,6 +126,14 @@ export function useSubmitSale({
       if (!idempotencyKeyRef.current) idempotencyKeyRef.current = newIdempotencyKey()
       const idempotencyKey = idempotencyKeyRef.current
 
+      const receipt = (flags: { queued?: boolean; alreadyRecorded?: boolean } = {}): SaleReceipt => ({
+        total: context.total,
+        clientNom: context.ticketClient.nom,
+        items: cartItems.map((item) => ({ nom: item.offre.nom, qty: item.qty, sousTotal: item.prix * item.qty })),
+        queued: flags.queued ?? false,
+        alreadyRecorded: flags.alreadyRecorded ?? false,
+      })
+
       const queueOffline = async () => {
         await enqueueOfflineSale({
           kiosque_id: kiosqueId,
@@ -134,11 +156,15 @@ export function useSubmitSale({
           kiosqueId,
           items: cartItems.length,
         })
-        showToast({
-          type: 'success',
-          title: 'Vente enregistrée',
-          message: 'Vente enregistrée — synchronisation automatique au retour du réseau',
-        })
+        // The confirmation screen (onRecorded) already says it: no duplicate toast.
+        if (!onRecorded) {
+          showToast({
+            type: 'success',
+            title: 'Vente enregistrée',
+            message: 'Vente enregistrée — synchronisation automatique au retour du réseau',
+          })
+        }
+        onRecorded?.(receipt({ queued: true }))
         finishWithReset(resetDelayMs)
       }
 
@@ -232,12 +258,15 @@ export function useSubmitSale({
             if (result.allAlreadyRecorded) {
               setLoading(false)
               setSaleSaved(true)
-              showToast({
-                type: 'success',
-                title: 'Vente déjà enregistrée',
-                message: 'Vente déjà enregistrée — aucune duplication effectuée.',
-              })
+              if (!onRecorded) {
+                showToast({
+                  type: 'success',
+                  title: 'Vente déjà enregistrée',
+                  message: 'Vente déjà enregistrée — aucune duplication effectuée.',
+                })
+              }
               finishAttempt()
+              onRecorded?.(receipt({ alreadyRecorded: true }))
               finishWithReset(resetDelayMs)
               return
             }
@@ -304,14 +333,17 @@ export function useSubmitSale({
 
         setLoading(false)
         setSaleSaved(true)
-        showToast({
-          type: 'success',
-          title: 'Vente enregistrée',
-          message: skipTicket
-            ? `${cartItems.length} offre(s) enregistrée(s).`
-            : `${cartItems.length} offre(s) - ticket téléchargé.`,
-        })
+        if (!onRecorded) {
+          showToast({
+            type: 'success',
+            title: 'Vente enregistrée',
+            message: skipTicket
+              ? `${cartItems.length} offre(s) enregistrée(s).`
+              : `${cartItems.length} offre(s) enregistrée(s) - ticket prêt.`,
+          })
+        }
         finishAttempt()
+        onRecorded?.(receipt())
         finishWithReset(resetDelayMs + 800)
       } catch (error: unknown) {
         logSaleError('échec soumission', error)
@@ -327,6 +359,7 @@ export function useSubmitSale({
     },
     [
       enqueueOfflineSale,
+      onRecorded,
       resetDelayMs,
       finishAttempt,
       finishWithReset,

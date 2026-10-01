@@ -26,6 +26,7 @@ import { CommandPalette } from '@/components/CommandPalette'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { useAuthStore, type UserRole } from '@/stores/authStore'
+import { useSyncStore } from '@/stores/syncStore'
 import { cn } from '@/lib/utils'
 
 interface LayoutProps {
@@ -112,6 +113,7 @@ export default function Layout({ children }: LayoutProps) {
   )
   const role = profile?.role
   const isFontainier = role === 'fontainier'
+  const pendingCount = useSyncStore((state) => state.pendingCount)
 
   // Cmd/Ctrl+K: command palette. Ctrl/Cmd+/: focus the page's search field.
   useEffect(() => {
@@ -164,6 +166,23 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
+
+  // Offline sales live in this phone's IndexedDB: count them from any screen
+  // (the sale screen keeps the count fresh afterwards). Dynamic import keeps
+  // the queue module — and jsPDF behind it — out of the shell bundle.
+  useEffect(() => {
+    if (!isFontainier) return
+    let cancelled = false
+    void import('@/utils/offlineSalesQueue')
+      .then(({ getQueuedSalesCount }) => getQueuedSalesCount())
+      .then((count) => {
+        if (!cancelled) useSyncStore.getState().setPendingCount(count)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [isFontainier])
 
   const handleNavigation = useCallback(
     (path: string) => {
@@ -286,12 +305,6 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {!isOnline && (
-          <div className="sticky top-0 z-50 flex min-h-10 items-center justify-center gap-2 bg-[#C62828] px-3 py-2 text-center text-xs font-semibold text-white">
-            <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Mode hors ligne — Les ventes seront synchronisées automatiquement
-          </div>
-        )}
         <header className="flex h-[var(--topbar-height)] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:px-4">
           <Button
             type="button"
@@ -333,6 +346,20 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           )}
         </header>
+
+        {/* The ONE offline banner of the app, under the header. */}
+        {!isOnline && (
+          <div
+            role="status"
+            className="flex min-h-10 shrink-0 items-center justify-center gap-2 bg-[#C62828] px-3 py-2 text-center text-sm font-semibold text-white"
+          >
+            <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>
+              Vous êtes hors ligne
+              {pendingCount > 0 && ` · ${pendingCount} vente${pendingCount > 1 ? 's' : ''} en attente`}
+            </span>
+          </div>
+        )}
 
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
         <main className="min-h-0 flex-1 overflow-auto bg-bg p-3 sm:p-4">

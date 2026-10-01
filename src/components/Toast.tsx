@@ -103,22 +103,24 @@ function ToastContainer({
   )
 }
 
+// Opaque light backgrounds: a 10 % tint was see-through and unreadable over
+// the header, the offline banner or any content behind the toast.
 const toastConfig = {
   success: {
     icon: CheckCircle,
-    className: 'border-success bg-success/10 text-success',
+    className: 'border-success bg-green-light text-success',
   },
   error: {
     icon: AlertCircle,
-    className: 'border-destructive bg-destructive/10 text-destructive',
+    className: 'border-destructive bg-red-light text-destructive',
   },
   warning: {
     icon: AlertTriangle,
-    className: 'border-warning bg-warning/10 text-warning',
+    className: 'border-warning bg-amber-light text-warning',
   },
   info: {
     icon: Info,
-    className: 'border-primary bg-primary/10 text-primary',
+    className: 'border-primary bg-blue-light text-primary',
   },
 }
 

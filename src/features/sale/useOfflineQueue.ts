@@ -8,6 +8,7 @@ import {
 } from '@/utils/offlineSalesQueue'
 import { flushOfflineClients } from '@/utils/offlineClientQueue'
 import { logInfo, logWarn } from '@/lib/telemetry'
+import { useSyncStore } from '@/stores/syncStore'
 
 interface UseOfflineQueueOptions {
   /** Called after a successful flush so the caller can refresh its summary. */
@@ -28,7 +29,10 @@ export function useOfflineQueue({ onFlushed }: UseOfflineQueueOptions = {}) {
   const [isSyncingQueue, setIsSyncingQueue] = useState(false)
 
   const refreshQueuedCount = useCallback(async () => {
-    setPendingCount(await getQueuedSalesCount())
+    const count = await getQueuedSalesCount()
+    setPendingCount(count)
+    // The app shell's offline banner shows the same count.
+    useSyncStore.getState().setPendingCount(count)
   }, [])
 
   const enqueueSale = useCallback(

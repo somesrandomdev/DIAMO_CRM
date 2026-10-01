@@ -168,3 +168,96 @@ describe('useSubmitSale — panier multi-offres (index composite)', () => {
     )
   })
 })
+
+describe('useSubmitSale — reçu pour l’écran de confirmation (onRecorded)', () => {
+  function setupWithReceipt() {
+    const onRecorded = jest.fn()
+    const hook = renderHook(() =>
+      useSubmitSale({
+        enqueueOfflineSale: mockEnqueue,
+        uploadTicket: mockUploadTicket,
+        resetForm: jest.fn(),
+        reloadSummary: jest.fn(),
+        onRecorded,
+        timings: { verifyDelayMs: 1, retry1Ms: 1, retry2Ms: 1, resetDelayMs: 1 },
+      })
+    )
+    return { ...hook, onRecorded }
+  }
+
+  it('vente en ligne : un seul reçu avec client, offres et total', async () => {
+    const { result, onRecorded } = setupWithReceipt()
+    await act(async () => {
+      await result.current.submit({ ...context })
+    })
+
+    expect(onRecorded).toHaveBeenCalledTimes(1)
+    expect(onRecorded).toHaveBeenCalledWith({
+      total: 1100,
+      clientNom: 'Client Test',
+      items: [
+        { nom: 'Bidon 10L', qty: 2, sousTotal: 600 },
+        { nom: 'Bidon 20L', qty: 1, sousTotal: 500 },
+      ],
+      queued: false,
+      alreadyRecorded: false,
+    })
+    // Appelé APRÈS le ticket : le PDF est prêt quand l'écran s'ouvre.
+    expect(mockUploadTicket.mock.invocationCallOrder[0]).toBeLessThan(onRecorded.mock.invocationCallOrder[0])
+  })
+
+  it('avec l’écran de confirmation : pas de toast de succès en double', async () => {
+    const { result } = setupWithReceipt()
+    await act(async () => {
+      await result.current.submit({ ...context })
+    })
+    expect(mockShowToast).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }))
+  })
+
+  it('hors ligne : reçu « en file », pas de ticket', async () => {
+    const { result, onRecorded } = setupWithReceipt()
+    await act(async () => {
+      await result.current.submit({ ...context, isOnline: false })
+    })
+
+    expect(onRecorded).toHaveBeenCalledWith(expect.objectContaining({ queued: true, total: 1100 }))
+    expect(mockUploadTicket).not.toHaveBeenCalled()
+  })
+
+  it('double soumission (tout déjà en base) : reçu « déjà enregistrée »', async () => {
+    mockTable.push(
+      { id: 'sale-1', idempotency_key: 'k', offre_id: 'offre-10L', montant_total: 600, lien_ticket: null },
+      { id: 'sale-2', idempotency_key: 'k', offre_id: 'offre-20L', montant_total: 500, lien_ticket: null }
+    )
+    const randomUUID = jest
+      .spyOn(crypto, 'randomUUID')
+      .mockReturnValue('k' as `${string}-${string}-${string}-${string}-${string}`)
+    const { result, onRecorded } = setupWithReceipt()
+    await act(async () => {
+      await result.current.submit({ ...context })
+    })
+    randomUUID.mockRestore()
+
+    expect(onRecorded).toHaveBeenCalledWith(expect.objectContaining({ alreadyRecorded: true }))
+  })
+
+  it('échec non récupérable (RLS) : aucun reçu, pas d’écran de confirmation', async () => {
+    const { result, onRecorded } = setupWithReceipt()
+    mockNetworkFailures.length = 0
+    const rlsError = { code: '42501', message: 'new row violates row-level security policy' }
+    const { supabase } = jest.requireMock('@/lib/supabase') as {
+      supabase: { from: () => { insert: () => unknown } }
+    }
+    const originalFrom = supabase.from
+    supabase.from = () => ({
+      ...originalFrom(),
+      insert: () => ({ select: () => ({ single: async () => ({ data: null, error: rlsError }) }) }),
+    })
+    await act(async () => {
+      await result.current.submit({ ...context })
+    })
+    supabase.from = originalFrom
+
+    expect(onRecorded).not.toHaveBeenCalled()
+  })
+})

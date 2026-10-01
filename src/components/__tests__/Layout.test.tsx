@@ -26,6 +26,11 @@ jest.mock('@/lib/supabase', () => ({
 
 jest.mock('@/components/CommandPalette', () => ({ CommandPalette: () => null }))
 
+const mockQueuedCount = jest.fn(async () => 0)
+jest.mock('@/utils/offlineSalesQueue', () => ({ getQueuedSalesCount: () => mockQueuedCount() }))
+
+import { act } from '@testing-library/react'
+import { useSyncStore } from '@/stores/syncStore'
 import Layout from '../Layout'
 
 function CurrentPath() {
@@ -76,5 +81,72 @@ describe('Layout — navigation par rôle', () => {
 
     expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Ouvrir le menu')).not.toHaveClass('hidden')
+  })
+})
+
+describe('Layout — bandeau hors-ligne unique', () => {
+  const setOnline = (value: boolean) =>
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => value })
+
+  afterEach(() => {
+    setOnline(true)
+    useSyncStore.getState().setPendingCount(0)
+  })
+
+  it('hors ligne : UN seul bandeau, avec le nombre de ventes en attente', async () => {
+    mockRole = 'fontainier'
+    mockQueuedCount.mockResolvedValue(2)
+    setOnline(false)
+    await act(async () => {
+      renderAt('/ventes/nouvelle')
+    })
+
+    const banners = screen.getAllByRole('status')
+    expect(banners).toHaveLength(1)
+    expect(banners[0]).toHaveTextContent('Vous êtes hors ligne · 2 ventes en attente')
+  })
+
+  it('hors ligne sans vente en attente : pas de compteur', async () => {
+    mockRole = 'fontainier'
+    mockQueuedCount.mockResolvedValue(0)
+    setOnline(false)
+    await act(async () => {
+      renderAt('/ventes/nouvelle')
+    })
+    expect(screen.getByRole('status')).toHaveTextContent(/^Vous êtes hors ligne$/)
+  })
+
+  it('le compteur suit la file (mise à jour par l’écran de vente)', async () => {
+    mockRole = 'fontainier'
+    mockQueuedCount.mockResolvedValue(1)
+    setOnline(false)
+    await act(async () => {
+      renderAt('/ventes/nouvelle')
+    })
+    expect(screen.getByRole('status')).toHaveTextContent('1 vente en attente')
+    act(() => useSyncStore.getState().setPendingCount(3))
+    expect(screen.getByRole('status')).toHaveTextContent('3 ventes en attente')
+  })
+
+  it('retour du réseau : le bandeau disparaît', async () => {
+    mockRole = 'fontainier'
+    setOnline(false)
+    await act(async () => {
+      renderAt('/ventes/nouvelle')
+    })
+    expect(screen.getByRole('status')).toBeInTheDocument()
+    setOnline(true)
+    act(() => {
+      window.dispatchEvent(new Event('online'))
+    })
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('en ligne : aucun bandeau', async () => {
+    mockRole = 'administrateur'
+    await act(async () => {
+      renderAt('/profil')
+    })
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 })

@@ -14,6 +14,8 @@ interface SaleClientPickerProps {
   onAddNew: () => void
   /** Incremented by the parent after a sale to clear the search field. */
   resetKey: number
+  /** Latest clients of the kiosque, shown as one-tap chips (hidden if empty). */
+  recentClients?: Client[]
 }
 
 /**
@@ -29,6 +31,7 @@ export function SaleClientPicker({
   onClear,
   onAddNew,
   resetKey,
+  recentClients = [],
 }: SaleClientPickerProps) {
   const search = useClientSearch(clients, resetKey)
 
@@ -45,6 +48,32 @@ export function SaleClientPicker({
   return (
     <PosCard className="space-y-3">
       <PosLabel>Client</PosLabel>
+
+      {!selectedClient && recentClients.length > 0 && (
+        <div>
+          <p id="recent-clients-label" className="mb-2 text-xs text-[#1C5376]">
+            Clients récents
+          </p>
+          <ul aria-labelledby="recent-clients-label" className="flex flex-wrap gap-2">
+            {recentClients.map((client) => (
+              <li key={client.id} className="min-w-0 max-w-full">
+                <button
+                  type="button"
+                  onClick={() => select(client)}
+                  className="flex min-h-12 max-w-full flex-col items-start justify-center rounded-full border-2 border-[#DCE1E5] bg-white px-4 py-1 text-left hover:border-[#006EBD] active:scale-[0.98]"
+                >
+                  <span className="max-w-[12rem] truncate text-sm font-semibold text-[#12364D]">{client.nom}</span>
+                  {client.telephone && (
+                    <span className="max-w-[12rem] truncate text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                      {client.telephone}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div ref={search.containerRef} className="relative">
         {isLoading ? (
