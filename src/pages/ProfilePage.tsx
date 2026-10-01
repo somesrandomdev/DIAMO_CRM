@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { Copy, Check } from 'lucide-react'
 import {
   CheckCircle2,
   Edit,
@@ -14,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormInput } from '@/components/ui/form-input'
 import { StatusBadge } from '@/components/ui/status-badge'
+import { APP_BUILD } from '@/lib/build'
 import { normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -39,6 +41,7 @@ function roleVariant(role?: string) {
 export default function ProfilePage() {
   const { profile, loadProfile } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
+  const [buildCopied, setBuildCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   /**
    * Feedback carries its own kind so success and failure are visually distinct.
@@ -207,6 +210,39 @@ export default function ProfilePage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Système</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">
+                Version de l'application
+              </p>
+              <p className="mt-0.5 font-mono text-[13px] font-semibold text-text">{APP_BUILD}</p>
+            </div>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(APP_BUILD)
+                  setBuildCopied(true)
+                  window.setTimeout(() => setBuildCopied(false), 2000)
+                } catch {
+                  // Copie bloquée: la version reste visible à l'écran.
+                }
+              }}
+            >
+              {buildCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {buildCopied ? 'Copié' : 'Copier'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

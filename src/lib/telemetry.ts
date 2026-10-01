@@ -82,6 +82,17 @@ export async function flushTelemetry(): Promise<void> {
   }
 }
 
+function deviceContext(): Record<string, unknown> {
+  if (typeof window === 'undefined') return {}
+  return {
+    userAgent: window.navigator.userAgent,
+    standalone:
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(display-mode: standalone)').matches
+        : false,
+  }
+}
+
 function enqueue(level: LogLevel, source: string, message: string, context?: Record<string, unknown>): void {
   try {
     // Synchronisé: l'entrée est dans le buffer AVANT tout await, donc un
@@ -90,7 +101,8 @@ function enqueue(level: LogLevel, source: string, message: string, context?: Rec
       level,
       source,
       message,
-      context: context ?? null,
+      // userAgent + standalone sur chaque log (diagnostic terrain PWA)
+      context: { ...(context ?? {}), ...deviceContext() },
       build: APP_BUILD,
       route: currentRoute(),
       user_id: null,

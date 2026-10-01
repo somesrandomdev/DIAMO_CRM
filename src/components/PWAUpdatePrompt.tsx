@@ -1,18 +1,19 @@
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import { logError, logInfo } from '@/lib/telemetry'
-import { RefreshCw, X } from 'lucide-react'
 import { useEffect } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { logError, logInfo } from '@/lib/telemetry'
 
 /**
- * Version-update prompt (registerType: 'prompt'). The service worker never
- * activates a new version by itself: when one is downloaded, this card
- * slides up and the user chooses — update now (one tap, reloads) or dismiss
- * (won't re-show until the NEXT version). Checks run on load and every
- * 30 minutes, so nobody is stuck on an old build for long.
+ * Dialog BLOQUANT de mise à jour : plus de mise à jour silencieuse ni de
+ * precache coincé. Dès qu'une nouvelle version est détectée (au chargement
+ * ou au check 30 min), l'utilisateur DOIT recharger — le bouton applique
+ * skipWaiting (message SKIP_WAITING au SW) puis reload au controllerchange.
  */
 export function PWAUpdatePrompt() {
   const {
-    needRefresh: [needRefresh, setNeedRefresh],
+    needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
@@ -29,48 +30,40 @@ export function PWAUpdatePrompt() {
 
   useEffect(() => {
     if (needRefresh) {
-      logInfo('sw', 'nouvelle version disponible')
+      logInfo('sw', 'nouvelle version détectée — dialog bloquant affiché')
     }
   }, [needRefresh])
 
-  if (!needRefresh) return null
-
   return (
-    <div className="animate-slide-up fixed bottom-4 left-4 right-4 z-[100]">
-      <div className="mx-auto max-w-md rounded-xl bg-[#009EFB] p-4 text-white shadow-2xl">
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
-              <RefreshCw className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Nouvelle version disponible</p>
-              <p className="text-xs opacity-90">
-                Rechargez pour profiter des dernières améliorations
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setNeedRefresh(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-white/20"
-            aria-label="Fermer"
-          >
-            <X className="h-[18px] w-[18px]" />
-          </button>
-        </div>
-
-        <button
-          type="button"
+    <Dialog open={needRefresh} onOpenChange={() => undefined}>
+      <DialogContent
+        hideClose
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onInteractOutside={(event) => event.preventDefault()}
+        className="max-w-md"
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5 text-[#009EFB]" aria-hidden="true" />
+            Mise à jour disponible
+          </DialogTitle>
+        </DialogHeader>
+        <p className="text-[13px] text-[#1C5376]">
+          Une nouvelle version de l'application est prête. Rechargez maintenant pour en profiter —
+          cela ne prend que quelques secondes.
+        </p>
+        <Button
+          variant="pos-primary"
+          className="h-14 w-full text-base"
           onClick={() => {
-            logInfo('sw', 'mise à jour appliquée par l utilisateur')
+            logInfo('sw', 'rechargement utilisateur déclenché')
             void updateServiceWorker(true)
           }}
-          className="w-full rounded-lg bg-white py-3 text-sm font-semibold text-[#009EFB] transition-all hover:bg-white/90 active:scale-[0.98]"
         >
-          Mettre à jour maintenant
-        </button>
-      </div>
-    </div>
+          Recharger maintenant
+        </Button>
+      </DialogContent>
+    </Dialog>
   )
 }

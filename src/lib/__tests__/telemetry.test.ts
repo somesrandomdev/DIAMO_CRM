@@ -83,7 +83,9 @@ describe('telemetry', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1)
     const batch = lastBatch()
     expect(batch[0].level).toBe('error')
-    expect(batch[0].context).toEqual({ code: '42501' })
+    expect(batch[0].context).toMatchObject({ code: '42501' })
+    expect(batch[0].context).toHaveProperty('userAgent')
+    expect(batch[0].context).toHaveProperty('standalone')
     expect(batch[1].level).toBe('warn')
   })
 
