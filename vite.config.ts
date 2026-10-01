@@ -10,8 +10,8 @@ import path from 'path'
 
 // ── Identité de build ──────────────────────────────────────────────────
 // sha court du commit (fallback timestamp si git indisponible). Écrit dans
-// public/version.json (servi tel quel, fetché avec cache: 'no-store') et
-// injecté dans le bundle via __APP_BUILD__ pour la comparaison de version.
+// public/version.json (servi tel quel, fetché avec cache: 'no-store') —
+// source de vérité de la version: Profil, télémétrie, contexte UpdateGate.
 let BUILD_ID = ''
 try {
   BUILD_ID = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
@@ -32,9 +32,6 @@ try {
 }
 
 export default defineConfig({
-  define: {
-    'globalThis.__APP_BUILD__': JSON.stringify(BUILD_ID),
-  },
   plugins: [
     react(),
     tailwindcss(),

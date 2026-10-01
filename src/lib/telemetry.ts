@@ -9,7 +9,7 @@
  *    ne doit JAMAIS casser l'UX.
  */
 import { supabase } from '@/lib/supabase'
-import { APP_BUILD } from '@/lib/build'
+import { fetchServedBuild } from '@/lib/build'
 import { REST_URL, REST_API_KEY } from '@/lib/restConfig'
 
 export type LogLevel = 'info' | 'warn' | 'error'
@@ -27,6 +27,7 @@ export interface TechLogEntry {
 
 const FLUSH_INTERVAL_MS = 5000
 const FLUSH_THRESHOLD = 20
+const APP_BUILD_FALLBACK = 'dev'
 const REQUEUE_CAP = 200
 
 let buffer: TechLogEntry[] = []
@@ -38,6 +39,13 @@ function currentRoute(): string {
 }
 
 /** Insère le batch courant. keepalive pour les flush en fin de session. */
+let servedBuildCache: string | null = null
+
+async function ensureServedBuild(): Promise<void> {
+  if (servedBuildCache) return
+  servedBuildCache = await fetchServedBuild()
+}
+
 async function sendBatch(entries: TechLogEntry[], keepalive: boolean): Promise<void> {
   // Une session illisible ne doit pas tuer le flush: user_id null, token anon.
   let accessToken: string | null = null
@@ -50,8 +58,19 @@ async function sendBatch(entries: TechLogEntry[], keepalive: boolean): Promise<v
     // Session indisponible — on logge quand même.
   }
 
-  // user_id stampé au flush (l'entrée est créée synchrone, sans await)
-  const stamped = entries.map((entry) => ({ ...entry, user_id: userId }))
+  await ensureServedBuild()
+
+  // RLS tech_logs: INSERT exige user_id = auth.uid(). Sans session (page
+  // login), on garde les entrées en buffer — jamais de 400.
+  if (!accessToken) {
+    buffer = [...entries, ...buffer].slice(0, REQUEUE_CAP)
+    return
+  }
+
+  // user_id + build stampés au flush: l'entrée est créée synchrone, mais le
+  // build servi (/version.json) n'est connu qu'après le premier flush.
+  const build = servedBuildCache ?? APP_BUILD_FALLBACK
+  const stamped = entries.map((entry) => ({ ...entry, user_id: userId, build }))
 
   await fetch(`${REST_URL}/rest/v1/tech_logs`, {
     method: 'POST',
@@ -103,7 +122,7 @@ function enqueue(level: LogLevel, source: string, message: string, context?: Rec
       message,
       // userAgent + standalone sur chaque log (diagnostic terrain PWA)
       context: { ...(context ?? {}), ...deviceContext() },
-      build: APP_BUILD,
+      build: servedBuildCache ?? APP_BUILD_FALLBACK,
       route: currentRoute(),
       user_id: null,
       created_at: new Date().toISOString(),
@@ -179,6 +198,7 @@ function setupGlobalCapture(): void {
 export function _resetTelemetryForTests(): void {
   buffer = []
   flushing = false
+  servedBuildCache = null
 }
 
 /** À appeler une fois au démarrage (main.tsx). */

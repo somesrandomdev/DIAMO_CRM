@@ -15,7 +15,11 @@ jest.mock('@/lib/supabase', () => ({
   },
 }))
 
-jest.mock('@/lib/build', () => ({ APP_BUILD: 'test-build' }))
+// telemetry n'importe que fetchServedBuild de ce module — le build servi est
+// fictif ici, l'important est qu'il ne touche jamais au fetch global.
+jest.mock('@/lib/build', () => ({
+  fetchServedBuild: async () => 'test-build',
+}))
 jest.mock('@/lib/restConfig', () => ({
   REST_URL: 'https://fake.supabase.co',
   REST_API_KEY: 'fake-anon-key',
@@ -56,7 +60,9 @@ describe('telemetry', () => {
     for (let index = 0; index < 20; index += 1) {
       logInfo('test', `auto-${index}`)
     }
-    await Promise.resolve()
+    // Un tick macrotâche: laisse l'auto-flush (getSession → build → fetch)
+    // finir avant le flush explicite, sinon flushing=true le fait sauter.
+    await new Promise((resolve) => setTimeout(resolve, 0))
     await flushTelemetry()
 
     expect(mockFetch).toHaveBeenCalledTimes(1)
@@ -102,10 +108,17 @@ describe('telemetry', () => {
     expect(lastBatch()[0].message).toBe('survivant')
   })
 
-  it('aucune session → user_id null, aucun throw', async () => {
-    mockGetSession.mockRejectedValue(new Error('no session'))
+  it('aucune session → aucun fetch (garde RLS), entrée conservée puis envoyée au flush suivant', async () => {
+    mockGetSession.mockRejectedValueOnce(new Error('no session'))
     logInfo('test', 'sans session')
     await expect(flushTelemetry()).resolves.toBeUndefined()
-    expect(lastBatch()[0].user_id).toBeNull()
+    // RLS tech_logs exige user_id = auth.uid(): sans token, rien ne part.
+    expect(mockFetch).not.toHaveBeenCalled()
+
+    // La session revient: le flush suivant envoie l'entrée conservée.
+    await flushTelemetry()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(lastBatch()[0].message).toBe('sans session')
+    expect(lastBatch()[0].user_id).toBe('user-1')
   })
 })

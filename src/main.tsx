@@ -5,10 +5,13 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { validateEnv } from './utils/env'
-import { APP_BUILD } from './lib/build'
+import { fetchServedBuild } from './lib/build'
 import { setupTelemetry } from './lib/telemetry'
 
-console.info(`DIAMO CRM — build ${APP_BUILD}`)
+// Le build réellement servi (version.json, no-store) — pas un marqueur compilé.
+void fetchServedBuild().then((build) => {
+  console.info(`DIAMO CRM — build ${build ?? 'dev'}`)
+})
 
 // Validate environment configuration on startup
 validateEnv()

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Copy, Check } from 'lucide-react'
 import {
   CheckCircle2,
@@ -17,6 +17,7 @@ import { FormInput } from '@/components/ui/form-input'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { APP_BUILD } from '@/lib/build'
 import { normalizePhone } from '@/lib/phone'
+import { fetchServedBuild } from '@/lib/build'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -42,6 +43,7 @@ export default function ProfilePage() {
   const { profile, loadProfile } = useAuthStore()
   const [isEditing, setIsEditing] = useState(false)
   const [buildCopied, setBuildCopied] = useState(false)
+  const [servedBuild, setServedBuild] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   /**
    * Feedback carries its own kind so success and failure are visually distinct.
@@ -49,6 +51,10 @@ export default function ProfilePage() {
    * box, which made a failed save look identical to a successful one.
    */
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
+  useEffect(() => {
+    void fetchServedBuild().then(setServedBuild)
+  }, [])
+
   const [formData, setFormData] = useState<ProfileData>({
     username: profile?.username || '',
     email: profile?.email || '',
@@ -223,7 +229,7 @@ export default function ProfilePage() {
               <p className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">
                 Version de l'application
               </p>
-              <p className="mt-0.5 font-mono text-[13px] font-semibold text-text">{APP_BUILD}</p>
+              <p className="mt-0.5 font-mono text-[13px] font-semibold text-text">{servedBuild ?? APP_BUILD}</p>
             </div>
             <Button
               type="button"
@@ -231,7 +237,7 @@ export default function ProfilePage() {
               size="sm"
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(APP_BUILD)
+                  await navigator.clipboard.writeText(servedBuild ?? APP_BUILD)
                   setBuildCopied(true)
                   window.setTimeout(() => setBuildCopied(false), 2000)
                 } catch {

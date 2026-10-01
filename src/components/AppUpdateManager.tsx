@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { logInfo } from '@/lib/telemetry'
-import { APP_BUILD } from '@/lib/build'
 import {
   getUpdateBuilds,
   getUpdatePhase,
   markUpdateAvailable,
-  needsUpdate,
   subscribeUpdate,
   type UpdatePhase,
 } from '@/lib/updateCoordinator'
@@ -17,13 +15,16 @@ let lastServedBuild = ''
 
 /**
  * Mise à jour forcée — auto-guérison:
- *  1. Au lancement: registration.update() + fetch version.json (no-store).
- *  2. build servi ≠ build courant → update disponible (le SW configuré avec
- *     skipWaiting+claim s'active dès téléchargé → controllerchange).
- *  3. controllerchange / message FORCE_UPDATE / diff version.json → phase
- *     'pending': bannière persistante NON fermable.
+ *  1. Au lancement: fetch version.json (no-store, contexte seulement) +
+ *     registration.update() pour télécharger tout nouveau SW.
+ *  2. Le SW est configuré skipWaiting+claim (vite.config): dès téléchargé il
+ *     s'active et prend le contrôle → controllerchange sur la page.
+ *  3. controllerchange / message FORCE_UPDATE → phase 'pending': bannière
+ *     persistante NON fermable.
  *  4. Dès un moment sûr (garde panier désenregistrée ou panier vidé) →
  *     phase 'active': UpdateGate plein écran sans aucune sortie.
+ * Le gate n'est JAMAIS déclenché par un diff de version: seul un nouveau SW
+ * réellement actif compte (un 'build' mal injecté ne peut plus bloquer).
  * Le reload ne perd jamais la file hors-ligne (IndexedDB, reprise au montage
  * de l'écran de vente après rechargement).
  */
@@ -79,20 +80,19 @@ export function AppUpdateManager() {
   // ── Checks: lancement + 30 min + retour sur l'onglet ───────────────
   useEffect(() => {
     const check = async () => {
-      // 1. build servi vs build courant
+      // 1. Contexte seulement: le build réellement servi (telemetry). Ce diff
+      //    ne déclenche JAMAIS le gate — seul un nouveau SW actif compte.
       try {
         const response = await fetch('/version.json', { cache: 'no-store' })
         if (response.ok) {
           const data = (await response.json()) as { build?: string }
           lastServedBuild = data.build ?? ''
-          if (needsUpdate(APP_BUILD, lastServedBuild)) {
-            markUpdateAvailable(lastServedBuild)
-          }
         }
       } catch {
-        // offline: le controllerchange fera le travail
+        // offline: peu importe, la détection passe par le SW
       }
-      // 2. force le téléchargement d'un éventuel nouveau SW
+      // 2. Force le téléchargement d'un éventuel nouveau SW — skipWaiting+claim
+      //    l'activera, ce qui déclenchera le controllerchange ci-dessus.
       try {
         const registration = await navigator.serviceWorker?.getRegistration()
         await registration?.update()

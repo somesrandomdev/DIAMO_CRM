@@ -28,12 +28,7 @@ function emit(): void {
   for (const listener of listeners) listener()
 }
 
-/** Un build servi différent du build courant = mise à jour requise. */
-export function needsUpdate(currentBuild: string, servedBuild: string): boolean {
-  return servedBuild.trim().length > 0 && servedBuild !== currentBuild
-}
-
-/** Update détecté (controllerchange, FORCE_UPDATE ou version.json diff). */
+/** Update détecté (nouveau SW actif via controllerchange, ou FORCE_UPDATE). */
 export function markUpdateAvailable(newBuild: string): void {
   if (phase !== 'idle') return
   builds = { oldBuild: APP_BUILD, newBuild: newBuild || 'inconnu' }
