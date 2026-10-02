@@ -1,11 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { useEnv } from '../utils/env'
+import { getEnv } from '../utils/env'
 
 /**
  * Supabase client configuration
  * Uses validated environment variables for secure connection
  */
-const env = useEnv()
+const env = getEnv()
 
 export const supabase: SupabaseClient = createClient(
   env.supabaseUrl,
@@ -34,13 +34,14 @@ export const supabase: SupabaseClient = createClient(
  * @param error - Error object from Supabase
  * @returns User-friendly error message
  */
-export function handleSupabaseError(error: any): string {
+export function handleSupabaseError(error: unknown): string {
   if (!error) {
     return 'Une erreur inconnue est survenue'
   }
+  const { code, message } = error as { code?: string; message?: string }
 
   // Handle specific Supabase error codes
-  switch (error.code) {
+  switch (code) {
     case 'PGRST116':
       return 'Aucune donnée trouvée'
     case '23505':
@@ -54,6 +55,6 @@ export function handleSupabaseError(error: any): string {
     case 'INVALID_REFRESH_TOKEN':
       return 'Session invalide. Veuillez vous reconnecter.'
     default:
-      return error.message || 'Une erreur est survenue'
+      return message || 'Une erreur est survenue'
   }
 }

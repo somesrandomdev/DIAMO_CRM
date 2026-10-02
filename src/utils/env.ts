@@ -72,7 +72,7 @@ export function getEnvConfig(): EnvConfig {
  */
 let envConfig: EnvConfig | null = null
 
-export function useEnv(): EnvConfig {
+export function getEnv(): EnvConfig {
   if (!envConfig) {
     envConfig = getEnvConfig()
   }
