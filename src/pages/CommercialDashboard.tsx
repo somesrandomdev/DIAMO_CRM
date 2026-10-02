@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
-import { Edit, Store } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { ArrowLeft, ChevronRight, Edit, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
+import { Select } from '@/components/ui/input'
+import { KPICard } from '@/components/ui/kpi-card'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { LoadMoreButton } from '@/components/LoadMoreButton'
 import { SearchBar } from '@/components/SearchBar'
 import {
   EditClientDialog,
@@ -21,52 +19,40 @@ import {
   type EditableVente,
   type VenteOption,
 } from '@/components/EditDialogs'
-import { useToast } from '@/components/Toast'
-import { chartTheme } from '@/lib/chartTheme'
-import { supabase } from '@/lib/supabase'
-import {
-  buildDailySeries,
-  clientPurchaseMap,
-  computeCommercialKpis,
-  monthKey,
-  revenuePerKiosk,
-  startOfMonth,
-  type CommercialClient,
-  type CommercialSale,
-  type SupervisedKiosque,
-} from '@/lib/commercialStats'
 import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
-import type { DailyRevenuePoint } from '@/components/dashboard/useAdminDashboard'
-import { useAuthStore } from '@/stores/authStore'
-import { formatCFACompact, toCFA } from '@/utils/price'
-import { Label } from '@/components/ui/label'
-import { Card } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { KPICard } from '@/components/ui/kpi-card'
+import { KioskClientsPanel } from '@/features/kiosk/KioskClientsPanel'
+import {
+  formatDay,
+  type KioskClientRow,
+  type KioskOverviewExtra,
+  type KioskOverviewRow,
+  type KioskOverviewSort,
+} from '@/features/kiosk/types'
+import { buildDailySeries, monthPeriod } from '@/lib/commercialStats'
+import { supabase } from '@/lib/supabase'
+import { useDebouncedValue } from '@/lib/useDebouncedValue'
+import { usePagedRpc } from '@/lib/usePagedRpc'
+import { toCFA } from '@/utils/price'
 
-interface SaleRow extends CommercialSale {
-  offre_id: string | null
-  quantite: number
-  clients?: { nom?: string } | { nom?: string }[] | null
-  offres?: { nom?: string } | { nom?: string }[] | null
-}
+const SORT_OPTIONS: { value: KioskOverviewSort; label: string }[] = [
+  { value: 'pct_asc', label: 'Les plus en retard' },
+  { value: 'ca', label: 'CA le plus élevé' },
+  { value: 'activite', label: 'Activité la plus récente' },
+  { value: 'nom', label: 'Nom (A → Z)' },
+]
 
-interface TrendRow {
-  kiosque_id: string
-  montant_total: number | null
-  created_at: string
-}
+const SALES_PAGE = 20
 
-interface ClientRow extends CommercialClient {
-  adresse?: string | null
-  email?: string | null
-  notes?: string | null
-}
-
-interface ObjectifRow {
+interface SaleRow {
   id: string
   kiosque_id: string
-  ca_cible: number
+  client_id: string | null
+  offre_id: string | null
+  quantite: number
+  montant_total: number | null
+  created_at: string
+  clients?: { nom?: string } | { nom?: string }[] | null
+  offres?: { nom?: string } | { nom?: string }[] | null
 }
 
 function firstJoined<T>(value: T | T[] | null | undefined): T | null {
@@ -74,661 +60,480 @@ function firstJoined<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null
 }
 
+/**
+ * Commercial: the supervised kiosks of the month, aggregated and paged in
+ * Postgres (kiosk_overview, scoped server-side to this commercial). One list,
+ * furthest behind its objective first; a kiosk opens its detail (?kiosque=…).
+ */
 export default function CommercialDashboard() {
-  const { profile } = useAuthStore()
-  const { showToast } = useToast()
-  const [kiosques, setKiosques] = useState<SupervisedKiosque[]>([])
-  const [sales, setSales] = useState<SaleRow[]>([])
-  const [clients, setClients] = useState<ClientRow[]>([])
-  const [objectifs, setObjectifs] = useState<ObjectifRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedKiosqueId, setSelectedKiosqueId] = useState<string | null>(null)
-  const [drillOffres, setDrillOffres] = useState<VenteOption[]>([])
-  const [editingClient, setEditingClient] = useState<EditableClient | null>(null)
-  const [editingVente, setEditingVente] = useState<EditableVente | null>(null)
-  const [dailySeries, setDailySeries] = useState<DailyRevenuePoint[]>([])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedId = searchParams.get('kiosque')
+  const [month] = useState(() => monthPeriod(0))
 
-  const load = useCallback(async () => {
-    if (!profile?.id) {
-      setIsLoading(false)
-      return
-    }
+  const [searchInput, setSearchInput] = useState('')
+  const search = useDebouncedValue(searchInput.trim(), 300)
+  const [sort, setSort] = useState<KioskOverviewSort>('pct_asc')
+  const [refreshKey, setRefreshKey] = useState(0)
+  const refresh = () => setRefreshKey((key) => key + 1)
 
-    setIsLoading(true)
+  const kiosks = usePagedRpc<KioskOverviewRow, KioskOverviewExtra>(
+    'kiosk_overview',
+    { p_from: month.from, p_to: month.to, p_search: search || null, p_sort: sort, p_only_active: false },
+    { refreshKey }
+  )
+  const totals = kiosks.extra?.totals
 
-    const { data: assignments, error: assignmentsError } = await supabase
-      .from('commercials_kiosques')
-      .select('kiosque_id, kiosques(id, nom)')
-      .eq('commercial_id', profile.id)
-
-    if (assignmentsError) {
-      console.error('Error loading supervised kiosques:', assignmentsError)
-      showToast({
-        type: 'error',
-        title: 'Chargement impossible',
-        message: "Vos kiosques supervisés n'ont pas pu être chargés. Veuillez réessayer.",
-      })
-      setKiosques([])
-      setSales([])
-      setClients([])
-      setObjectifs([])
-      setDailySeries([])
-      setIsLoading(false)
-      return
-    }
-
-    const supervised: SupervisedKiosque[] = (assignments ?? [])
-      .map((row) => firstJoined(row.kiosques as SupervisedKiosque | SupervisedKiosque[] | null))
-      .filter((kiosque): kiosque is SupervisedKiosque => kiosque !== null)
-    setKiosques(supervised)
-
-    if (supervised.length === 0) {
-      setSales([])
-      setClients([])
-      setObjectifs([])
-      setDailySeries([])
-      setIsLoading(false)
-      return
-    }
-
-    const kiosqueIds = supervised.map((kiosque) => kiosque.id)
-    const trendStart = new Date()
-    trendStart.setDate(trendStart.getDate() - 29)
-    const [salesResult, clientsResult, objectifsResult, trendResult] = await Promise.all([
-      supabase
-        .from('ventes')
-        .select('id, kiosque_id, client_id, offre_id, quantite, montant_total, created_at, clients(nom), offres(nom)')
-        .in('kiosque_id', kiosqueIds)
-        .gte('created_at', startOfMonth().toISOString())
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('clients')
-        .select('id, kiosque_id, nom, telephone, adresse, email, notes')
-        .in('kiosque_id', kiosqueIds)
-        .order('nom'),
-      supabase
-        .from('objectifs')
-        .select('id, kiosque_id, ca_cible')
-        .in('kiosque_id', kiosqueIds)
-        .eq('mois', monthKey()),
-      supabase
-        .from('ventes')
-        .select('kiosque_id, montant_total, created_at')
-        .in('kiosque_id', kiosqueIds)
-        .gte('created_at', trendStart.toISOString()),
-    ])
-
-    const failure =
-      salesResult.error ?? clientsResult.error ?? objectifsResult.error ?? trendResult.error
-    if (failure) {
-      console.error('Error loading supervisor dashboard:', failure)
-      showToast({
-        type: 'error',
-        title: 'Chargement incomplet',
-        message: 'Certaines données ont échoué au chargement. Veuillez réessayer.',
-      })
-    }
-
-    setSales((salesResult.data ?? []) as SaleRow[])
-    setClients((clientsResult.data ?? []) as ClientRow[])
-    setObjectifs((objectifsResult.data ?? []) as ObjectifRow[])
-    setDailySeries(buildDailySeries((trendResult.data ?? []) as TrendRow[]))
-    setIsLoading(false)
-  }, [profile?.id, showToast])
-
+  const [trendRows, setTrendRows] = useState<Array<{ day: string; ca: number }>>([])
   useEffect(() => {
-    load()
-  }, [load])
-
-  // Active offers of the drilled-down kiosk, used by the vente edit dialog.
-  useEffect(() => {
-    if (!selectedKiosqueId) {
-      setDrillOffres([])
-      return
-    }
-
     let cancelled = false
-    supabase
-      .from('offres_kiosque')
-      .select('offre_id, offres(id, nom)')
-      .eq('kiosque_id', selectedKiosqueId)
-      .eq('est_actif', true)
-      .then(({ data, error }) => {
-        if (cancelled || error) return
-        const options = (data ?? [])
-          .map((row) => firstJoined((row as { offres?: unknown }).offres as VenteOption | VenteOption[] | null))
-          .filter((offre): offre is VenteOption => offre !== null)
-        setDrillOffres(options)
-      })
+    supabase.rpc('scoped_daily_revenue', { p_days: 30 }).then(({ data, error }) => {
+      if (cancelled) return
+      if (error) console.error('[scoped_daily_revenue]', error.code, error.message)
+      setTrendRows((data as Array<{ day: string; ca: number }> | null) ?? [])
+    })
     return () => {
       cancelled = true
     }
-  }, [selectedKiosqueId])
-
-  const kpis = useMemo(() => computeCommercialKpis(kiosques, sales, clients), [kiosques, sales, clients])
-  const perKiosk = useMemo(() => revenuePerKiosk(kiosques, sales), [kiosques, sales])
-  const purchases = useMemo(() => clientPurchaseMap(sales), [sales])
-
-  /** Month CA vs target per kiosk, worst progress first — the at-a-glance
-   *  underperformer list. Kiosques without a target sort last. */
-  const objectifRows = useMemo(() => {
-    const targetByKiosque = new Map(objectifs.map((objectif) => [objectif.kiosque_id, objectif.ca_cible]))
-    return kiosques
-      .map((kiosque) => {
-        const revenue = perKiosk.find((row) => row.kiosqueId === kiosque.id)?.revenue ?? 0
-        const target = targetByKiosque.get(kiosque.id) ?? null
-        const pct = target !== null && target > 0 ? (revenue / target) * 100 : null
-        return { kiosque, revenue, target, pct }
-      })
-      .sort((a, b) => (a.pct ?? -1) - (b.pct ?? -1))
-  }, [kiosques, objectifs, perKiosk])
-
-  const selectedKiosque = kiosques.find((kiosque) => kiosque.id === selectedKiosqueId) ?? null
-  const allKioskSales = useMemo(
-    () => sales.filter((sale) => sale.kiosque_id === selectedKiosqueId),
-    [sales, selectedKiosqueId]
-  )
-  const allKioskClients = useMemo(
-    () => clients.filter((client) => client.kiosque_id === selectedKiosqueId),
-    [clients, selectedKiosqueId]
+  }, [refreshKey])
+  const dailySeries = useMemo(
+    () => buildDailySeries(trendRows.map((point) => ({ created_at: point.day, montant_total: point.ca }))),
+    [trendRows]
   )
 
-  // Drill-down search + progressive display: the kiosk can have hundreds of
-  // clients; search first, then show 20 at a time behind a "Charger plus".
-  const [clientSearch, setClientSearch] = useState('')
-  const [visibleClients, setVisibleClients] = useState(20)
-  const [visibleSales, setVisibleSales] = useState(10)
+  const openKiosk = (id: string | null) => setSearchParams(id ? { kiosque: id } : {})
 
-  // Reset the paging when switching kiosques or typing.
-  useEffect(() => {
-    setVisibleClients(20)
-  }, [selectedKiosqueId, clientSearch])
-  useEffect(() => {
-    setVisibleSales(10)
-  }, [selectedKiosqueId])
-
-  const kioskClients = useMemo(() => {
-    const needle = clientSearch.trim().toLowerCase()
-    if (!needle) return allKioskClients
-    return allKioskClients.filter(
-      (client) =>
-        client.nom.toLowerCase().includes(needle) ||
-        (client.telephone ?? '').toLowerCase().includes(needle)
-    )
-  }, [allKioskClients, clientSearch])
-  const shownClients = kioskClients.slice(0, visibleClients)
-  const kioskSales = allKioskSales.slice(0, visibleSales)
-
-  const kioskObjectif = objectifs.find((objectif) => objectif.kiosque_id === selectedKiosqueId) ?? null
-  const kioskRevenue = perKiosk.find((row) => row.kiosqueId === selectedKiosqueId)?.revenue ?? 0
-  const objectifProgress = kioskObjectif && kioskObjectif.ca_cible > 0
-    ? (kioskRevenue / kioskObjectif.ca_cible) * 100
-    : 0
-
-  const venteOffreOptions = useMemo(() => {
-    // A vente can reference an inactive (or missing) offre that isn't in the
-    // active-offres list; add it as a fallback option so the select can still
-    // display it. ventes.offre_id is nullable — skip the fallback then.
-    if (!editingVente?.offre_id) return drillOffres
-    if (drillOffres.some((offre) => offre.id === editingVente.offre_id)) return drillOffres
-    const sale = sales.find((row) => row.id === editingVente.id)
-    const nom = firstJoined(sale?.offres)?.nom ?? 'Offre actuelle'
-    return [...drillOffres, { id: editingVente.offre_id, nom }]
-  }, [drillOffres, editingVente, sales])
-
-  const clientColumns: DataTableColumn<ClientRow>[] = [
-    {
-      key: 'nom',
-      header: 'Client',
-      render: (client) => <span className="font-medium">{client.nom}</span>,
-      sortValue: (client) => client.nom,
-    },
-    {
-      key: 'telephone',
-      header: 'Téléphone',
-      render: (client) => client.telephone || '—',
-      sortValue: (client) => client.telephone ?? '',
-    },
-    {
-      key: 'lastPurchase',
-      header: 'Dernier achat',
-      render: (client) => {
-        const last = purchases.get(client.id)?.lastPurchase
-        return last ? new Date(last).toLocaleDateString('fr-FR') : '—'
-      },
-      sortValue: (client) => purchases.get(client.id)?.lastPurchase ?? '',
-    },
-    {
-      key: 'totalSpent',
-      header: 'Total dépensé',
-      render: (client) => (
-        <span className="[font-variant-numeric:tabular-nums]">
-          {toCFA(purchases.get(client.id)?.totalSpent ?? 0)}
-        </span>
-      ),
-      sortValue: (client) => purchases.get(client.id)?.totalSpent ?? 0,
-      align: 'right',
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      render: (client) => (
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-lg"
-          className="h-12 w-12 min-h-12"
-          aria-label={`Modifier ${client.nom}`}
-          onClick={(event) => {
-            event.stopPropagation()
-            setEditingClient(client)
-          }}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-      ),
-    },
-  ]
-
-  const saleColumns: DataTableColumn<SaleRow>[] = [
-    {
-      key: 'created_at',
-      header: 'Date',
-      render: (sale) => new Date(sale.created_at).toLocaleDateString('fr-FR'),
-      sortValue: (sale) => sale.created_at,
-    },
-    {
-      key: 'client',
-      header: 'Client',
-      render: (sale) => firstJoined(sale.clients)?.nom ?? '—',
-      sortValue: (sale) => firstJoined(sale.clients)?.nom ?? '',
-    },
-    {
-      key: 'offre',
-      header: 'Offre',
-      render: (sale) => firstJoined(sale.offres)?.nom ?? '—',
-      sortValue: (sale) => firstJoined(sale.offres)?.nom ?? '',
-    },
-    {
-      key: 'montant_total',
-      header: 'Montant',
-      render: (sale) => (
-        <span className="font-semibold [font-variant-numeric:tabular-nums]">
-          {toCFA(sale.montant_total ?? 0)}
-        </span>
-      ),
-      sortValue: (sale) => sale.montant_total ?? 0,
-      align: 'right',
-    },
-    {
-      key: 'actions',
-      header: '',
-      align: 'right',
-      render: (sale) => (
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-lg"
-          className="h-12 w-12 min-h-12"
-          aria-label="Modifier la vente"
-          onClick={(event) => {
-            event.stopPropagation()
-            setEditingVente({
-              id: sale.id,
-              quantite: sale.quantite,
-              montant_total: sale.montant_total ?? 0,
-              offre_id: sale.offre_id,
-              client_id: sale.client_id,
-            })
-          }}
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-      ),
-    },
-  ]
-
-  if (isLoading) {
+  if (selectedId) {
     return (
-      <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-28 rounded-lg" />)}
-        </div>
-        <Skeleton className="h-72 rounded-lg" />
-        <Skeleton className="h-40 rounded-lg" />
-      </div>
+      <KioskDetail
+        kiosqueId={selectedId}
+        knownRow={kiosks.rows.find((row) => row.kiosque_id === selectedId) ?? null}
+        month={month}
+        onBack={() => openKiosk(null)}
+        onChanged={refresh}
+      />
     )
   }
 
-  if (kiosques.length === 0) {
-    return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-base font-semibold text-text">Supervision</h1>
-          <p className="text-sm text-text-secondary">Performance des kiosques que vous supervisez.</p>
-        </div>
-        <EmptyState
-          icon={<Store className="h-5 w-5" />}
-          title="Aucun kiosque supervisé"
-          description="Demandez à un administrateur de vous assigner des kiosques pour suivre leurs performances."
-        />
-      </div>
-    )
-  }
+  const noKiosks = !kiosks.isLoading && totals?.kiosques === 0
+
+  const columns: DataTableColumn<KioskOverviewRow>[] = [
+    { key: 'nom', header: 'Kiosque', render: (row) => <span className="font-medium">{row.nom}</span> },
+    { key: 'ca', header: 'CA du mois', align: 'right', render: (row) => <span className="font-mono">{toCFA(row.ca)}</span> },
+    {
+      key: 'objectif',
+      header: 'Objectif',
+      align: 'right',
+      render: (row) => (row.objectif ? <span className="font-mono">{toCFA(row.objectif)}</span> : <span className="text-text-tertiary">—</span>),
+    },
+    {
+      key: 'pct',
+      header: 'Réalisation',
+      render: (row) =>
+        row.pct !== null ? (
+          <div className="ml-auto w-28">
+            <Progress value={row.pct} />
+            <p className="mt-1 text-right text-xs font-semibold text-text-secondary">{Math.round(row.pct)} %</p>
+          </div>
+        ) : (
+          <span className="text-xs text-text-tertiary">Non défini</span>
+        ),
+    },
+    { key: 'ventes', header: 'Ventes', align: 'right', render: (row) => row.nb_ventes },
+    { key: 'last', header: 'Dernière vente', render: (row) => formatDay(row.last_sale_at) },
+    { key: 'open', header: '', align: 'right', render: () => <ChevronRight className="ml-auto h-4 w-4 text-text-tertiary" /> },
+  ]
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-base font-semibold text-text">Supervision</h1>
         <p className="text-sm text-text-secondary">
-          Performance de vos {kiosques.length} kiosque{kiosques.length > 1 ? 's' : ''} — cumul du mois.
+          {totals ? `Vos ${totals.kiosques} kiosque${totals.kiosques > 1 ? 's' : ''} — cumul du mois.` : 'Vos kiosques — cumul du mois.'}
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <KPICard label="CA du mois" value={toCFA(kpis.revenueMonth)} sub="Tous kiosques confondus" />
-        <KPICard label="Ventes" value={kpis.salesCount} sub="Ce mois" />
-        <KPICard label="Clients" value={kpis.clientsCount} sub="Tous kiosques confondus" />
-        <KPICard label="Kiosques" value={kpis.kiosquesCount} sub="Sous supervision" />
-      </div>
-
-      <Card padding="md">
-        <Label variant="caps" className="mb-3">Tendance 30 jours (tous kiosques)</Label>
-        <DailyTrendChart data={dailySeries} />
-      </Card>
-
-      <Card padding="md">
-        <Label variant="caps" className="mb-3">Objectifs en cours</Label>
-        {objectifRows.every((row) => row.target === null) ? (
-          <p className="text-sm text-text-secondary">
-            Aucun objectif défini ce mois. Ouvrez un kiosque ci-dessous pour en définir un.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {objectifRows.map((row) => (
-              <button
-                key={row.kiosque.id}
-                type="button"
-                className="block min-h-12 w-full text-left"
-                aria-label={`Voir le détail de ${row.kiosque.nom}`}
-                onClick={() => setSelectedKiosqueId(row.kiosque.id)}
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-text">{row.kiosque.nom}</span>
-                  <span className="text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
-                    {toCFA(row.revenue)}
-                    {row.target !== null ? ` / ${toCFA(row.target)}` : ' - Non défini'}
-                  </span>
-                </div>
-                {row.pct !== null && (
-                  <div className="mt-1.5">
-                    <Progress value={row.pct} />
-                    <p className="mt-0.5 text-right text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
-                      {row.pct.toFixed(0)} %
-                    </p>
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card padding="md">
-        <Label variant="caps" className="mb-3">Revenus par kiosque (mois en cours)</Label>
-        <ResponsiveContainer width="100%" height={Math.max(160, perKiosk.length * 44)}>
-          <BarChart data={perKiosk} layout="vertical" margin={{ left: 8, right: 16 }}>
-            <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
-            <XAxis
-              type="number"
-              tickFormatter={(value) => formatCFACompact(Number(value))}
-              tick={{ fill: chartTheme.axis, fontSize: 11 }}
-            />
-            <YAxis
-              dataKey="nom"
-              type="category"
-              width={130}
-              tick={{ fill: chartTheme.axis, fontSize: 12 }}
-            />
-            <Tooltip
-              contentStyle={chartTheme.tooltip}
-              formatter={(value) => [toCFA(Number(value)), 'CA']}
-            />
-            <Bar dataKey="revenue" fill={chartTheme.blue} radius={[0, 4, 4, 0]} barSize={18} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
-
-      <div>
-        <Label variant="caps" className="mb-2">Explorer un kiosque</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant={selectedKiosqueId === null ? 'primary' : 'outline'}
-            size="touch"
-            aria-pressed={selectedKiosqueId === null}
-            onClick={() => setSelectedKiosqueId(null)}
-          >
-            Vue d'ensemble
-          </Button>
-          {perKiosk.map((row) => (
-            <Button
-              key={row.kiosqueId}
-              type="button"
-              variant={selectedKiosqueId === row.kiosqueId ? 'primary' : 'outline'}
-              size="touch"
-              aria-pressed={selectedKiosqueId === row.kiosqueId}
-              onClick={() => setSelectedKiosqueId(row.kiosqueId)}
-            >
-              {row.nom}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {selectedKiosque ? (
-        <div className="space-y-4">
-          <Card padding="md">
-            <div>
-              <Label variant="caps">Objectif du mois</Label>
-              {kioskObjectif ? (
-                <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
-                  {toCFA(kioskRevenue)}{' '}
-                  <span className="text-sm font-medium text-text-secondary">
-                    / {toCFA(kioskObjectif.ca_cible)}
-                  </span>
-                </p>
-              ) : (
-                <p className="mt-1 text-sm text-text-secondary">Aucun objectif défini pour ce mois.</p>
-              )}
-              <p className="mt-0.5 text-xs text-text-secondary">Objectif fixé par l'administrateur.</p>
-            </div>
-            {kioskObjectif && (
-              <div className="mt-3">
-                <Progress value={objectifProgress} className="h-3 bg-bg" />
-                <p className="mt-1 text-right text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
-                  {objectifProgress.toFixed(1)} %
-                </p>
-              </div>
-            )}
-          </Card>
-
-          <Card padding="md">
-            <Label variant="caps" className="mb-3">Clients du kiosque</Label>
-            <div className="mb-3">
-              <SearchBar
-                value={clientSearch}
-                onChange={setClientSearch}
-                placeholder="Nom ou téléphone du client"
-                resultCount={kioskClients.length}
-              />
-            </div>
-            {allKioskClients.length === 0 ? (
-              <EmptyState title="Aucun client pour ce kiosque" className="border-0" />
-            ) : kioskClients.length === 0 ? (
-              <EmptyState
-                title="Aucun résultat"
-                description="Essayez un autre nom ou numéro de téléphone."
-                className="border-0"
-              />
-            ) : (
-              <>
-                <div className="hidden sm:block">
-                  <DataTable
-                    columns={clientColumns}
-                    data={shownClients}
-                    getRowKey={(client) => client.id}
-                  />
-                </div>
-
-                {/* Mobile: client cards */}
-                <div className="space-y-3 sm:hidden">
-                  {shownClients.map((client) => {
-                    const stats = purchases.get(client.id)
-                    return (
-                      <div
-                        key={client.id}
-                        className="flex items-start justify-between gap-2 rounded-lg border border-border bg-white p-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-base font-bold text-text">{client.nom}</p>
-                          <p className="mt-0.5 text-xs text-text-secondary">
-                            {client.telephone || 'Téléphone non renseigné'}
-                          </p>
-                          <p className="mt-0.5 text-xs text-text-secondary">
-                            Dernier achat :{' '}
-                            {stats?.lastPurchase
-                              ? new Date(stats.lastPurchase).toLocaleDateString('fr-FR')
-                              : '—'}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-2">
-                          <p className="text-base font-bold text-text [font-variant-numeric:tabular-nums]">
-                            {toCFA(stats?.totalSpent ?? 0)}
-                          </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon-lg"
-                            className="h-12 w-12 min-h-12"
-                            aria-label={`Modifier ${client.nom}`}
-                            onClick={() => setEditingClient(client)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {visibleClients < kioskClients.length && (
-                  <Button
-                    type="button"
-                    variant="outline" size="touch"
-                    className="w-full"
-                    onClick={() => setVisibleClients((count) => count + 20)}
-                  >
-                    Charger plus ({kioskClients.length - visibleClients} restants)
-                  </Button>
-                )}
-              </>
-            )}
-          </Card>
-
-          <Card padding="md">
-            <Label variant="caps" className="mb-3">Ventes récentes</Label>
-            {kioskSales.length === 0 ? (
-              <EmptyState title="Aucune vente ce mois" className="border-0" />
-            ) : (
-              <>
-                <div className="hidden sm:block">
-                  <DataTable
-                    columns={saleColumns}
-                    data={kioskSales}
-                    getRowKey={(sale) => sale.id}
-                  />
-                </div>
-
-                {/* Mobile: sale cards */}
-                <div className="space-y-3 sm:hidden">
-                  {kioskSales.map((sale) => (
-                    <div
-                      key={sale.id}
-                      className="flex items-start justify-between gap-2 rounded-lg border border-border bg-white p-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-text">
-                          {new Date(sale.created_at).toLocaleDateString('fr-FR')}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-text-secondary">
-                          {firstJoined(sale.clients)?.nom ?? '—'} - {firstJoined(sale.offres)?.nom ?? '—'}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        <p className="text-base font-bold text-text [font-variant-numeric:tabular-nums]">
-                          {toCFA(sale.montant_total ?? 0)}
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-lg"
-                          className="h-12 w-12 min-h-12"
-                          aria-label="Modifier la vente"
-                          onClick={() =>
-                            setEditingVente({
-                              id: sale.id,
-                              quantite: sale.quantite,
-                              montant_total: sale.montant_total ?? 0,
-                              offre_id: sale.offre_id,
-                              client_id: sale.client_id,
-                            })
-                          }
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {visibleSales < allKioskSales.length && (
-                  <Button
-                    type="button"
-                    variant="outline" size="touch"
-                    className="w-full"
-                    onClick={() => setVisibleSales((count) => count + 20)}
-                  >
-                    Charger plus ({allKioskSales.length - visibleSales} restantes)
-                  </Button>
-                )}
-              </>
-            )}
-          </Card>
-        </div>
+      {noKiosks ? (
+        <EmptyState
+          icon={<Store className="h-5 w-5" />}
+          title="Aucun kiosque supervisé"
+          description="Demandez à un administrateur de vous assigner des kiosques pour suivre leurs performances."
+        />
       ) : (
-        <Card padding="md">
-          <p className="text-sm text-text-secondary">
-            Sélectionnez un kiosque ci-dessus pour voir ses clients, ses ventes récentes et son objectif.
-          </p>
-        </Card>
+        <>
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {totals ? (
+              <>
+                <KPICard label="CA du mois" value={toCFA(totals.ca)} sub="Tous vos kiosques" />
+                <KPICard label="Ventes" value={totals.nb_ventes} sub="Ce mois" />
+                <KPICard label="Clients" value={totals.clients} sub="Tous vos kiosques" />
+                <KPICard
+                  label="Objectifs atteints"
+                  value={`${totals.objectif_atteint} / ${totals.avec_objectif}`}
+                  sub="Kiosques avec objectif"
+                />
+              </>
+            ) : (
+              [1, 2, 3, 4].map((item) => <Skeleton key={item} className="h-[104px] rounded-lg" />)
+            )}
+          </div>
+
+
+          <Card padding="md" className="space-y-3">
+            <Label variant="caps">Mes kiosques</Label>
+            <div className="grid gap-2 sm:grid-cols-[1fr_16rem]">
+              <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Rechercher un kiosque" />
+              <Select fieldSize="lg" aria-label="Trier" value={sort} onChange={(event) => setSort(event.target.value as KioskOverviewSort)}>
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {kiosks.error && <p className="text-sm text-red">{kiosks.error}</p>}
+
+            {kiosks.isLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((item) => <Skeleton key={item} className="h-14 rounded-lg" />)}
+              </div>
+            ) : kiosks.rows.length === 0 ? (
+              <EmptyState title="Aucun kiosque trouvé" description="Essayez un autre nom." className="border-0" />
+            ) : (
+              <>
+                <div className="hidden sm:block">
+                  <DataTable
+                    columns={columns}
+                    data={kiosks.rows}
+                    getRowKey={(row) => row.kiosque_id}
+                    onRowClick={(row) => openKiosk(row.kiosque_id)}
+                  />
+                </div>
+
+                {/* Mobile: one tappable card per kiosk */}
+                <ul className="space-y-2 sm:hidden">
+                  {kiosks.rows.map((row) => (
+                    <li key={row.kiosque_id}>
+                      <button
+                        type="button"
+                        onClick={() => openKiosk(row.kiosque_id)}
+                        className="w-full rounded-lg border border-border bg-surface p-3 text-left active:scale-[0.99]"
+                        aria-label={`Voir le détail de ${row.nom}`}
+                      >
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="truncate text-sm font-semibold text-text">{row.nom}</span>
+                          <span className="shrink-0 text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
+                            {toCFA(row.ca)}
+                            {row.objectif ? ` / ${toCFA(row.objectif)}` : ''}
+                          </span>
+                        </span>
+                        {row.pct !== null ? (
+                          <span className="mt-1.5 block">
+                            <Progress value={row.pct} />
+                            <span className="mt-0.5 block text-right text-xs font-semibold text-text-secondary">{Math.round(row.pct)} %</span>
+                          </span>
+                        ) : (
+                          <span className="mt-1 block text-xs text-text-tertiary">Objectif non défini · {row.nb_ventes} vente(s)</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <LoadMoreButton
+                  shown={kiosks.rows.length}
+                  total={kiosks.total}
+                  isLoading={kiosks.isLoadingMore}
+                  onClick={kiosks.loadMore}
+                  noun="kiosques"
+                />
+              </>
+            )}
+          </Card>
+
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Tendance 30 jours (tous vos kiosques)</Label>
+            <DailyTrendChart data={dailySeries} />
+          </Card>
+        </>
       )}
+    </div>
+  )
+}
+
+interface KioskDetailProps {
+  kiosqueId: string
+  knownRow: KioskOverviewRow | null
+  month: { from: string; to: string }
+  onBack: () => void
+  onChanged: () => void
+}
+
+/** One supervised kiosk: month objective, its clients, its sales of the month. */
+function KioskDetail({ kiosqueId, knownRow, month, onBack, onChanged }: KioskDetailProps) {
+  const [row, setRow] = useState<KioskOverviewRow | null>(knownRow)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const refresh = () => {
+    setRefreshKey((key) => key + 1)
+    onChanged()
+  }
+
+  // Deep link (?kiosque=…): the kiosk isn't in the loaded list — look it up
+  // by name in the commercial's own scope, then match the id.
+  useEffect(() => {
+    if (knownRow) {
+      setRow(knownRow)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const { data: kiosque } = await supabase.from('kiosques').select('nom').eq('id', kiosqueId).maybeSingle()
+      const nom = (kiosque as { nom?: string } | null)?.nom
+      if (!nom) return
+      const { data } = await supabase.rpc('kiosk_overview', {
+        p_from: month.from,
+        p_to: month.to,
+        p_search: nom,
+        p_sort: 'nom',
+        p_only_active: false,
+        p_limit: 50,
+        p_offset: 0,
+      })
+      const match = ((data as { rows?: KioskOverviewRow[] } | null)?.rows ?? []).find((item) => item.kiosque_id === kiosqueId)
+      if (!cancelled) setRow(match ?? null)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [kiosqueId, knownRow, month.from, month.to])
+
+  const [editingClient, setEditingClient] = useState<EditableClient | null>(null)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Button type="button" variant="outline" size="touch" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" />
+            Tous mes kiosques
+          </Button>
+        </div>
+        <h1 className="text-base font-semibold text-text">{row?.nom ?? 'Kiosque'}</h1>
+      </div>
+
+      <Card padding="md">
+        <Label variant="caps">Objectif du mois</Label>
+        {row?.objectif ? (
+          <>
+            <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
+              {toCFA(row.ca)} <span className="text-sm font-medium text-text-secondary">/ {toCFA(row.objectif)}</span>
+            </p>
+            <Progress value={row.pct ?? 0} className="mt-3 h-3 bg-bg" />
+            <p className="mt-1 text-right text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
+              {(row.pct ?? 0).toFixed(1)} %
+            </p>
+          </>
+        ) : (
+          <p className="mt-1 text-sm text-text-secondary">
+            {row ? `${toCFA(row.ca)} ce mois — aucun objectif défini.` : 'Chargement…'}
+          </p>
+        )}
+        <p className="mt-0.5 text-xs text-text-secondary">Objectif fixé par l'administrateur.</p>
+      </Card>
+
+      <KioskClientsPanel
+        kiosqueId={kiosqueId}
+        kiosqueNom={row?.nom ?? 'ce kiosque'}
+        onEdit={(client: KioskClientRow) => setEditingClient(client)}
+        refreshKey={refreshKey}
+      />
+
+      <KioskSalesPanel kiosqueId={kiosqueId} monthFrom={month.from} refreshKey={refreshKey} onChanged={refresh} />
 
       <EditClientDialog
         open={editingClient !== null}
         onOpenChange={(open) => !open && setEditingClient(null)}
         client={editingClient}
-        onSaved={load}
+        onSaved={refresh}
       />
+    </div>
+  )
+}
+
+/** The kiosk's sales of the month, newest first, 20 at a time (range()). */
+function KioskSalesPanel({
+  kiosqueId,
+  monthFrom,
+  refreshKey,
+  onChanged,
+}: {
+  kiosqueId: string
+  monthFrom: string
+  refreshKey: number
+  onChanged: () => void
+}) {
+  const [sales, setSales] = useState<SaleRow[]>([])
+  const [total, setTotal] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [editingVente, setEditingVente] = useState<EditableVente | null>(null)
+  const [offres, setOffres] = useState<VenteOption[]>([])
+  const [clientOptions, setClientOptions] = useState<VenteOption[]>([])
+
+  const fetchSales = useCallback(
+    async (offset: number) => {
+      const { data, count, error } = await supabase
+        .from('ventes')
+        .select('id, kiosque_id, client_id, offre_id, quantite, montant_total, created_at, clients(nom), offres(nom)', { count: 'exact' })
+        .eq('kiosque_id', kiosqueId)
+        .gte('created_at', monthFrom)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + SALES_PAGE - 1)
+      if (error) console.error('[supervision] ventes', error.code, error.message)
+      return { rows: (data ?? []) as SaleRow[], count: count ?? 0 }
+    },
+    [kiosqueId, monthFrom]
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    setIsLoading(true)
+    void fetchSales(0).then(({ rows, count }) => {
+      if (cancelled) return
+      setSales(rows)
+      setTotal(count)
+      setIsLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [fetchSales, refreshKey])
+
+  const loadMore = async () => {
+    setIsLoadingMore(true)
+    const { rows, count } = await fetchSales(sales.length)
+    setSales((previous) => [...previous, ...rows])
+    setTotal(count)
+    setIsLoadingMore(false)
+  }
+
+  // Active offers of the kiosk, for the vente edit dialog.
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('offres_kiosque')
+      .select('offre_id, offres(id, nom)')
+      .eq('kiosque_id', kiosqueId)
+      .eq('est_actif', true)
+      .then(({ data, error }) => {
+        if (cancelled || error) return
+        setOffres(
+          (data ?? [])
+            .map((row) => firstJoined((row as { offres?: unknown }).offres as VenteOption | VenteOption[] | null))
+            .filter((offre): offre is VenteOption => offre !== null)
+        )
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [kiosqueId])
+
+  const openEdit = async (sale: SaleRow) => {
+    setEditingVente({
+      id: sale.id,
+      quantite: sale.quantite,
+      montant_total: sale.montant_total ?? 0,
+      offre_id: sale.offre_id,
+      client_id: sale.client_id,
+    })
+    // Client choices: the kiosk's first 200 by name + the sale's own client.
+    const { data } = await supabase.rpc('kiosk_clients', {
+      p_kiosque_id: kiosqueId,
+      p_search: null,
+      p_sort: 'nom',
+      p_limit: 200,
+      p_offset: 0,
+    })
+    const options = ((data as { rows?: KioskClientRow[] } | null)?.rows ?? []).map((client) => ({ id: client.id, nom: client.nom }))
+    if (sale.client_id && !options.some((option) => option.id === sale.client_id)) {
+      options.unshift({ id: sale.client_id, nom: firstJoined(sale.clients)?.nom ?? 'Client actuel' })
+    }
+    setClientOptions(options)
+  }
+
+  const venteOffres = useMemo(() => {
+    // A sale can reference an inactive offer: keep it selectable.
+    if (!editingVente?.offre_id || offres.some((offre) => offre.id === editingVente.offre_id)) return offres
+    const sale = sales.find((row) => row.id === editingVente.id)
+    return [...offres, { id: editingVente.offre_id, nom: firstJoined(sale?.offres)?.nom ?? 'Offre actuelle' }]
+  }, [editingVente, offres, sales])
+
+  const columns: DataTableColumn<SaleRow>[] = [
+    { key: 'date', header: 'Date', render: (sale) => formatDay(sale.created_at) },
+    { key: 'client', header: 'Client', render: (sale) => firstJoined(sale.clients)?.nom ?? '—' },
+    { key: 'offre', header: 'Offre', render: (sale) => firstJoined(sale.offres)?.nom ?? '—' },
+    {
+      key: 'montant',
+      header: 'Montant',
+      align: 'right',
+      render: (sale) => <span className="font-semibold [font-variant-numeric:tabular-nums]">{toCFA(sale.montant_total ?? 0)}</span>,
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (sale) => (
+        <Button type="button" variant="outline" size="icon-lg" aria-label="Modifier la vente" onClick={() => void openEdit(sale)}>
+          <Edit className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ]
+
+  return (
+    <Card padding="md" className="space-y-3">
+      <Label variant="caps">Ventes du mois {isLoading ? '' : `(${total})`}</Label>
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map((item) => <Skeleton key={item} className="h-14 rounded-lg" />)}
+        </div>
+      ) : sales.length === 0 ? (
+        <EmptyState title="Aucune vente ce mois" className="border-0" />
+      ) : (
+        <>
+          <div className="hidden sm:block">
+            <DataTable columns={columns} data={sales} getRowKey={(sale) => sale.id} />
+          </div>
+          <ul className="space-y-2 sm:hidden">
+            {sales.map((sale) => (
+              <li key={sale.id} className="flex items-start justify-between gap-2 rounded-lg border border-border bg-surface p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-text">{formatDay(sale.created_at)}</p>
+                  <p className="mt-0.5 truncate text-xs text-text-secondary">
+                    {firstJoined(sale.clients)?.nom ?? '—'} · {firstJoined(sale.offres)?.nom ?? '—'}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <p className="text-base font-bold text-text [font-variant-numeric:tabular-nums]">{toCFA(sale.montant_total ?? 0)}</p>
+                  <Button type="button" variant="outline" size="icon-lg" aria-label="Modifier la vente" onClick={() => void openEdit(sale)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <LoadMoreButton shown={sales.length} total={total} isLoading={isLoadingMore} onClick={() => void loadMore()} noun="ventes" />
+        </>
+      )}
+
       <EditVenteDialog
         open={editingVente !== null}
         onOpenChange={(open) => !open && setEditingVente(null)}
         vente={editingVente}
-        clients={kioskClients.map((client) => ({ id: client.id, nom: client.nom }))}
-        offres={venteOffreOptions}
-        onSaved={load}
+        clients={clientOptions}
+        offres={venteOffres}
+        onSaved={onChanged}
       />
-    </div>
+    </Card>
   )
 }
