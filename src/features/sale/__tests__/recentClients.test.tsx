@@ -2,20 +2,32 @@ import { fireEvent, render, renderHook, screen, waitFor, within } from '@testing
 import type { Client } from '@/stores/venteStore'
 
 /**
- * Recent-client chips: the 5 latest clients of THE kiosque, loaded once on
- * mount, hidden when there are none, one tap selects + pre-fills the field.
+ * Recent-client chips: the kiosque's most recent BUYERS (one chip per
+ * client, latest sale first), topped up with its newest clients; loaded once
+ * on mount, hidden when there are none, one tap selects + pre-fills.
  */
 
-const mockQuery = {
-  eq: jest.fn(),
-  order: jest.fn(),
-  limit: jest.fn(),
-}
-const mockSelect = jest.fn()
-const mockFrom = jest.fn()
+type Response = { data: unknown; error: unknown }
+let mockResponses: Record<string, Response> = {}
+const mockCalls: Array<{ table: string; select: string; eq: unknown[]; order: unknown[]; limit: number }> = []
 
 jest.mock('@/lib/supabase', () => ({
-  supabase: { from: (...args: unknown[]) => mockFrom(...args) },
+  supabase: {
+    from: (table: string) => {
+      const call = { table, select: '', eq: [] as unknown[], order: [] as unknown[], limit: 0 }
+      const chain = {
+        select: (columns: string) => ((call.select = columns), chain),
+        eq: (...args: unknown[]) => ((call.eq = args), chain),
+        order: (...args: unknown[]) => ((call.order = args), chain),
+        limit: async (n: number) => {
+          call.limit = n
+          mockCalls.push(call)
+          return mockResponses[table] ?? { data: [], error: null }
+        },
+      }
+      return chain
+    },
+  },
 }))
 
 import { useRecentClients } from '../useRecentClients'
@@ -26,47 +38,88 @@ const recent: Client[] = [
   { id: 'c2', nom: 'Moussa Diop', telephone: '772223344', kiosque_id: 'k1' },
 ]
 
-function mockResponse(response: { data: unknown; error: unknown }) {
-  mockFrom.mockReturnValue({ select: mockSelect })
-  mockSelect.mockReturnValue(mockQuery)
-  mockQuery.eq.mockReturnValue(mockQuery)
-  mockQuery.order.mockReturnValue(mockQuery)
-  mockQuery.limit.mockResolvedValue(response)
-}
+const client = (id: string, nom: string) => ({ id, nom, telephone: '77', kiosque_id: 'k1' })
+const sale = (c: ReturnType<typeof client> | null) => ({ client_id: c?.id ?? null, clients: c })
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+  jest.clearAllMocks()
+  mockResponses = {}
+  mockCalls.length = 0
+})
 
 describe('useRecentClients', () => {
-  it('charge les 5 derniers clients DU kiosque, triés par created_at décroissant', async () => {
-    mockResponse({ data: recent, error: null })
+  it('derniers ACHETEURS du kiosque, ventes les plus récentes d’abord, un client = une chip', async () => {
+    const awa = client('c1', 'Awa'), moussa = client('c2', 'Moussa'), fatou = client('c3', 'Fatou')
+    mockResponses.ventes = {
+      // Panier multi-offres d'Awa = 2 lignes ; Moussa a acheté avant.
+      data: [sale(awa), sale(awa), sale(moussa), sale(awa), sale(fatou)],
+      error: null,
+    }
     const { result } = renderHook(() => useRecentClients('k1'))
 
-    await waitFor(() => expect(result.current.recentClients).toHaveLength(2))
-    expect(mockFrom).toHaveBeenCalledWith('clients')
-    expect(mockQuery.eq).toHaveBeenCalledWith('kiosque_id', 'k1')
-    expect(mockQuery.order).toHaveBeenCalledWith('created_at', { ascending: false })
-    expect(mockQuery.limit).toHaveBeenCalledWith(5)
+    await waitFor(() => expect(result.current.recentClients.map((c) => c.nom)).toEqual(['Awa', 'Moussa', 'Fatou']))
+    const ventes = mockCalls.find((call) => call.table === 'ventes')!
+    expect(ventes.eq).toEqual(['kiosque_id', 'k1'])
+    expect(ventes.order).toEqual(['created_at', { ascending: false }])
   })
 
-  it('une seule requête au montage (pas à chaque rendu)', async () => {
-    mockResponse({ data: recent, error: null })
+  it('moins de 5 acheteurs : complété par les clients les plus récemment créés, sans doublon', async () => {
+    const awa = client('c1', 'Awa')
+    mockResponses.ventes = { data: [sale(awa)], error: null }
+    mockResponses.clients = { data: [client('c9', 'Nouveau'), awa, client('c8', 'Ibou')], error: null }
+    const { result } = renderHook(() => useRecentClients('k1'))
+
+    await waitFor(() => expect(result.current.recentClients.map((c) => c.nom)).toEqual(['Awa', 'Nouveau', 'Ibou']))
+    const clients = mockCalls.find((call) => call.table === 'clients')!
+    expect(clients.eq).toEqual(['kiosque_id', 'k1'])
+    expect(clients.order).toEqual(['created_at', { ascending: false }])
+  })
+
+  it('5 acheteurs ou plus : 5 chips max, pas de 2e requête', async () => {
+    mockResponses.ventes = {
+      data: ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => sale(client(id, id.toUpperCase()))),
+      error: null,
+    }
+    const { result } = renderHook(() => useRecentClients('k1'))
+    await waitFor(() => expect(result.current.recentClients).toHaveLength(5))
+    expect(mockCalls.map((call) => call.table)).toEqual(['ventes'])
+  })
+
+  it('vente sans client ou client sans nom : ignorée', async () => {
+    mockResponses.ventes = { data: [sale(null), sale(client('c1', '')), sale(client('c2', 'Awa'))], error: null }
+    mockResponses.clients = { data: [], error: null }
+    const { result } = renderHook(() => useRecentClients('k1'))
+    await waitFor(() => expect(result.current.recentClients.map((c) => c.nom)).toEqual(['Awa']))
+  })
+
+  it('une seule série de requêtes au montage (pas à chaque rendu)', async () => {
+    mockResponses.ventes = { data: [sale(client('c1', 'Awa'))], error: null }
     const { result, rerender } = renderHook(() => useRecentClients('k1'))
-    await waitFor(() => expect(result.current.recentClients).toHaveLength(2))
+    await waitFor(() => expect(result.current.recentClients).toHaveLength(1))
     rerender()
     rerender()
-    expect(mockQuery.limit).toHaveBeenCalledTimes(1)
+    expect(mockCalls).toHaveLength(2) // ventes + complément clients
   })
 
   it('erreur (hors ligne, RLS) : aucune chip', async () => {
-    mockResponse({ data: null, error: { code: 'PGRST', message: 'fetch failed' } })
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockResponses.ventes = { data: null, error: { code: 'PGRST', message: 'fetch failed' } }
     const { result } = renderHook(() => useRecentClients('k1'))
-    await waitFor(() => expect(mockQuery.limit).toHaveBeenCalled())
+    await waitFor(() => expect(mockCalls).toHaveLength(1))
     expect(result.current.recentClients).toEqual([])
+  })
+
+  it('complément en erreur : on garde les acheteurs', async () => {
+    mockResponses.ventes = { data: [sale(client('c1', 'Awa'))], error: null }
+    mockResponses.clients = { data: null, error: { code: 'PGRST', message: 'fetch failed' } }
+    const { result } = renderHook(() => useRecentClients('k1'))
+    await waitFor(() => expect(mockCalls).toHaveLength(2))
+    expect(result.current.recentClients.map((c) => c.nom)).toEqual(['Awa'])
   })
 
   it('pas de kiosque : aucune requête, aucune chip', () => {
     const { result } = renderHook(() => useRecentClients(null))
-    expect(mockFrom).not.toHaveBeenCalled()
+    expect(mockCalls).toHaveLength(0)
     expect(result.current.recentClients).toEqual([])
   })
 })
