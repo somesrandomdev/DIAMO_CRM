@@ -26,6 +26,12 @@ export async function enqueueClient(client: QueuedClient): Promise<void> {
   await db.put('offlineClients', client)
 }
 
+/** Clients created offline and not synced yet (read-only, for display). */
+export async function getQueuedClients(): Promise<QueuedClient[]> {
+  const db = await getDb()
+  return db.getAll('offlineClients')
+}
+
 export interface FlushOfflineClientsResult {
   flushed: number
   failed: number

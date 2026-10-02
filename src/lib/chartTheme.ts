@@ -1,7 +1,9 @@
 export const chartTheme = {
   axis: 'var(--color-text-tertiary)',
   grid: 'var(--color-border)',
-  blue: 'var(--color-blue)',
+  // Grands aplats : bleu de marque (pas de texte dessus)
+  blue: 'var(--color-brand)',
+  blueSecondary: 'var(--color-brand-hover)',
   teal: 'var(--color-teal)',
   amber: 'var(--color-amber)',
   red: 'var(--color-red)',

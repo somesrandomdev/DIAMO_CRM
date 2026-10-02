@@ -36,8 +36,8 @@ export function AlertCard({ severity, title, subtitle, icon, className }: AlertC
       <div className="flex items-start gap-2">
         <div className="mt-0.5 shrink-0">{icon ?? severityIcons[severity]}</div>
         <div className="min-w-0">
-          <p className="truncate text-[12px] font-semibold text-text">{title}</p>
-          {subtitle && <p className="mt-0.5 text-[11px] text-text-secondary">{subtitle}</p>}
+          <p className="truncate text-xs font-semibold text-text">{title}</p>
+          {subtitle && <p className="mt-0.5 text-xs text-text-secondary">{subtitle}</p>}
         </div>
       </div>
     </div>

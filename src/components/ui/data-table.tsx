@@ -32,7 +32,7 @@ export function DataTable<T>({
   data,
   getRowKey,
   onRowClick,
-  emptyMessage = 'Aucune donnee a afficher.',
+  emptyMessage = 'Aucune donnée à afficher.',
   className,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null)
@@ -60,14 +60,14 @@ export function DataTable<T>({
 
   return (
     <div className={cn('overflow-x-auto [-webkit-overflow-scrolling:touch]', className)}>
-      <table className="w-full min-w-[680px] border-collapse text-[12.5px]">
+      <table className="w-full min-w-[680px] border-collapse text-xs">
         <thead>
           <tr className="border-b border-border bg-muted">
             {columns.map((column) => (
               <th
                 key={column.key}
                 className={cn(
-                  'px-3 py-2 text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary',
+                  'px-3 py-2 text-xs font-semibold uppercase tracking-wide text-text-tertiary',
                   column.align === 'right' && 'text-right',
                   column.align === 'center' && 'text-center',
                   (!column.align || column.align === 'left') && 'text-left'

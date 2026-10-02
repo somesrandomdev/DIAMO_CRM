@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/Toast'
 import { normalizePhone } from '@/lib/phone'
@@ -20,6 +19,7 @@ import {
   type ProvisionEmployeeResult,
 } from '@/lib/userProvisioning'
 import type { UserRole } from '@/stores/authStore'
+import { Input, Select } from '@/components/ui/input'
 
 interface KiosqueOption {
   id: string
@@ -215,7 +215,7 @@ export function AddEmployeeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-[18px]">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             <UserPlus className="h-5 w-5 text-blue" aria-hidden="true" />
             Ajouter un employé
           </DialogTitle>
@@ -228,10 +228,10 @@ export function AddEmployeeDialog({
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Nom complet */}
           <div className="space-y-1.5">
-            <Label htmlFor={`${fieldId}-name`} className="text-[13px]">
+            <Label htmlFor={`${fieldId}-name`} className="text-sm">
               Nom complet
             </Label>
-            <FormInput
+            <Input
               id={`${fieldId}-name`}
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
@@ -241,7 +241,7 @@ export function AddEmployeeDialog({
               aria-invalid={!!errors.fullName}
               aria-describedby={`${fieldId}-name-help${errors.fullName ? ` ${fieldId}-name-error` : ''}`}
             />
-            <p id={`${fieldId}-name-help`} className="text-[12px] text-text-secondary">
+            <p id={`${fieldId}-name-help`} className="text-xs text-text-secondary">
               Sert d'identifiant de connexion (en plus du téléphone).
             </p>
             {errors.fullName && (
@@ -251,10 +251,10 @@ export function AddEmployeeDialog({
 
           {/* Téléphone (optionnel) — sert d'identifiant de connexion */}
           <div className="space-y-1.5">
-            <Label htmlFor={`${fieldId}-phone`} className="text-[13px]">
+            <Label htmlFor={`${fieldId}-phone`} className="text-sm">
               Téléphone (optionnel)
             </Label>
-            <FormInput
+            <Input
               id={`${fieldId}-phone`}
               type="tel"
               value={phone}
@@ -266,10 +266,10 @@ export function AddEmployeeDialog({
 
           {/* E-mail (optionnel) */}
           <div className="space-y-1.5">
-            <Label htmlFor={`${fieldId}-email`} className="text-[13px]">
+            <Label htmlFor={`${fieldId}-email`} className="text-sm">
               Adresse e-mail (optionnelle)
             </Label>
-            <FormInput
+            <Input
               id={`${fieldId}-email`}
               type="email"
               value={email}
@@ -280,7 +280,7 @@ export function AddEmployeeDialog({
               aria-invalid={!!errors.email}
               aria-describedby={`${fieldId}-email-help${errors.email ? ` ${fieldId}-email-error` : ''}`}
             />
-            <p id={`${fieldId}-email-help`} className="text-[12px] text-text-secondary">
+            <p id={`${fieldId}-email-help`} className="text-xs text-text-secondary">
               Optionnel — l'utilisateur pourra se connecter avec son identifiant ou son téléphone.
             </p>
             {errors.email && (
@@ -290,11 +290,11 @@ export function AddEmployeeDialog({
 
           {/* Mot de passe temporaire */}
           <div className="space-y-1.5">
-            <Label htmlFor={`${fieldId}-password`} className="text-[13px]">
+            <Label htmlFor={`${fieldId}-password`} className="text-sm">
               Mot de passe temporaire
             </Label>
             <div className="flex gap-2">
-              <FormInput
+              <Input
                 id={`${fieldId}-password`}
                 // Intentionally type="text": the admin must be able to read this
                 // aloud to the employee. Masking it here helps no one — nobody is
@@ -331,7 +331,7 @@ export function AddEmployeeDialog({
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            <p id={`${fieldId}-password-help`} className="text-[12px] text-text-secondary">
+            <p id={`${fieldId}-password-help`} className="text-xs text-text-secondary">
               {copied
                 ? '✓ Identifiants copiés dans le presse-papiers.'
                 : "L'employé pourra le changer depuis son profil."}
@@ -343,10 +343,10 @@ export function AddEmployeeDialog({
 
           {/* Rôle */}
           <div className="space-y-1.5">
-            <Label htmlFor={`${fieldId}-role`} className="text-[13px]">
+            <Label htmlFor={`${fieldId}-role`} className="text-sm">
               Rôle
             </Label>
-            <FormSelect
+            <Select
               id={`${fieldId}-role`}
               value={role}
               onChange={(event) => {
@@ -363,14 +363,14 @@ export function AddEmployeeDialog({
                   {option.label}
                 </option>
               ))}
-            </FormSelect>
-            <p className="text-[12px] text-text-secondary">{selectedRoleHelp}</p>
+            </Select>
+            <p className="text-xs text-text-secondary">{selectedRoleHelp}</p>
           </div>
 
           {/* Kiosque — fontainier only */}
           {needsKiosque && (
             <div className="space-y-1.5">
-              <Label htmlFor={`${fieldId}-kiosque`} className="text-[13px]">
+              <Label htmlFor={`${fieldId}-kiosque`} className="text-sm">
                 Kiosque assigné
               </Label>
               <KiosqueSearchSelect
@@ -383,7 +383,7 @@ export function AddEmployeeDialog({
                 invalid={!!errors.kiosqueId}
               />
               {kiosques.length === 0 && (
-                <p className="text-[12px] text-amber">
+                <p className="text-xs text-amber">
                   Aucun kiosque n'existe encore. Créez d'abord un kiosque.
                 </p>
               )}
@@ -400,7 +400,7 @@ export function AddEmployeeDialog({
               className="flex items-start gap-3 rounded-md border-2 border-red bg-red-light p-3"
             >
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red" aria-hidden="true" />
-              <p className="text-[13px] font-medium leading-snug text-red">{formError}</p>
+              <p className="text-sm font-medium leading-snug text-red">{formError}</p>
             </div>
           )}
 
@@ -413,7 +413,7 @@ export function AddEmployeeDialog({
             >
               Annuler
             </Button>
-            <Button type="submit" variant="primary" loading={isSaving}>
+            <Button type="submit" variant="primary" loading={isSaving} loadingText="Création du compte…">
               <UserPlus className="h-4 w-4" />
               Créer le compte
             </Button>
@@ -426,7 +426,7 @@ export function AddEmployeeDialog({
 
 function FieldError({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <p id={id} className="flex items-center gap-1.5 text-[12px] font-medium text-red">
+    <p id={id} className="flex items-center gap-1.5 text-xs font-medium text-red">
       <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       {children}
     </p>

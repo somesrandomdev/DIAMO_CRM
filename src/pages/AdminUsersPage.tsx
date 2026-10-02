@@ -14,12 +14,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { StatusBadge } from '@/components/ui/status-badge'
-import { PosChip, PosInput, PosLabel, PosSelect } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { useAuthStore } from '@/stores/authStore'
 import { normalizePhone } from '@/lib/phone'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import type { UserRole } from '@/stores/authStore'
+import { Label } from '@/components/ui/label'
+import { Input, Select } from '@/components/ui/input'
 
 interface KiosqueRow {
   id: string
@@ -340,7 +341,7 @@ export default function AdminUsersPage() {
 
   const columns: DataTableColumn<ProfileRow>[] = [
     { key: 'username', header: 'Utilisateur', render: (row) => <span className="font-medium">{row.username}</span>, sortValue: (row) => row.username },
-    { key: 'role', header: 'Role', render: (row) => <StatusBadge variant={roleVariant(row.role)}>{roleLabels[row.role]}</StatusBadge>, sortValue: (row) => row.role },
+    { key: 'role', header: 'Rôle', render: (row) => <StatusBadge variant={roleVariant(row.role)}>{roleLabels[row.role]}</StatusBadge>, sortValue: (row) => row.role },
     { key: 'kiosque', header: 'Kiosque', render: (row) => (row.kiosque_id ? kioskNameById.get(row.kiosque_id) ?? 'Inconnu' : 'Global'), sortValue: (row) => row.kiosque_id ? kioskNameById.get(row.kiosque_id) ?? '' : 'Global' },
     {
       key: 'actions',
@@ -399,8 +400,8 @@ export default function AdminUsersPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Utilisateurs</h1>
-          <p className="text-[12px] text-text-secondary">
+          <h1 className="text-base font-semibold text-text">Utilisateurs</h1>
+          <p className="text-xs text-text-secondary">
             Créez les accès des employés et gérez leurs rôles et kiosques.
           </p>
         </div>
@@ -442,8 +443,8 @@ export default function AdminUsersPage() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <PosLabel htmlFor="edit-username">Identifiant *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="edit-username">Identifiant *</Label>
+              <Input fieldSize="lg"
                 id="edit-username"
                 value={form.username}
                 onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
@@ -452,8 +453,8 @@ export default function AdminUsersPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="edit-phone">Téléphone</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="edit-phone">Téléphone</Label>
+              <Input fieldSize="lg"
                 id="edit-phone"
                 type="tel"
                 value={form.phone}
@@ -462,8 +463,8 @@ export default function AdminUsersPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="edit-role">Rôle *</PosLabel>
-              <PosSelect
+              <Label variant="caps" htmlFor="edit-role">Rôle *</Label>
+              <Select fieldSize="lg"
                 id="edit-role"
                 value={form.role}
                 onChange={(event) => setForm((current) => ({ ...current, role: event.target.value as UserRole }))}
@@ -471,11 +472,11 @@ export default function AdminUsersPage() {
                 <option value="fontainier">Fontainier</option>
                 <option value="commercial">Commercial</option>
                 <option value="administrateur">Administrateur</option>
-              </PosSelect>
+              </Select>
             </div>
             {form.role === 'fontainier' && (
               <div className="space-y-1.5">
-                <PosLabel htmlFor="edit-kiosque">Kiosque assigné *</PosLabel>
+                <Label variant="caps" htmlFor="edit-kiosque">Kiosque assigné *</Label>
                 <KiosqueSearchSelect
                   id="edit-kiosque"
                   kiosques={kiosques}
@@ -488,12 +489,15 @@ export default function AdminUsersPage() {
             )}
             {form.role === 'commercial' && (
               <div className="space-y-2">
-                <PosLabel>Kiosques supervisés</PosLabel>
+                <Label variant="caps">Kiosques supervisés</Label>
                 <div className="flex flex-wrap gap-2">
                   {kiosques.map((kiosque) => (
-                    <PosChip
+                    <Button
                       key={kiosque.id}
-                      active={assignedKiosqueIds.includes(kiosque.id)}
+                      type="button"
+                      variant={assignedKiosqueIds.includes(kiosque.id) ? 'primary' : 'outline'}
+                      size="touch"
+                      aria-pressed={assignedKiosqueIds.includes(kiosque.id)}
                       onClick={() =>
                         setAssignedKiosqueIds((current) =>
                           current.includes(kiosque.id)
@@ -503,10 +507,10 @@ export default function AdminUsersPage() {
                       }
                     >
                       {kiosque.nom}
-                    </PosChip>
+                    </Button>
                   ))}
                 </div>
-                <p className="text-xs text-[#1C5376]">
+                <p className="text-xs text-text-secondary">
                   Un commercial n'a pas de kiosque attitré : il supervise uniquement les kiosques
                   sélectionnés ci-dessus (lecture et correction des ventes, clients et objectifs).
                   Enregistrer pour appliquer.
@@ -514,10 +518,10 @@ export default function AdminUsersPage() {
               </div>
             )}
             <DialogFooter>
-              <Button type="button" variant="pos-secondary" onClick={() => setIsEditOpen(false)}>
+              <Button type="button" variant="outline" size="touch" onClick={() => setIsEditOpen(false)}>
                 Annuler
               </Button>
-              <Button type="submit" variant="pos-primary" loading={isSaving}>
+              <Button type="submit" variant="primary" size="touch" loading={isSaving} loadingText="Enregistrement…">
                 <Save className="h-4 w-4" />
                 Enregistrer
               </Button>
@@ -555,8 +559,8 @@ export default function AdminUsersPage() {
                       aria-pressed={roleFilter === role}
                       className={
                         roleFilter === role
-                          ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                          : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                          ? 'min-h-11 rounded-md bg-primary px-3 text-xs font-semibold text-white'
+                          : 'min-h-11 rounded-md border border-border bg-surface px-3 text-xs font-semibold text-text-secondary hover:border-primary hover:text-primary'
                       }
                     >
                       {role === 'all' ? 'Tous' : roleLabels[role]}
@@ -567,8 +571,8 @@ export default function AdminUsersPage() {
 
               {filteredProfiles.length === 0 ? (
                 <EmptyState
-                  title="Aucun resultat"
-                  description="Essayez un autre nom ou changez de filtre de role."
+                  title="Aucun résultat"
+                  description="Essayez un autre nom ou changez de filtre de rôle."
                 />
               ) : (
               <div className="hidden sm:block">
@@ -584,11 +588,11 @@ export default function AdminUsersPage() {
                     className="flex items-start justify-between gap-2 rounded-md border border-border bg-surface p-3"
                   >
                     <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-text">{row.username}</p>
+                      <p className="text-sm font-semibold text-text">{row.username}</p>
                       <div className="mt-1">
                         <StatusBadge variant={roleVariant(row.role)}>{roleLabels[row.role]}</StatusBadge>
                       </div>
-                      <p className="mt-1.5 text-[12px] text-text-secondary">
+                      <p className="mt-1.5 text-xs text-text-secondary">
                         {row.kiosque_id ? kioskNameById.get(row.kiosque_id) ?? 'Inconnu' : 'Global'}
                       </p>
                     </div>

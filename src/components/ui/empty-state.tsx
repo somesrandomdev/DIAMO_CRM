@@ -16,8 +16,8 @@ export function EmptyState({ title, description, icon, action, className }: Empt
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-light text-blue">
         {icon ?? <Inbox className="h-5 w-5" />}
       </div>
-      <p className="text-[13px] font-semibold text-text">{title}</p>
-      {description && <p className="mt-1 max-w-sm text-[12px] text-text-secondary">{description}</p>}
+      <p className="text-sm font-semibold text-text">{title}</p>
+      {description && <p className="mt-1 max-w-sm text-xs text-text-secondary">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   )

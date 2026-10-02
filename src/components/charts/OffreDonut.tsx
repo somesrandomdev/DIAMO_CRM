@@ -23,7 +23,7 @@ export function OffreDonut({ data }: OffreDonutProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Repartition des ventes par offre</CardTitle>
+        <CardTitle>Répartition des ventes par offre</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={260}>

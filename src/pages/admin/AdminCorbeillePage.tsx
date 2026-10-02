@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { PosInput } from '@/components/pos'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -14,6 +13,7 @@ import { logAudit } from '@/lib/audit'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { formatPhone } from '@/lib/phone'
 import type { UserRole } from '@/stores/authStore'
+import { Input } from '@/components/ui/input'
 
 interface DeletedProfileRow {
   id: string
@@ -175,7 +175,7 @@ export default function AdminCorbeillePage() {
         <div className="flex justify-end gap-2">
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline" size="touch"
             onClick={() => setRestoring(row)}
           >
             <RotateCcw className="h-4 w-4" />
@@ -200,8 +200,8 @@ export default function AdminCorbeillePage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[15px] font-semibold text-text">Corbeille</h1>
-        <p className="text-[12px] text-text-secondary">
+        <h1 className="text-base font-semibold text-text">Corbeille</h1>
+        <p className="text-xs text-text-secondary">
           Utilisateurs désactivés. Restaurez-les ou supprimez-les définitivement.
         </p>
       </div>
@@ -229,6 +229,7 @@ export default function AdminCorbeillePage() {
         title="Restaurer cet utilisateur ?"
         description={`${restoring?.username ?? ''} redeviendra immédiatement actif avec son rôle et son kiosque d'origine.`}
         confirmLabel="Restaurer"
+        busyLabel="Restauration…"
         cancelLabel="Annuler"
         isBusy={isRestoring}
         onConfirm={restore}
@@ -244,8 +245,8 @@ export default function AdminCorbeillePage() {
               confirmer.
             </DialogDescription>
           </DialogHeader>
-          {deleteError && <p className="text-sm font-medium text-[#FF4949]">{deleteError}</p>}
-          <PosInput
+          {deleteError && <p className="text-sm font-medium text-red">{deleteError}</p>}
+          <Input fieldSize="lg"
             value={confirmName}
             onChange={(event) => setConfirmName(event.target.value)}
             placeholder={deleting?.username ?? ''}
@@ -253,10 +254,10 @@ export default function AdminCorbeillePage() {
           />
           <Button
             type="button"
-            variant="pos-destructive"
+            variant="destructive" size="touch"
             className="w-full"
             disabled={confirmName.trim().toLowerCase() !== (deleting?.username ?? '').trim().toLowerCase()}
-            loading={isDeleting}
+            loading={isDeleting} loadingText="Suppression…"
             onClick={deletePermanently}
           >
             <Trash2 className="h-4 w-4" />

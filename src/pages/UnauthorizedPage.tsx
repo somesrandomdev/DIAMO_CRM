@@ -17,9 +17,9 @@ export default function UnauthorizedPage() {
             <LockKeyhole className="h-7 w-7 text-red" />
           </div>
           <div>
-            <h1 className="text-[15px] font-semibold text-text">Acces non autorise</h1>
-            <p className="mt-2 text-[12px] text-text-secondary">
-              Votre role ne permet pas d'ouvrir cette page.
+            <h1 className="text-base font-semibold text-text">Accès non autorisé</h1>
+            <p className="mt-2 text-xs text-text-secondary">
+              Votre rôle ne permet pas d'ouvrir cette page.
             </p>
           </div>
           <Button variant="primary" onClick={() => navigate(getRoleHome(profile?.role), { replace: true })}>

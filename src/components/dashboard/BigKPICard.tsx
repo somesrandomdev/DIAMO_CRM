@@ -86,7 +86,7 @@ export function BigKPICard({
       <span className={cn('absolute inset-x-0 top-0 h-1', tones.accent)} aria-hidden="true" />
 
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[12px] font-semibold leading-snug text-text-secondary">
+        <p className="text-xs font-semibold leading-snug text-text-secondary">
           {label}
         </p>
         <span
@@ -109,7 +109,7 @@ export function BigKPICard({
           {delta && (
             <span
               className={cn(
-                'inline-flex items-center gap-1 text-[13px] font-semibold',
+                'inline-flex items-center gap-1 text-sm font-semibold',
                 delta.className
               )}
             >
@@ -121,7 +121,7 @@ export function BigKPICard({
               <span className="sr-only"> {delta.word}</span>
             </span>
           )}
-          {hint && <span className="text-[12px] text-text-secondary">{hint}</span>}
+          {hint && <span className="text-xs text-text-secondary">{hint}</span>}
         </div>
       )}
     </div>

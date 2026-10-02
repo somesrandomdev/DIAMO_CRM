@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosInput, PosLabel } from '@/components/pos'
 import type { Client } from '@/stores/venteStore'
 import { useClientSearch } from './useClientSearch'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 
 interface SaleClientPickerProps {
   clients: Client[]
@@ -14,6 +16,8 @@ interface SaleClientPickerProps {
   onAddNew: () => void
   /** Incremented by the parent after a sale to clear the search field. */
   resetKey: number
+  /** Latest clients of the kiosque, shown as one-tap chips (hidden if empty). */
+  recentClients?: Client[]
 }
 
 /**
@@ -29,6 +33,7 @@ export function SaleClientPicker({
   onClear,
   onAddNew,
   resetKey,
+  recentClients = [],
 }: SaleClientPickerProps) {
   const search = useClientSearch(clients, resetKey)
 
@@ -43,8 +48,34 @@ export function SaleClientPicker({
   }
 
   return (
-    <PosCard className="space-y-3">
-      <PosLabel>Client</PosLabel>
+    <Card padding="md" className="space-y-3">
+      <Label variant="caps">Client</Label>
+
+      {!selectedClient && recentClients.length > 0 && (
+        <div>
+          <p id="recent-clients-label" className="mb-2 text-xs text-text-secondary">
+            Clients récents
+          </p>
+          <ul aria-labelledby="recent-clients-label" className="flex flex-wrap gap-2">
+            {recentClients.map((client) => (
+              <li key={client.id} className="min-w-0 max-w-full">
+                <button
+                  type="button"
+                  onClick={() => select(client)}
+                  className="flex min-h-12 max-w-full flex-col items-start justify-center rounded-full border-2 border-border bg-white px-4 py-1 text-left hover:border-blue active:scale-[0.98]"
+                >
+                  <span className="max-w-[12rem] truncate text-sm font-semibold text-text">{client.nom}</span>
+                  {client.telephone && (
+                    <span className="max-w-[12rem] truncate text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
+                      {client.telephone}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div ref={search.containerRef} className="relative">
         {isLoading ? (
@@ -53,10 +84,10 @@ export function SaleClientPicker({
           // gets "no results" and concludes the client is missing.
           <div className="space-y-2" aria-live="polite">
             <Skeleton className="h-12 w-full" />
-            <p className="text-xs text-[#1C5376]">Chargement de la liste des clients...</p>
+            <p className="text-xs text-text-secondary">Chargement de la liste des clients...</p>
           </div>
         ) : (
-          <PosInput
+          <Input fieldSize="lg"
             type="text"
             value={search.query}
             onChange={(event) => {
@@ -64,24 +95,24 @@ export function SaleClientPicker({
               search.handleSearch(event.target.value)
             }}
             onFocus={search.reopenSuggestions}
-            placeholder="Nom ou telephone du client"
+            placeholder="Nom ou téléphone du client"
             readOnly={selectedClient !== null}
-            className={selectedClient ? 'bg-[#F6F9FB]' : ''}
+            className={selectedClient ? 'bg-bg' : ''}
             aria-label="Rechercher un client"
           />
         )}
 
         {search.showSuggestions && search.results.length > 0 && (
-          <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border-2 border-[#DCE1E5] bg-white shadow-lg">
+          <div className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border-2 border-border bg-white shadow-lg">
             {search.results.map((client) => (
               <button
                 key={client.id}
                 type="button"
                 onClick={() => select(client)}
-                className="block min-h-12 w-full border-b border-[#DCE1E5] px-3 py-2 text-left last:border-b-0 hover:bg-[#F6F9FB]"
+                className="block min-h-12 w-full border-b border-border px-3 py-2 text-left last:border-b-0 hover:bg-bg"
               >
-                <p className="text-sm font-semibold text-[#12364D]">{client.nom}</p>
-                {client.telephone && <p className="text-xs text-[#1C5376]">{client.telephone}</p>}
+                <p className="text-sm font-semibold text-text">{client.nom}</p>
+                {client.telephone && <p className="text-xs text-text-secondary">{client.telephone}</p>}
               </button>
             ))}
           </div>
@@ -89,31 +120,31 @@ export function SaleClientPicker({
       </div>
 
       {search.query.trim() && !selectedClient && search.results.length === 0 && (
-        <Button type="button" variant="pos-secondary" className="w-full justify-start" onClick={onAddNew}>
-          Creer ce client
+        <Button type="button" variant="outline" size="touch" className="w-full justify-start" onClick={onAddNew}>
+          Créer ce client
         </Button>
       )}
 
       {selectedClient && (
-        <div className="rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] p-3">
+        <div className="rounded-md border-2 border-blue bg-blue-light p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <PosLabel className="text-[#007EC8]">Client selectionne</PosLabel>
-              <p className="mt-1 text-sm font-bold text-[#12364D]">{selectedClient.nom}</p>
-              <p className="text-xs text-[#1C5376]">
-                {selectedClient.telephone || 'Telephone non renseigne'}
+              <Label variant="caps" className="text-blue">Client sélectionné</Label>
+              <p className="mt-1 text-sm font-bold text-text">{selectedClient.nom}</p>
+              <p className="text-xs text-text-secondary">
+                {selectedClient.telephone || 'Téléphone non renseigné'}
               </p>
             </div>
-            <Button type="button" variant="pos-secondary" size="sm" onClick={clear}>
+            <Button type="button" variant="outline" size="sm" onClick={clear}>
               Changer
             </Button>
           </div>
         </div>
       )}
 
-      <Button type="button" variant="pos-secondary" className="w-full" onClick={onAddNew}>
-        Creer un nouveau client
+      <Button type="button" variant="outline" size="touch" className="w-full" onClick={onAddNew}>
+        Créer un nouveau client
       </Button>
-    </PosCard>
+    </Card>
   )
 }

@@ -13,13 +13,13 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormInput } from '@/components/ui/form-input'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { APP_BUILD } from '@/lib/build'
 import { normalizePhone } from '@/lib/phone'
 import { fetchServedBuild } from '@/lib/build'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
+import { Input } from '@/components/ui/input'
 
 interface ProfileData {
   username: string
@@ -107,8 +107,8 @@ export default function ProfilePage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Mon profil</h1>
-          <p className="text-[12px] text-text-secondary">Informations du compte et affectation courante.</p>
+          <h1 className="text-base font-semibold text-text">Mon profil</h1>
+          <p className="text-xs text-text-secondary">Informations du compte et affectation courante.</p>
         </div>
         <Button type="button" variant="default" size="sm" onClick={() => setIsEditing((current) => !current)}>
           <Edit className="h-4 w-4" />
@@ -133,8 +133,8 @@ export default function ProfilePage() {
           <p
             className={
               feedback.kind === 'success'
-                ? 'text-[14px] font-semibold leading-snug text-green'
-                : 'text-[14px] font-semibold leading-snug text-red'
+                ? 'text-sm font-semibold leading-snug text-green'
+                : 'text-sm font-semibold leading-snug text-red'
             }
           >
             {feedback.text}
@@ -152,7 +152,7 @@ export default function ProfilePage() {
               <CardTitle>{profile?.username || 'Utilisateur'}</CardTitle>
               <div className="mt-1">
                 <StatusBadge variant={roleVariant(profile?.role)}>
-                  {roleLabels[profile?.role || ''] || profile?.role || 'Role inconnu'}
+                  {roleLabels[profile?.role || ''] || profile?.role || 'Rôle inconnu'}
                 </StatusBadge>
               </div>
             </div>
@@ -161,56 +161,56 @@ export default function ProfilePage() {
         <CardContent>
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-3">
-              <h2 className="text-[12px] font-semibold text-text">Informations de base</h2>
+              <h2 className="text-xs font-semibold text-text">Informations de base</h2>
               <label className="block space-y-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">Nom utilisateur</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Nom utilisateur</span>
                 {isEditing ? (
-                  <FormInput
+                  <Input
                     value={formData.username}
                     onChange={(event) => setFormData({ ...formData, username: event.target.value })}
                   />
                 ) : (
-                  <ReadonlyLine icon={<User className="h-4 w-4" />} value={profile?.username || 'Non defini'} />
+                  <ReadonlyLine icon={<User className="h-4 w-4" />} value={profile?.username || 'Non défini'} />
                 )}
               </label>
 
               <label className="block space-y-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">Email</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Email</span>
                 {isEditing ? (
-                  <FormInput
+                  <Input
                     type="email"
                     value={formData.email}
                     onChange={(event) => setFormData({ ...formData, email: event.target.value })}
                   />
                 ) : (
-                  <ReadonlyLine icon={<Mail className="h-4 w-4" />} value={profile?.email || 'Non defini'} />
+                  <ReadonlyLine icon={<Mail className="h-4 w-4" />} value={profile?.email || 'Non défini'} />
                 )}
               </label>
 
               <label className="block space-y-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">Telephone</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Téléphone</span>
                 {isEditing ? (
-                  <FormInput
+                  <Input
                     type="tel"
                     value={formData.phone}
                     onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
                   />
                 ) : (
-                  <ReadonlyLine icon={<Phone className="h-4 w-4" />} value={profile?.phone || 'Non defini'} />
+                  <ReadonlyLine icon={<Phone className="h-4 w-4" />} value={profile?.phone || 'Non défini'} />
                 )}
               </label>
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-[12px] font-semibold text-text">Affectation</h2>
-              <ReadonlyLine icon={<Shield className="h-4 w-4" />} value={roleLabels[profile?.role || ''] || 'Role inconnu'} />
-              <ReadonlyLine icon={<MapPin className="h-4 w-4" />} value={profile?.kiosques?.nom || 'Aucun kiosque assigne'} />
+              <h2 className="text-xs font-semibold text-text">Affectation</h2>
+              <ReadonlyLine icon={<Shield className="h-4 w-4" />} value={roleLabels[profile?.role || ''] || 'Rôle inconnu'} />
+              <ReadonlyLine icon={<MapPin className="h-4 w-4" />} value={profile?.kiosques?.nom || 'Aucun kiosque assigné'} />
             </div>
           </div>
 
           {isEditing && (
             <div className="mt-4 flex justify-end">
-              <Button type="button" variant="primary" onClick={handleSave} loading={loading}>
+              <Button type="button" variant="primary" onClick={handleSave} loading={loading} loadingText="Enregistrement…">
                 <Save className="h-4 w-4" />
                 Sauvegarder
               </Button>
@@ -226,10 +226,10 @@ export default function ProfilePage() {
         <CardContent>
           <div className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2">
             <div>
-              <p className="text-[10.5px] font-semibold uppercase tracking-wide text-text-tertiary">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Version de l'application
               </p>
-              <p className="mt-0.5 font-mono text-[13px] font-semibold text-text">{servedBuild ?? APP_BUILD}</p>
+              <p className="mt-0.5 font-mono text-sm font-semibold text-text">{servedBuild ?? APP_BUILD}</p>
             </div>
             <Button
               type="button"
@@ -257,7 +257,7 @@ export default function ProfilePage() {
 
 function ReadonlyLine({ icon, value }: { icon: ReactNode; value: string }) {
   return (
-    <div className="flex min-h-11 items-center gap-2 rounded-md bg-muted px-3 text-[12px] text-text">
+    <div className="flex min-h-11 items-center gap-2 rounded-md bg-muted px-3 text-xs text-text">
       <span className="text-blue">{icon}</span>
       <span className="truncate">{value}</span>
     </div>

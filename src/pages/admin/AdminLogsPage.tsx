@@ -13,9 +13,9 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
-import { PosSelect } from '@/components/pos'
 import { TechLogsTab } from './TechLogsTab'
 import { supabase } from '@/lib/supabase'
+import { Select } from '@/components/ui/input'
 
 interface AuditRow {
   id: string
@@ -158,7 +158,7 @@ export default function AdminLogsPage() {
       render: (row) => (row.actor_id ? actorNames.get(row.actor_id) ?? row.actor_id.slice(0, 8) : '—'),
       sortValue: (row) => (row.actor_id ? actorNames.get(row.actor_id) ?? '' : ''),
     },
-    { key: 'action', header: 'Action', render: (row) => <span className="font-mono text-[12px]">{row.action}</span>, sortValue: (row) => row.action },
+    { key: 'action', header: 'Action', render: (row) => <span className="font-mono text-xs">{row.action}</span>, sortValue: (row) => row.action },
     { key: 'entity', header: 'Entité', render: (row) => `${row.entity_type ?? '—'}${row.entity_id ? ` · ${row.entity_id.slice(0, 8)}` : ''}` },
   ]
 
@@ -166,16 +166,16 @@ export default function AdminLogsPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Logs d'audit</h1>
-          <p className="text-[12px] text-text-secondary">Traçabilité des actions d'administration.</p>
+          <h1 className="text-base font-semibold text-text">Logs d'audit</h1>
+          <p className="text-xs text-text-secondary">Traçabilité des actions d'administration.</p>
         </div>
-        <Button type="button" variant="default" size="sm" onClick={load} loading={isLoading}>
+        <Button type="button" variant="default" size="sm" onClick={load} loading={isLoading} loadingText="Actualisation…">
           <RefreshCw className="h-4 w-4" />
           Actualiser
         </Button>
       </div>
 
-      <div className="inline-flex rounded-md border border-border bg-surface text-[12px] font-semibold">
+      <div className="inline-flex rounded-md border border-border bg-surface text-xs font-semibold">
         {(
           [
             ['audit', 'Audit'],
@@ -215,7 +215,7 @@ export default function AdminLogsPage() {
               }}
               placeholder="Rechercher (action, entité, détail...)"
             />
-            <PosSelect
+            <Select fieldSize="lg"
               value={actionFilter}
               onChange={(event) => {
                 setActionFilter(event.target.value)
@@ -229,8 +229,8 @@ export default function AdminLogsPage() {
                   {action}
                 </option>
               ))}
-            </PosSelect>
-            <PosSelect
+            </Select>
+            <Select fieldSize="lg"
               value={period}
               onChange={(event) => {
                 setPeriod(event.target.value as Period)
@@ -243,7 +243,7 @@ export default function AdminLogsPage() {
                   {option.label}
                 </option>
               ))}
-            </PosSelect>
+            </Select>
           </div>
 
           {isLoading ? (
@@ -271,7 +271,7 @@ export default function AdminLogsPage() {
               {page * PAGE_SIZE < filtered.length && (
                 <Button
                   type="button"
-                  variant="pos-secondary"
+                  variant="outline" size="touch"
                   className="mt-2 w-full sm:w-auto"
                   onClick={() => setPage((current) => current + 1)}
                 >
@@ -294,7 +294,7 @@ export default function AdminLogsPage() {
             </DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="space-y-2 text-[13px]">
+            <div className="space-y-2 text-sm">
               <p>
                 <span className="font-semibold">Action :</span>{' '}
                 <span className="font-mono">{selected.action}</span>
@@ -309,7 +309,7 @@ export default function AdminLogsPage() {
               </p>
               <div>
                 <span className="font-semibold">Détails :</span>
-                <pre className="mt-1 max-h-60 overflow-auto rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3 text-[12px]">
+                <pre className="mt-1 max-h-60 overflow-auto rounded-md border border-border bg-bg p-3 text-xs">
                   {JSON.stringify(selected.details ?? {}, null, 2)}
                 </pre>
               </div>

@@ -11,11 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PosLabel } from '@/components/pos'
 import { logAudit } from '@/lib/audit'
 import { validateKiosqueRows, type KiosqueImportRow } from '@/lib/kiosqueImport'
 import { resolveTypeCode, type KiosqueType } from '@/lib/kiosqueTypes'
 import { supabase } from '@/lib/supabase'
+import { Label } from '@/components/ui/label'
 
 interface KiosqueImportDialogProps {
   open: boolean
@@ -185,7 +185,7 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
-              variant="pos-secondary"
+              variant="outline" size="touch"
               className="flex-1"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -199,9 +199,9 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
           </div>
 
           {rows.length > 0 && (
-            <div className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
-              <PosLabel className="mb-2">Apercu (5 premieres lignes)</PosLabel>
-              <div className="space-y-1 text-[13px]">
+            <div className="rounded-md border border-border bg-bg p-3">
+              <Label variant="caps" className="mb-2">Aperçu (5 premières lignes)</Label>
+              <div className="space-y-1 text-sm">
                 {rows.slice(0, 5).map((row, index) => {
                   const unknownType = unknownTypeFlags[index]
                   return (
@@ -209,38 +209,38 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
                       <span
                         className={
                           !row.nom || duplicateFlags[index]
-                            ? 'font-semibold text-[#FF4949]'
-                            : 'font-semibold text-[#12364D]'
+                            ? 'font-semibold text-red'
+                            : 'font-semibold text-text'
                         }
                       >
                         {row.nom || '(nom manquant — sera ignorée)'}
                         {duplicateFlags[index] ? ' — doublon' : ''}
                       </span>
-                      {row.adresse ? <span className="text-[#1C5376]"> - {row.adresse}</span> : null}
+                      {row.adresse ? <span className="text-text-secondary"> - {row.adresse}</span> : null}
                       {unknownType ? (
-                        <span className="font-semibold text-[#FF4949]">
+                        <span className="font-semibold text-red">
                           {' '}
                           — Type inconnu : {row.typeRaw} — ajoutez-le d'abord via Créer un kiosque
                         </span>
                       ) : row.typeRaw ? (
-                        <span className="text-[#1C5376]">
+                        <span className="text-text-secondary">
                           {' '}
                           [{resolveTypeCode(row.typeRaw, types).code}]
                         </span>
                       ) : (
-                        <span className="text-[#7D94A6]"> — (sans type)</span>
+                        <span className="text-text-tertiary"> — (sans type)</span>
                       )}
                     </p>
                   )
                 })}
               </div>
-              <p className="mt-2 text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
+              <p className="mt-2 text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                 {validation.valid.length} ligne(s) valide(s), {invalidCount} invalide(s)
                 {duplicateCount > 0 ? `, ${duplicateCount} doublon(s)` : ''}
                 {unknownTypeCount > 0 ? `, ${unknownTypeCount} type(s) inconnu(s)` : ''}.
               </p>
               {duplicateCount > 0 && (
-                <label className="mt-2 flex min-h-12 items-center gap-2 text-[13px] text-[#12364D]">
+                <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-text">
                   <input
                     type="checkbox"
                     checked={skipDuplicates}
@@ -253,17 +253,17 @@ export function KiosqueImportDialog({ open, onOpenChange, baseNames, types, onIm
             </div>
           )}
 
-          {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+          {error && <p className="text-sm font-medium text-red">{error}</p>}
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" size="touch" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
           <Button
             type="button"
-            variant="pos-primary"
-            loading={isImporting}
+            variant="primary" size="touch"
+            loading={isImporting} loadingText="Import…"
             disabled={rows.length === 0}
             onClick={importKiosques}
           >

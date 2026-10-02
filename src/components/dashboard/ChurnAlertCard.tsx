@@ -32,12 +32,12 @@ export function ChurnAlertCard() {
         className="flex w-full min-h-12 items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning-light p-3 text-left transition-colors hover:border-warning"
         aria-label="Voir les clients inactifs"
       >
-        <span className="flex items-center gap-2 text-[13px] font-medium text-text">
+        <span className="flex items-center gap-2 text-sm font-medium text-text">
           <UserX className="h-5 w-5 shrink-0 text-warning" />
           {churnedClients.length} client{churnedClients.length > 1 ? 's' : ''} inactif
           {churnedClients.length > 1 ? 's' : ''} depuis 30 jours
         </span>
-        <span className="text-[12px] font-semibold text-warning">Voir</span>
+        <span className="text-xs font-semibold text-warning">Voir</span>
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -55,10 +55,10 @@ export function ChurnAlertCard() {
                 className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface p-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-text">{client.nom}</p>
-                  <p className="truncate text-[12px] text-text-secondary">{client.kiosque}</p>
+                  <p className="truncate text-sm font-semibold text-text">{client.nom}</p>
+                  <p className="truncate text-xs text-text-secondary">{client.kiosque}</p>
                 </div>
-                <p className="shrink-0 text-[12px] font-semibold text-warning [font-variant-numeric:tabular-nums]">
+                <p className="shrink-0 text-xs font-semibold text-warning [font-variant-numeric:tabular-nums]">
                   {client.daysInactive !== null
                     ? `Inactif depuis ${client.daysInactive} jour${client.daysInactive > 1 ? 's' : ''}`
                     : 'Jamais acheté'}

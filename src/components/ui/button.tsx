@@ -24,17 +24,12 @@ const buttonVariants = cva(
           'border border-success bg-success text-success-foreground shadow-none hover:bg-success-hover focus:bg-success-hover active:bg-success-active',
         warning:
           'border border-warning bg-warning text-warning-foreground shadow-none hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
-        // POS design system: Diam'o brand variants (water blue / deep blue / soft red)
-        'pos-primary':
-          'min-h-12 bg-[#009EFB] text-white hover:bg-[#007EC8] focus:bg-[#007EC8]',
-        'pos-destructive':
-          'min-h-12 bg-[#FF4949] text-white hover:bg-[#dc2626] focus:bg-[#dc2626]',
-        'pos-secondary':
-          'min-h-12 border-2 border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#12364D]',
       },
       size: {
         default: 'h-11 px-4 py-2',
         sm: 'h-9 min-h-9 rounded-md px-3 text-xs sm:h-8 sm:min-h-8',
+        /** 48px touch target (field screens: sale, dialogs on phones). */
+        touch: 'h-12 px-4 py-2',
         lg: 'h-12 rounded-md px-8',
         xl: 'h-12 rounded-lg px-10 text-base',
         icon: 'h-11 w-11',
@@ -54,10 +49,12 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
   loading?: boolean
+  /** Shown next to the spinner while loading — name the action ("Suppression…"). */
+  loadingText?: string
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, loadingText = 'Chargement…', disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     return (
       <Comp
@@ -88,7 +85,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span>Chargement...</span>
+            <span>{loadingText}</span>
           </>
         ) : (
           children

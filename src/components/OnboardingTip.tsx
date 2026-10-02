@@ -16,9 +16,9 @@ export function OnboardingTip({ role, message }: { role: string; message: string
   if (!visible) return null
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border-2 border-[#009EFB]/40 bg-[#E3F3FE] p-3">
-      <p className="flex items-start gap-2 text-[13px] text-[#12364D]">
-        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-[#009EFB]" aria-hidden="true" />
+    <div className="flex items-start justify-between gap-3 rounded-lg border-2 border-blue/40 bg-blue-light p-3">
+      <p className="flex items-start gap-2 text-sm text-text">
+        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-blue" aria-hidden="true" />
         {message}
       </p>
       <button
@@ -28,7 +28,7 @@ export function OnboardingTip({ role, message }: { role: string; message: string
           window.localStorage.setItem(storageKey, 'seen')
           setVisible(false)
         }}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#1C5376] hover:bg-white/70"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-white/70"
       >
         <X className="h-4 w-4" />
       </button>

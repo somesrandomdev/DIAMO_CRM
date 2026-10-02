@@ -9,11 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { supabase } from '@/lib/supabase'
 import { formatPhone } from '@/lib/phone'
 import { logAudit } from '@/lib/audit'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface PasswordResetDialogProps {
   open: boolean
@@ -134,7 +135,7 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-[#009EFB]" aria-hidden="true" />
+            <Key className="h-5 w-5 text-blue" aria-hidden="true" />
             Réinitialiser le mot de passe
           </DialogTitle>
           <DialogDescription>
@@ -149,27 +150,27 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
               type="button"
               onClick={generateTemp}
               disabled={isBusy}
-              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-[#DCE1E5] bg-white p-3 text-left transition-colors hover:border-[#009EFB] disabled:opacity-60"
+              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-border bg-white p-3 text-left transition-colors hover:border-blue disabled:opacity-60"
             >
-              <Wand2 className="h-5 w-5 shrink-0 text-[#009EFB]" aria-hidden="true" />
+              <Wand2 className="h-5 w-5 shrink-0 text-blue" aria-hidden="true" />
               <span>
-                <span className="block text-sm font-semibold text-[#12364D]">Générer un mot de passe temporaire</span>
-                <span className="block text-xs text-[#1C5376]">Affiché une seule fois, à transmettre à l'utilisateur</span>
+                <span className="block text-sm font-semibold text-text">Générer un mot de passe temporaire</span>
+                <span className="block text-xs text-text-secondary">Affiché une seule fois, à transmettre à l'utilisateur</span>
               </span>
             </button>
             <button
               type="button"
               onClick={() => setMode('specific')}
               disabled={isBusy}
-              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-[#DCE1E5] bg-white p-3 text-left transition-colors hover:border-[#009EFB] disabled:opacity-60"
+              className="flex min-h-12 w-full items-center gap-3 rounded-md border-2 border-border bg-white p-3 text-left transition-colors hover:border-blue disabled:opacity-60"
             >
-              <Key className="h-5 w-5 shrink-0 text-[#12364D]" aria-hidden="true" />
+              <Key className="h-5 w-5 shrink-0 text-text" aria-hidden="true" />
               <span>
-                <span className="block text-sm font-semibold text-[#12364D]">Définir un mot de passe précis</span>
-                <span className="block text-xs text-[#1C5376]">Vous choisissez la valeur (8 caractères minimum)</span>
+                <span className="block text-sm font-semibold text-text">Définir un mot de passe précis</span>
+                <span className="block text-xs text-text-secondary">Vous choisissez la valeur (8 caractères minimum)</span>
               </span>
             </button>
-            {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+            {error && <p className="text-sm font-medium text-red">{error}</p>}
           </div>
         )}
 
@@ -182,8 +183,8 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <PosLabel htmlFor="reset-password">Nouveau mot de passe *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="reset-password">Nouveau mot de passe *</Label>
+              <Input fieldSize="lg"
                 id="reset-password"
                 type="text"
                 value={newPassword}
@@ -192,12 +193,12 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
                 autoFocus
               />
             </div>
-            {error && <p className="text-sm font-medium text-[#FF4949]">{error}</p>}
+            {error && <p className="text-sm font-medium text-red">{error}</p>}
             <DialogFooter>
-              <Button type="button" variant="pos-secondary" onClick={() => setMode('choice')}>
+              <Button type="button" variant="outline" size="touch" onClick={() => setMode('choice')}>
                 Retour
               </Button>
-              <Button type="submit" variant="pos-primary" loading={isBusy} disabled={newPassword.length < 8}>
+              <Button type="submit" variant="primary" size="touch" loading={isBusy} loadingText="Réinitialisation…" disabled={newPassword.length < 8}>
                 Réinitialiser
               </Button>
             </DialogFooter>
@@ -206,24 +207,24 @@ export function PasswordResetDialog({ open, onOpenChange, userId, username, tele
 
         {mode === 'revealed' && (
           <div className="space-y-4">
-            <div className="rounded-md border-2 border-[#009EFB] bg-[#E3F3FE] p-4 text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#1C5376]">
+            <div className="rounded-md border-2 border-blue bg-blue-light p-4 text-center">
+              <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
                 Mot de passe temporaire
               </p>
-              <p className="mt-2 select-all break-all font-mono text-2xl font-bold text-[#12364D]">
+              <p className="mt-2 select-all break-all font-mono text-2xl font-bold text-text">
                 {generated}
               </p>
             </div>
-            <Button type="button" variant="pos-secondary" className="w-full" onClick={copy}>
+            <Button type="button" variant="outline" size="touch" className="w-full" onClick={copy}>
               <Copy className="h-4 w-4" />
               {copied ? 'Copié !' : 'Copier'}
             </Button>
-            <p className="text-[13px] leading-relaxed text-[#1C5376]">
+            <p className="text-sm leading-relaxed text-text-secondary">
               Transmettez ce mot de passe à l'utilisateur. Il devra le changer à sa prochaine
               connexion.
             </p>
             <DialogFooter>
-              <Button type="button" variant="pos-primary" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="primary" size="touch" onClick={() => onOpenChange(false)}>
                 Terminé
               </Button>
             </DialogFooter>

@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddClientUltra from '@/pages/AddClientUltra'
-import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/authStore'
 import { useVenteStore } from '@/stores/venteStore'
 import { SaleCart } from './SaleCart'
 import { SaleCheckout } from './SaleCheckout'
 import { SaleClientPicker } from './SaleClientPicker'
+import { PendingSalesBadge } from './PendingSalesBadge'
+import { SaleConfirmation } from './SaleConfirmation'
 import { SaleRecentList } from './SaleRecentList'
-import { SaleStatusBanners } from './SaleStatusBanners'
 import { SaleSummary } from './SaleSummary'
 import { OnboardingTip } from '@/components/OnboardingTip'
 import { useOfflineQueue } from './useOfflineQueue'
 import { useSaleSummary } from './useSaleSummary'
-import { useSubmitSale } from './useSubmitSale'
+import { useRecentClients } from './useRecentClients'
+import { useSubmitSale, type SaleReceipt } from './useSubmitSale'
 import { useTicketUpload } from './useTicketUpload'
 import { useVenteForm } from './useVenteForm'
 import { setUpdateUnsafeGuard } from '@/lib/updateCoordinator'
@@ -37,18 +38,24 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
   const form = useVenteForm()
   const { dailyStats, recentSales, dailyGoal, loadVenteSummary } = useSaleSummary()
 
+  const { uploadTicket, ticket, clearTicket } = useTicketUpload()
+  /** Non-null = the confirmation screen is open for this sale. */
+  const [receipt, setReceipt] = useState<SaleReceipt | null>(null)
+
   // Mise à jour forcée: un panier non vide = moment non sûr. La bannière
   // s'affiche, l'UpdateGate attend que le panier soit vidé (vente validée
   // ou annulée) ou que l'écran soit quitté. Jamais de perte de saisie.
+  // L'écran de confirmation ouvert compte aussi : le ticket n'est pas encore
+  // partagé (le panier, lui, est déjà vidé derrière).
   useEffect(() => {
-    setUpdateUnsafeGuard(() => form.cartItems.length > 0)
+    setUpdateUnsafeGuard(() => form.cartItems.length > 0 || receipt !== null)
     return () => setUpdateUnsafeGuard(null)
-  }, [form.cartItems])
-  const { uploadTicket } = useTicketUpload()
+  }, [form.cartItems, receipt])
 
   const [showAddClient, setShowAddClient] = useState(false)
 
   const kiosqueId = profile?.kiosque_id
+  const { recentClients, reload: reloadRecentClients } = useRecentClients(kiosqueId)
   const reloadSummary = useCallback(() => {
     if (kiosqueId) loadVenteSummary(kiosqueId)
   }, [kiosqueId, loadVenteSummary])
@@ -59,7 +66,14 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
     uploadTicket,
     resetForm: form.resetForm,
     reloadSummary,
+    onRecorded: setReceipt,
   })
+
+  const closeConfirmation = useCallback(() => {
+    setReceipt(null)
+    clearTicket()
+    form.resetForm()
+  }, [clearTicket, form])
 
   const safeClients = useMemo(() => clients.filter((client) => client?.nom), [clients])
   const safeOffers = useMemo(
@@ -67,8 +81,12 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
     [offres]
   )
   const selectedClient = useMemo(
-    () => safeClients.find((client) => client.id === form.selectedClientId) ?? null,
-    [form.selectedClientId, safeClients]
+    () =>
+      safeClients.find((client) => client.id === form.selectedClientId) ??
+      // A recent-client chip may name a client outside the loaded list.
+      recentClients.find((client) => client.id === form.selectedClientId) ??
+      null,
+    [form.selectedClientId, safeClients, recentClients]
   )
 
   useEffect(() => {
@@ -103,6 +121,7 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
           setShowAddClient(false)
           if (kiosqueId) {
             loadClients(kiosqueId)
+            void reloadRecentClients()
           }
         }}
       />
@@ -117,20 +136,23 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
     <div className="mx-auto max-w-2xl space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Nouvelle vente</h1>
-          <p className="text-sm text-[#1C5376]">Enregistrer une vente et generer le ticket.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-text">Nouvelle vente</h1>
+            <PendingSalesBadge
+              pendingCount={queue.pendingCount}
+              isOnline={queue.isOnline}
+              isSyncing={queue.isSyncingQueue}
+              onSync={queue.flushQueue}
+              clients={safeClients}
+            />
+          </div>
+          <p className="text-sm text-text-secondary">Enregistrer une vente et partager le ticket.</p>
         </div>
-        <Button type="button" variant="pos-secondary" onClick={onBack}>Retour</Button>
+        {/* Pas de « Retour » : cet écran EST l'accueil du fontainier (seul rôle
+            autorisé) ; la barre d'onglets couvre la navigation. */}
       </div>
 
-      <SaleStatusBanners
-        isOnline={queue.isOnline}
-        pendingCount={queue.pendingCount}
-        isSyncingQueue={queue.isSyncingQueue}
-        onSync={queue.flushQueue}
-      />
-
-      <OnboardingTip role="fontainier" message="Bienvenue ! Sélectionnez un client, touchez les offres à vendre, puis validez — le ticket se télécharge tout seul." />
+      <OnboardingTip role="fontainier" message="Bienvenue ! Sélectionnez un client, touchez les offres à vendre, puis validez — vous pourrez ensuite partager le ticket." />
       <SaleSummary
         todaySalesCount={dailyStats.ventes}
         todayRevenue={dailyStats.ca}
@@ -146,6 +168,7 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
           onClear={() => form.setSelectedClientId('')}
           onAddNew={() => setShowAddClient(true)}
           resetKey={resetKey}
+          recentClients={recentClients}
         />
 
         <SaleCart
@@ -170,6 +193,8 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
       </form>
 
       <SaleRecentList sales={recentSales} />
+
+      <SaleConfirmation receipt={receipt} ticket={ticket} onClose={closeConfirmation} />
     </div>
   )
 }

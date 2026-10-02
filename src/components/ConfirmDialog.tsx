@@ -14,6 +14,8 @@ interface ConfirmDialogProps {
   title: string
   description: string
   confirmLabel?: string
+  /** Spinner label while isBusy (« Suppression… », « Restauration… »). */
+  busyLabel?: string
   cancelLabel?: string
   isBusy?: boolean
   onConfirm: () => void
@@ -29,6 +31,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = 'Supprimer',
+  busyLabel = 'Suppression…',
   cancelLabel = 'Annuler',
   isBusy = false,
   onConfirm,
@@ -41,10 +44,10 @@ export function ConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" size="touch" onClick={() => onOpenChange(false)}>
             {cancelLabel}
           </Button>
-          <Button type="button" variant="pos-destructive" loading={isBusy} onClick={onConfirm}>
+          <Button type="button" variant="destructive" size="touch" loading={isBusy} loadingText={busyLabel} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </DialogFooter>

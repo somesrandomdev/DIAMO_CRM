@@ -156,7 +156,7 @@ export default function KiosqueDetailPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Button type="button" variant="default" size="sm" className="w-fit" onClick={() => navigate('/admin/dashboard')}>
           <ArrowLeft className="h-4 w-4" />
-          Dashboard
+          Tableau de bord
         </Button>
       </div>
 
@@ -167,10 +167,10 @@ export default function KiosqueDetailPage() {
       )}
 
       <div>
-        <h1 className="text-[15px] font-semibold text-text">{kiosque?.nom ?? 'Kiosque'}</h1>
-        <p className="mt-2 flex items-center gap-2 text-[12px] text-text-secondary">
+        <h1 className="text-base font-semibold text-text">{kiosque?.nom ?? 'Kiosque'}</h1>
+        <p className="mt-2 flex items-center gap-2 text-xs text-text-secondary">
           <MapPin className="h-4 w-4" />
-          {kiosque?.adresse || 'Adresse non renseignee'}
+          {kiosque?.adresse || 'Adresse non renseignée'}
         </p>
       </div>
 
@@ -192,7 +192,7 @@ export default function KiosqueDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="rounded-md border border-border p-3">
-              <p className="text-[12px] text-text-secondary">Offre la plus vendue</p>
+              <p className="text-xs text-text-secondary">Offre la plus vendue</p>
               <p className="font-semibold">{stats.bestOffer}</p>
             </div>
             {users.map((user) => (
@@ -201,7 +201,7 @@ export default function KiosqueDetailPage() {
                 <StatusBadge variant={roleVariant(user.role)}>{user.role}</StatusBadge>
               </div>
             ))}
-            {users.length === 0 && <EmptyState title="Aucun utilisateur assigne" className="border-0 bg-muted p-4" />}
+            {users.length === 0 && <EmptyState title="Aucun utilisateur assigné" className="border-0 bg-muted p-4" />}
           </CardContent>
         </Card>
       </div>

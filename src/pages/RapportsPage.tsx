@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosLabel, PosProgress } from '@/components/pos'
 import { generateReportPdf } from '@/lib/reportPdf'
 import { chartTheme } from '@/lib/chartTheme'
 import { monthKey, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
 import { formatCFACompact, toCFA } from '@/utils/price'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
 
 interface KiosqueRow {
   id: string
@@ -183,15 +184,15 @@ export default function RapportsPage() {
   const columns: DataTableColumn<ReportRow>[] = [
     { key: 'kiosque', header: 'Kiosque', render: (row) => <span className="font-medium">{row.kiosque.nom}</span>, sortValue: (row) => row.kiosque.nom },
     { key: 'ca', header: 'CA', align: 'right', render: (row) => <span className="font-mono">{toCFA(row.ca)}</span>, sortValue: (row) => row.ca },
-    { key: 'target', header: 'Objectif', align: 'right', render: (row) => row.target > 0 ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non defini</span>, sortValue: (row) => row.target },
+    { key: 'target', header: 'Objectif', align: 'right', render: (row) => row.target > 0 ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non défini</span>, sortValue: (row) => row.target },
     {
       key: 'progress',
       header: '%',
       align: 'right',
       render: (row) => (
         <div className="ml-auto w-24">
-          <PosProgress value={row.progress} className="bg-muted" barClassName="bg-primary" />
-          <p className="mt-1 text-right text-[10.5px] text-text-secondary">
+          <Progress value={row.progress} className="bg-muted" barClassName="bg-primary" />
+          <p className="mt-1 text-right text-xs text-text-secondary">
             {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'}
           </p>
         </div>
@@ -227,10 +228,10 @@ export default function RapportsPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Rapports</h1>
-          <p className="text-[12px] text-text-secondary">Comparaison des kiosques et exports par periode.</p>
+          <h1 className="text-base font-semibold text-text">Rapports</h1>
+          <p className="text-xs text-text-secondary">Comparaison des kiosques et exports par période.</p>
         </div>
-        <div className="inline-flex rounded-md border border-border bg-surface text-[12px] font-medium">
+        <div className="inline-flex rounded-md border border-border bg-surface text-xs font-medium">
           {periodOptions.map((option) => (
             <button
               key={option.value}
@@ -251,44 +252,44 @@ export default function RapportsPage() {
       {/* Kiosk-to-kiosk comparisons — horizontal bars for mobile readability */}
       {chartRows.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <PosCard>
-            <PosLabel className="mb-3">Chiffre d'affaires par kiosque</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Chiffre d'affaires par kiosque</Label>
             <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
               <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={(value) => formatCFACompact(Number(value))} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [toCFA(Number(value)), 'CA']} />
-                <Bar dataKey="ca" fill="#009EFB" radius={[0, 4, 4, 0]} barSize={16} />
+                <Bar dataKey="ca" fill={chartTheme.blue} radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
-          </PosCard>
+          </Card>
 
-          <PosCard>
-            <PosLabel className="mb-3">Realisation des objectifs (%)</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Réalisation des objectifs (%)</Label>
             <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
               <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={(value) => `${value} %`} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
-                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Realisation']} />
-                <Bar dataKey="pct" fill="#12364D" radius={[0, 4, 4, 0]} barSize={16} />
+                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Réalisation']} />
+                <Bar dataKey="pct" fill="var(--color-text)" radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
-          </PosCard>
+          </Card>
 
-          <PosCard>
-            <PosLabel className="mb-3">Volume de ventes par kiosque</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Volume de ventes par kiosque</Label>
             <ResponsiveContainer width="100%" height={Math.max(160, chartRows.length * 44)}>
               <BarChart data={chartRows} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <YAxis dataKey="nom" type="category" width={110} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [value, 'Ventes']} />
-                <Bar dataKey="ventes" fill="#007EC8" radius={[0, 4, 4, 0]} barSize={16} />
+                <Bar dataKey="ventes" fill={chartTheme.blueSecondary} radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
-          </PosCard>
+          </Card>
         </div>
       )}
 
@@ -305,7 +306,7 @@ export default function RapportsPage() {
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-16 rounded-lg" />)}
             </div>
           ) : rows.length === 0 || scoped.length === 0 ? (
-            <EmptyState title="Aucun rapport" description="Les rapports apparaitront apres les premieres ventes de la periode." />
+            <EmptyState title="Aucun rapport" description="Les rapports apparaîtront après les premières ventes de la période." />
           ) : (
             <>
               <div className="hidden sm:block">
@@ -317,7 +318,7 @@ export default function RapportsPage() {
                 {rows.map((row) => (
                   <div key={row.kiosque.id} className="rounded-md border border-border bg-surface p-3">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-[14px] font-semibold text-text">{row.kiosque.nom}</p>
+                      <p className="text-sm font-semibold text-text">{row.kiosque.nom}</p>
                       <Button
                         type="button"
                         variant="default"
@@ -332,20 +333,20 @@ export default function RapportsPage() {
 
                     <div className="mt-2">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="font-mono text-[16px] font-bold text-blue [font-variant-numeric:tabular-nums]">
+                        <span className="font-mono text-base font-bold text-blue [font-variant-numeric:tabular-nums]">
                           {toCFA(row.ca)}
                         </span>
-                        <span className="text-[11px] text-text-secondary [font-variant-numeric:tabular-nums]">
-                          / {row.target > 0 ? toCFA(row.target) : 'Non defini'}
+                        <span className="text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
+                          / {row.target > 0 ? toCFA(row.target) : 'Non défini'}
                         </span>
                       </div>
-                      <PosProgress value={row.progress} className="bg-muted" barClassName="bg-primary" />
-                      <p className="mt-1 text-right text-[10.5px] text-text-secondary [font-variant-numeric:tabular-nums]">
+                      <Progress value={row.progress} className="bg-muted" barClassName="bg-primary" />
+                      <p className="mt-1 text-right text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                         {row.target > 0 ? `${row.progress.toFixed(1)}%` : 'N/A'} - {row.ventes} vente(s)
                       </p>
                     </div>
 
-                    <dl className="mt-2 grid grid-cols-2 gap-2 text-[12px]">
+                    <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <dt className="text-text-secondary">Top client</dt>
                         <dd className="font-medium text-text">{row.topClient}</dd>

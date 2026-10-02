@@ -1,5 +1,6 @@
 import { toCFA } from '@/utils/price'
-import { PosCard, PosProgress } from '@/components/pos'
+import { Card } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 
 interface SaleSummaryProps {
   todaySalesCount: number
@@ -13,25 +14,25 @@ export function SaleSummary({ todaySalesCount, todayRevenue, dailyGoal }: SaleSu
   const goalProgress = dailyGoal && dailyGoal > 0 ? (todayRevenue / dailyGoal) * 100 : 0
 
   return (
-    <PosCard className="space-y-3 py-3">
+    <Card padding="md" className="space-y-3 py-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[#12364D]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-text">
           Aujourd'hui
         </span>
-        <span className="text-sm font-semibold text-[#12364D] [font-variant-numeric:tabular-nums]">
+        <span className="text-sm font-semibold text-text [font-variant-numeric:tabular-nums]">
           {todaySalesCount} vente{todaySalesCount > 1 ? 's' : ''} · {toCFA(todayRevenue)}
         </span>
       </div>
 
       {dailyGoal !== null && (
         <div>
-          <PosProgress value={goalProgress} className="h-3" />
-          <p className="mt-1 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
+          <Progress value={goalProgress} className="h-3" />
+          <p className="mt-1 text-right text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
             Objectif du jour : {toCFA(todayRevenue)} / {toCFA(dailyGoal)} CFA (
             {goalProgress.toFixed(0)} %)
           </p>
         </div>
       )}
-    </PosCard>
+    </Card>
   )
 }

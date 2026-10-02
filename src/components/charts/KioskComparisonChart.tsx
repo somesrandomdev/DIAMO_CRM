@@ -35,33 +35,33 @@ function BarTooltip({ active, payload, showDelta, clickable }: BarTooltipProps) 
 
   return (
     <div className="rounded-md border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="text-[13px] font-semibold text-text">{row.nom}</p>
-      <p className="mt-1 flex items-baseline gap-3 text-[12px] text-text-secondary">
+      <p className="text-sm font-semibold text-text">{row.nom}</p>
+      <p className="mt-1 flex items-baseline gap-3 text-xs text-text-secondary">
         Recette du mois
-        <span className="ml-auto font-mono text-[13px] font-semibold text-text">
+        <span className="ml-auto font-mono text-sm font-semibold text-text">
           {toCFA(row.caMois)}
         </span>
       </p>
       {row.nbVentes > 0 && (
         <>
-          <p className="flex items-baseline gap-3 text-[12px] text-text-secondary">
+          <p className="flex items-baseline gap-3 text-xs text-text-secondary">
             Ventes
             <span className="ml-auto font-mono text-text">{formatCount(row.nbVentes)}</span>
           </p>
-          <p className="flex items-baseline gap-3 text-[12px] text-text-secondary">
+          <p className="flex items-baseline gap-3 text-xs text-text-secondary">
             Panier moyen
             <span className="ml-auto font-mono text-text">{toCFA(row.panierMoyen)}</span>
           </p>
         </>
       )}
       {showDelta && (
-        <p className="mt-1 border-t border-border pt-1 text-[12px] text-text-secondary">
+        <p className="mt-1 border-t border-border pt-1 text-xs text-text-secondary">
           {row.deltaVsPrevious > 0 ? '+' : ''}
           {row.deltaVsPrevious.toFixed(1)} % vs mois dernier
         </p>
       )}
       {clickable && (
-        <p className="mt-1.5 text-[11px] italic text-text-tertiary">
+        <p className="mt-1.5 text-xs italic text-text-tertiary">
           Touchez la barre pour voir le détail
         </p>
       )}
@@ -95,7 +95,7 @@ export const KioskComparisonChart = memo(function KioskComparisonChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-[14px]">Comparaison des kiosques</CardTitle>
+        <CardTitle className="text-sm">Comparaison des kiosques</CardTitle>
         <CardDescription>
           Recette totale du mois, du plus élevé au plus faible.
           {onBarClick ? ' Touchez une barre pour ouvrir la fiche du kiosque.' : ''}
@@ -150,8 +150,8 @@ export const KioskComparisonChart = memo(function KioskComparisonChart({
           </ResponsiveContainer>
         ) : (
           <div className="flex h-[220px] flex-col items-center justify-center gap-2 text-center">
-            <p className="text-[13px] font-medium text-text">Aucune recette ce mois</p>
-            <p className="max-w-xs text-[12px] text-text-secondary">
+            <p className="text-sm font-medium text-text">Aucune recette ce mois</p>
+            <p className="max-w-xs text-xs text-text-secondary">
               Les kiosques apparaîtront ici dès qu'une vente sera enregistrée.
             </p>
           </div>

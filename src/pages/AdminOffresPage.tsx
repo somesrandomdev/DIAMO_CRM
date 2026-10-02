@@ -17,9 +17,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
-import { PosInput, PosLabel, PosTextarea } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
+import { Label } from '@/components/ui/label'
+import { Input, Textarea } from '@/components/ui/input'
 
 interface OffreRow {
   id: string
@@ -29,7 +30,7 @@ interface OffreRow {
 }
 
 function formatVolume(volumeMl: number | null) {
-  return volumeMl ? `${volumeMl / 1000} L` : 'Non defini'
+  return volumeMl ? `${volumeMl / 1000} L` : 'Non défini'
 }
 
 export default function AdminOffresPage() {
@@ -184,13 +185,13 @@ export default function AdminOffresPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Offres</h1>
-          <p className="text-[12px] text-text-secondary">Catalogue des volumes vendus par les kiosques.</p>
+          <h1 className="text-base font-semibold text-text">Offres</h1>
+          <p className="text-xs text-text-secondary">Catalogue des volumes vendus par les kiosques.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline" size="touch"
             onClick={() => navigate('/admin/tarifs')}
           >
             Prix par kiosque
@@ -233,7 +234,7 @@ export default function AdminOffresPage() {
               </div>
               {filteredRows.length === 0 ? (
                 <EmptyState
-                  title="Aucun resultat"
+                  title="Aucun résultat"
                   description="Essayez un autre nom d'offre."
                 />
               ) : (
@@ -260,8 +261,8 @@ export default function AdminOffresPage() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <PosLabel htmlFor="offre-nom">Nom *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="offre-nom">Nom *</Label>
+              <Input fieldSize="lg"
                 id="offre-nom"
                 value={form.nom}
                 onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))}
@@ -270,8 +271,8 @@ export default function AdminOffresPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="offre-volume">Volume (ml)</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="offre-volume">Volume (ml)</Label>
+              <Input fieldSize="lg"
                 id="offre-volume"
                 type="number"
                 min={0}
@@ -281,8 +282,8 @@ export default function AdminOffresPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="offre-description">Description</PosLabel>
-              <PosTextarea
+              <Label variant="caps" htmlFor="offre-description">Description</Label>
+              <Textarea fieldSize="lg"
                 id="offre-description"
                 rows={3}
                 value={form.description}
@@ -291,12 +292,12 @@ export default function AdminOffresPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+              <Button type="button" variant="outline" size="touch" onClick={() => setIsFormOpen(false)}>
                 Annuler
               </Button>
-              <Button type="submit" variant="pos-primary" loading={isSaving} disabled={!form.nom.trim()}>
+              <Button type="submit" variant="primary" size="touch" loading={isSaving} loadingText="Enregistrement…" disabled={!form.nom.trim()}>
                 <Save className="h-4 w-4" />
-                {form.id ? 'Mettre a jour' : 'Creer'}
+                {form.id ? 'Mettre à jour' : 'Créer'}
               </Button>
             </DialogFooter>
           </form>

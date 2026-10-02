@@ -128,12 +128,12 @@ export function AppUpdateManager() {
     return (
       <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-bg p-4 text-center">
         <img src="/logo-principal.png" alt="Diam'o" className="mb-4 h-16 w-auto object-contain" />
-        <RefreshCw className="mb-3 h-10 w-10 animate-spin text-[#009EFB]" aria-hidden="true" />
+        <RefreshCw className="mb-3 h-10 w-10 animate-spin text-blue" aria-hidden="true" />
         <h1 className="text-lg font-bold text-text">Nouvelle version disponible</h1>
-        <p className="mt-2 max-w-sm text-[13px] text-[#1C5376]">
+        <p className="mt-2 max-w-sm text-sm text-text-secondary">
           Appuyez sur le bouton pour mettre à jour l'application.
         </p>
-        <Button variant="pos-primary" className="mt-6 h-14 w-full max-w-xs text-base" onClick={applyUpdate}>
+        <Button variant="primary" size="touch" className="mt-6 h-14 w-full max-w-xs text-base" onClick={applyUpdate}>
           Mettre à jour
         </Button>
       </div>
@@ -142,13 +142,13 @@ export function AppUpdateManager() {
 
   // phase === 'pending': moment non sûr (vente en saisie) → bannière persistante
   return (
-    <div className="fixed inset-x-0 top-0 z-[90] flex items-center justify-between gap-3 bg-[#009EFB] px-3 py-2 text-white">
-      <span className="text-[12px] font-semibold">Mise à jour disponible — Recharger</span>
+    <div className="fixed inset-x-0 top-0 z-[90] flex items-center justify-between gap-3 bg-blue px-3 py-2 text-white">
+      <span className="text-xs font-semibold">Mise à jour disponible — Recharger</span>
       <Button
         type="button"
         variant="default"
         size="sm"
-        className="bg-white text-[#009EFB] hover:bg-white/90"
+        className="bg-white text-blue hover:bg-white/90"
         onClick={applyUpdate}
       >
         Recharger

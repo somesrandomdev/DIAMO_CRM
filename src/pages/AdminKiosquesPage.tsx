@@ -18,12 +18,13 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { KiosqueImportDialog } from '@/components/admin/KiosqueImportDialog'
-import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
 import { logError } from '@/lib/telemetry'
 import { normalizeTypeCode, typeBadgeClass, type KiosqueType } from '@/lib/kiosqueTypes'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface KiosqueRow {
   id: string
@@ -241,7 +242,7 @@ export default function AdminKiosquesPage() {
         <div className="flex items-center gap-2">
           <span className="font-medium">{row.nom}</span>
           <span
-            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeBadgeClass(row.type_code)}`}
+            className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${typeBadgeClass(row.type_code)}`}
           >
             {row.type_code ?? 'Sans type'}
           </span>
@@ -249,7 +250,7 @@ export default function AdminKiosquesPage() {
       ),
       sortValue: (row) => row.nom,
     },
-    { key: 'adresse', header: 'Adresse', render: (row) => row.adresse || 'Non renseignee', sortValue: (row) => row.adresse ?? '' },
+    { key: 'adresse', header: 'Adresse', render: (row) => row.adresse || 'Non renseignée', sortValue: (row) => row.adresse ?? '' },
     {
       key: 'type',
       header: 'Type',
@@ -305,19 +306,19 @@ export default function AdminKiosquesPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[15px] font-semibold text-text">Kiosques</h1>
-          <p className="text-[12px] text-text-secondary">Gestion des points de vente du reseau.</p>
+          <h1 className="text-base font-semibold text-text">Kiosques</h1>
+          <p className="text-xs text-text-secondary">Gestion des points de vente du réseau.</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             to="/admin/tarifs"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-[#DCE1E5] bg-white px-4 text-sm font-semibold text-[#12364D] transition-colors hover:border-[#12364D]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-border bg-white px-4 text-sm font-semibold text-text transition-colors hover:border-text"
           >
             Tarifs
           </Link>
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline" size="touch"
             onClick={() => setIsImportOpen(true)}
           >
             <Upload className="h-4 w-4" />
@@ -349,12 +350,12 @@ export default function AdminKiosquesPage() {
               aria-pressed={typeFilter === chip.value}
               className={
                 typeFilter === chip.value
-                  ? 'min-h-11 rounded-md bg-primary px-3 text-[12px] font-semibold text-white'
-                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-[12px] font-semibold text-text-secondary hover:border-primary hover:text-primary'
+                  ? 'min-h-11 rounded-md bg-primary px-3 text-xs font-semibold text-white'
+                  : 'min-h-11 rounded-md border border-border bg-surface px-3 text-xs font-semibold text-text-secondary hover:border-primary hover:text-primary'
               }
             >
               {chip.label}
-              <span className="ml-1.5 text-[11px] opacity-70 [font-variant-numeric:tabular-nums]">
+              <span className="ml-1.5 text-xs opacity-70 [font-variant-numeric:tabular-nums]">
                 {chip.count}
               </span>
             </button>
@@ -380,7 +381,7 @@ export default function AdminKiosquesPage() {
                   <Button type="button" variant="primary" onClick={openCreate}>
                     Ajouter manuellement
                   </Button>
-                  <Button type="button" variant="pos-secondary" onClick={() => setIsImportOpen(true)}>
+                  <Button type="button" variant="outline" size="touch" onClick={() => setIsImportOpen(true)}>
                     Importer via CSV
                   </Button>
                 </div>
@@ -398,7 +399,7 @@ export default function AdminKiosquesPage() {
               </div>
               {filteredRows.length === 0 ? (
                 <EmptyState
-                  title="Aucun resultat"
+                  title="Aucun résultat"
                   description="Essayez un autre nom ou changez de filtre de type."
                 />
               ) : (
@@ -425,8 +426,8 @@ export default function AdminKiosquesPage() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <PosLabel htmlFor="kiosque-nom">Nom *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="kiosque-nom">Nom *</Label>
+              <Input fieldSize="lg"
                 id="kiosque-nom"
                 value={form.nom}
                 onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))}
@@ -435,8 +436,8 @@ export default function AdminKiosquesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="kiosque-adresse">Adresse</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="kiosque-adresse">Adresse</Label>
+              <Input fieldSize="lg"
                 id="kiosque-adresse"
                 value={form.adresse}
                 onChange={(event) => setForm((current) => ({ ...current, adresse: event.target.value }))}
@@ -444,9 +445,9 @@ export default function AdminKiosquesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="kiosque-type">
+              <Label variant="caps" htmlFor="kiosque-type">
                 Type {!form.id && '*'}
-              </PosLabel>
+              </Label>
               <select
                 id="kiosque-type"
                 value={showNewType ? '__new__' : form.type_code}
@@ -459,7 +460,7 @@ export default function AdminKiosquesPage() {
                   setShowNewType(false)
                   setForm((current) => ({ ...current, type_code: value }))
                 }}
-                className="h-12 w-full rounded-md border-2 border-[#DCE1E5] bg-white px-3 text-base text-[#12364D] focus:border-[#12364D] focus:outline-none sm:h-11 sm:text-[13px]"
+                className="h-12 w-full rounded-md border-2 border-border bg-white px-3 text-base text-text focus:border-text focus:outline-none sm:h-11 sm:text-sm"
               >
                 <option value="">— Sélectionner un type —</option>
                 {types.map((type) => (
@@ -471,15 +472,15 @@ export default function AdminKiosquesPage() {
               </select>
               {/* Édition d'un kiosque sans type : hint */}
               {form.id && !form.type_code && !showNewType && (
-                <p className="text-[12px] text-amber">Pensez à définir le type de ce kiosque</p>
+                <p className="text-xs text-amber">Pensez à définir le type de ce kiosque</p>
               )}
             </div>
             {showNewType && (
-              <div className="space-y-2 rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
+              <div className="space-y-2 rounded-md border border-border bg-bg p-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1.5">
-                    <PosLabel htmlFor="new-type-code">Code *</PosLabel>
-                    <PosInput
+                    <Label variant="caps" htmlFor="new-type-code">Code *</Label>
+                    <Input fieldSize="lg"
                       id="new-type-code"
                       value={newTypeCode}
                       onChange={(event) => setNewTypeCode(normalizeTypeCode(event.target.value))}
@@ -488,8 +489,8 @@ export default function AdminKiosquesPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <PosLabel htmlFor="new-type-label">Libellé *</PosLabel>
-                    <PosInput
+                    <Label variant="caps" htmlFor="new-type-label">Libellé *</Label>
+                    <Input fieldSize="lg"
                       id="new-type-label"
                       value={newTypeLabel}
                       onChange={(event) => setNewTypeLabel(event.target.value)}
@@ -499,10 +500,10 @@ export default function AdminKiosquesPage() {
                 </div>
                 <Button
                   type="button"
-                  variant="pos-secondary"
+                  variant="outline"
                   size="sm"
                   className="w-full"
-                  loading={isCreatingType}
+                  loading={isCreatingType} loadingText="Création du type…"
                   onClick={async () => {
                     const code = await createType()
                     if (code) {
@@ -518,17 +519,17 @@ export default function AdminKiosquesPage() {
               </div>
             )}
             <DialogFooter>
-              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+              <Button type="button" variant="outline" size="touch" onClick={() => setIsFormOpen(false)}>
                 Annuler
               </Button>
               <Button
                 type="submit"
-                variant="pos-primary"
-                loading={isSaving}
+                variant="primary" size="touch"
+                loading={isSaving} loadingText="Enregistrement…"
                 disabled={!form.nom.trim() || (!form.id && !form.type_code) || isCreatingType}
               >
                 <Save className="h-4 w-4" />
-                {form.id ? 'Mettre a jour' : 'Creer'}
+                {form.id ? 'Mettre à jour' : 'Créer'}
               </Button>
             </DialogFooter>
           </form>

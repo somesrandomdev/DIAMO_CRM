@@ -119,7 +119,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       <DialogContent className="max-h-[80vh] max-w-xl overflow-y-auto" hideClose>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-[#009EFB]" aria-hidden="true" />
+            <Search className="h-5 w-5 text-blue" aria-hidden="true" />
             Recherche globale
           </DialogTitle>
         </DialogHeader>
@@ -130,13 +130,13 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           placeholder="Kiosques, clients, utilisateurs, pages..."
           aria-label="Recherche globale"
           autoFocus
-          className="h-12 w-full rounded-md border-2 border-[#DCE1E5] px-3 text-[15px] text-[#12364D] placeholder:text-[#8AA3B5] focus:border-[#009EFB] focus:outline-none"
+          className="h-12 w-full rounded-md border-2 border-border px-3 text-base text-text placeholder:text-text-tertiary focus:border-blue focus:outline-none"
         />
         <div className="space-y-1">
           {groups.map((group) =>
             group.results.length === 0 ? null : (
               <div key={group.title}>
-                <p className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-[#7D94A6]">
+                <p className="px-2 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
                   {group.title}
                 </p>
                 {group.results.map((result) => {
@@ -149,14 +149,14 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                         onOpenChange(false)
                         navigate(result.route)
                       }}
-                      className="flex min-h-11 w-full items-center gap-3 rounded-md px-2 text-left hover:bg-[#F6F9FB]"
+                      className="flex min-h-11 w-full items-center gap-3 rounded-md px-2 text-left hover:bg-bg"
                     >
-                      <Icon className="h-4 w-4 shrink-0 text-[#009EFB]" aria-hidden="true" />
+                      <Icon className="h-4 w-4 shrink-0 text-blue" aria-hidden="true" />
                       <span className="min-w-0">
-                        <span className="block truncate text-[13px] font-semibold text-[#12364D]">
+                        <span className="block truncate text-sm font-semibold text-text">
                           {result.label}
                         </span>
-                        <span className="block truncate text-[11px] text-[#7D94A6]">{result.sub}</span>
+                        <span className="block truncate text-xs text-text-tertiary">{result.sub}</span>
                       </span>
                     </button>
                   )
@@ -164,9 +164,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               </div>
             )
           )}
-          {isSearching && <p className="p-2 text-xs text-[#7D94A6]">Recherche…</p>}
+          {isSearching && <p className="p-2 text-xs text-text-tertiary">Recherche…</p>}
         </div>
-        <p className="border-t border-[#DCE1E5] pt-2 text-center text-[11px] text-[#7D94A6]">
+        <p className="border-t border-border pt-2 text-center text-xs text-text-tertiary">
           Échap pour fermer
         </p>
       </DialogContent>

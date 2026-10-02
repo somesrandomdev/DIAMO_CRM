@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ACTIVE_SALE_WINDOW_DAYS, activeKiosqueIds, type ScopeProfile, type ScopeSale } from '@/lib/alertScope'
 
 export type AdminAlertSeverity = 'info' | 'warning' | 'danger'
 
 export interface AdminAlert {
   type: string
+  /** null for network-wide alerts (offre_sous_perf). */
+  kiosque_id: string | null
   kiosque_nom: string
   message: string
   severity: AdminAlertSeverity
@@ -31,19 +34,41 @@ function fallbackMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Alertes indisponibles'
 }
 
+/** Active kiosks computed client-side (same rule as admin_active_kiosque_ids). */
+async function loadActiveScope(): Promise<{ kiosques: KiosqueForAlert[]; active: Set<string> }> {
+  const since = new Date(Date.now() - ACTIVE_SALE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const [kiosquesResult, profilesResult, salesResult] = await Promise.all([
+    supabase.from('kiosques').select('id, nom'),
+    supabase.from('profiles').select('kiosque_id, role, deleted_at').eq('role', 'fontainier').is('deleted_at', null),
+    supabase.from('ventes').select('kiosque_id, created_at').gte('created_at', since),
+  ])
+  if (kiosquesResult.error) throw kiosquesResult.error
+  if (profilesResult.error) throw profilesResult.error
+  if (salesResult.error) throw salesResult.error
+
+  const kiosques = (kiosquesResult.data ?? []) as KiosqueForAlert[]
+  const active = activeKiosqueIds(
+    kiosques.map((k) => k.id),
+    (profilesResult.data ?? []) as ScopeProfile[],
+    (salesResult.data ?? []) as ScopeSale[]
+  )
+  return { kiosques, active }
+}
+
 export function useAlerts() {
   const [alerts, setAlerts] = useState<AdminAlert[]>([])
+  const [activeKiosques, setActiveKiosques] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadFallbackAlerts = useCallback(async (): Promise<AdminAlert[]> => {
+  const loadFallbackAlerts = useCallback(async (): Promise<{ alerts: AdminAlert[]; activeCount: number }> => {
     const now = new Date()
     const today = now.toISOString().slice(0, 10)
     const last48 = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-    const [kiosquesResult, todayResult, last48Result, monthSalesResult] = await Promise.all([
-      supabase.from('kiosques').select('id, nom'),
+    const [scope, todayResult, last48Result, monthSalesResult] = await Promise.all([
+      loadActiveScope(),
       supabase.from('ventes').select('kiosque_id, created_at').gte('created_at', `${today}T00:00:00`),
       supabase.from('ventes').select('kiosque_id, created_at').gte('created_at', last48),
       supabase
@@ -52,36 +77,36 @@ export function useAlerts() {
         .gte('created_at', monthStart),
     ])
 
-    if (kiosquesResult.error) throw kiosquesResult.error
     if (todayResult.error) throw todayResult.error
     if (last48Result.error) throw last48Result.error
     if (monthSalesResult.error) throw monthSalesResult.error
 
-    const kiosques = (kiosquesResult.data ?? []) as KiosqueForAlert[]
     const todayKiosques = new Set(((todayResult.data ?? []) as SaleForAlert[]).map((sale) => sale.kiosque_id))
     const active48Kiosques = new Set(((last48Result.data ?? []) as SaleForAlert[]).map((sale) => sale.kiosque_id))
     const monthSales = (monthSalesResult.data ?? []) as SaleForAlert[]
     const computed: AdminAlert[] = []
 
-    kiosques.forEach((kiosque) => {
-      if (!todayKiosques.has(kiosque.id)) {
-        computed.push({
-          type: 'inactif_today',
-          kiosque_nom: kiosque.nom,
-          message: "Aucune vente enregistree aujourd'hui",
-          severity: 'warning',
-        })
-      }
-
-      if (!active48Kiosques.has(kiosque.id)) {
-        computed.push({
-          type: 'inactif_48h',
-          kiosque_nom: kiosque.nom,
-          message: 'Aucune vente depuis 48 heures',
-          severity: 'danger',
-        })
-      }
-    })
+    scope.kiosques
+      .filter((kiosque) => scope.active.has(kiosque.id))
+      .forEach((kiosque) => {
+        if (!active48Kiosques.has(kiosque.id)) {
+          computed.push({
+            type: 'inactif_48h',
+            kiosque_id: kiosque.id,
+            kiosque_nom: kiosque.nom,
+            message: 'Aucune vente depuis 48 heures',
+            severity: 'danger',
+          })
+        } else if (!todayKiosques.has(kiosque.id)) {
+          computed.push({
+            type: 'inactif_today',
+            kiosque_id: kiosque.id,
+            kiosque_nom: kiosque.nom,
+            message: "Aucune vente enregistrée aujourd'hui",
+            severity: 'warning',
+          })
+        }
+      })
 
     const offerCounts = new Map<string, number>()
     monthSales.forEach((sale) => {
@@ -94,6 +119,7 @@ export function useAlerts() {
       if (monthSales.length > 0 && count / monthSales.length < 0.05) {
         computed.push({
           type: 'offre_sous_perf',
+          kiosque_id: null,
           kiosque_nom: name,
           message: 'Moins de 5% des ventes ce mois',
           severity: 'info',
@@ -101,7 +127,7 @@ export function useAlerts() {
       }
     })
 
-    return computed.slice(0, 8)
+    return { alerts: computed, activeCount: scope.active.size }
   }, [])
 
   const load = useCallback(async () => {
@@ -109,29 +135,45 @@ export function useAlerts() {
     setError(null)
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('get_admin_alerts')
+      const [alertsResult, scopeResult] = await Promise.all([
+        supabase.rpc('get_admin_alerts'),
+        supabase.rpc('get_admin_alerts_scope'),
+      ])
 
-      if (!rpcError && data) {
-        setAlerts(
-          (data as Array<Record<string, string>>).map((row) => ({
-            type: row.type ?? 'alerte',
-            kiosque_nom: row.kiosque_nom ?? '',
-            message: row.message ?? '',
-            severity: normalizeSeverity(row.severity),
-          }))
-        )
+      if (!alertsResult.error && alertsResult.data) {
+        let rows = (alertsResult.data as Array<Record<string, string | null>>).map((row) => ({
+          type: row.type ?? 'alerte',
+          kiosque_id: row.kiosque_id ?? null,
+          kiosque_nom: row.kiosque_nom ?? '',
+          message: row.message ?? '',
+          severity: normalizeSeverity(row.severity),
+        }))
+
+        const scopeRow = Array.isArray(scopeResult.data) ? scopeResult.data[0] : scopeResult.data
+        if (!scopeResult.error && scopeRow) {
+          setActiveKiosques(Number((scopeRow as { active_kiosques: number }).active_kiosques))
+        } else {
+          // Migration 20261009 not run yet: the RPC still checks every
+          // kiosk, so apply the active scope here.
+          const { active } = await loadActiveScope()
+          rows = rows.filter((alert) => alert.kiosque_id === null || active.has(alert.kiosque_id))
+          setActiveKiosques(active.size)
+        }
+        setAlerts(rows)
         return
       }
 
-      const fallbackAlerts = await loadFallbackAlerts()
-      setAlerts(fallbackAlerts)
-      if (rpcError) {
-        setError('RPC get_admin_alerts absente ou indisponible; alertes calculees cote client.')
+      const fallback = await loadFallbackAlerts()
+      setAlerts(fallback.alerts)
+      setActiveKiosques(fallback.activeCount)
+      if (alertsResult.error) {
+        setError('RPC get_admin_alerts absente ou indisponible; alertes calculées côté client.')
       }
     } catch (caught) {
       console.error('Error loading alerts:', caught)
       setError(fallbackMessage(caught))
       setAlerts([])
+      setActiveKiosques(null)
     } finally {
       setIsLoading(false)
     }
@@ -146,10 +188,11 @@ export function useAlerts() {
   return useMemo(
     () => ({
       alerts,
+      activeKiosques,
       isLoading,
       error,
       refresh: load,
     }),
-    [alerts, error, isLoading, load]
+    [alerts, activeKiosques, error, isLoading, load]
   )
 }

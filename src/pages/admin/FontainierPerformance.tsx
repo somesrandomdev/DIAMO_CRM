@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosLabel, PosProgress } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { chartTheme } from '@/lib/chartTheme'
 import { monthKey, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 
 interface FontainierRow {
   id: string
@@ -131,22 +133,22 @@ export default function FontainierPerformance() {
       key: 'target',
       header: 'Objectif',
       align: 'right',
-      render: (row) => (row.target ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non defini</span>),
+      render: (row) => (row.target ? <span className="font-mono">{toCFA(row.target)}</span> : <span className="text-text-tertiary">Non défini</span>),
       sortValue: (row) => row.target ?? 0,
     },
     {
       key: 'attainment',
-      header: 'Realisation',
+      header: 'Réalisation',
       render: (row) => {
         const tone = attainmentTone(row.attainment)
         return (
           <div className="ml-auto w-28">
-            <PosProgress
+            <Progress
               value={Math.min(100, row.attainment ?? 0)}
               className="h-2 rounded-full bg-muted"
               barClassName={`rounded-full ${tone.fill}`}
             />
-            <p className={`mt-1 text-right text-[11px] font-semibold [font-variant-numeric:tabular-nums] ${tone.text}`}>
+            <p className={`mt-1 text-right text-xs font-semibold [font-variant-numeric:tabular-nums] ${tone.text}`}>
               {row.attainment !== null ? `${row.attainment.toFixed(0)} %` : 'N/A'}
             </p>
           </div>
@@ -173,9 +175,9 @@ export default function FontainierPerformance() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[15px] font-semibold text-text">Performance des fontainiers</h1>
-        <p className="text-[12px] text-text-secondary">
-          Realisation de l'objectif mensuel par kiosque — mois en cours.
+        <h1 className="text-base font-semibold text-text">Performance des fontainiers</h1>
+        <p className="text-xs text-text-secondary">
+          Réalisation de l'objectif mensuel par kiosque — mois en cours.
         </p>
       </div>
 
@@ -183,43 +185,43 @@ export default function FontainierPerformance() {
         <EmptyState
           icon={<TrendingUp className="h-5 w-5" />}
           title="Aucun fontainier"
-          description="Ajoutez des fontainiers avec un kiosque assigne pour suivre leurs performances."
+          description="Ajoutez des fontainiers avec un kiosque assigné pour suivre leurs performances."
         />
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <PosCard className="flex flex-col gap-1">
-              <PosLabel>Objectif atteint</PosLabel>
-              <span className="text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+            <Card padding="md" className="flex flex-col gap-1">
+              <Label variant="caps">Objectif atteint</Label>
+              <span className="text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {rows.filter((row) => (row.attainment ?? 0) > 100).length}
               </span>
-            </PosCard>
-            <PosCard className="flex flex-col gap-1">
-              <PosLabel>En bonne voie (80-100 %)</PosLabel>
-              <span className="text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+            </Card>
+            <Card padding="md" className="flex flex-col gap-1">
+              <Label variant="caps">En bonne voie (80-100 %)</Label>
+              <span className="text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {rows.filter((row) => row.attainment !== null && row.attainment >= 80 && row.attainment <= 100).length}
               </span>
-            </PosCard>
-            <PosCard className="flex flex-col gap-1">
-              <PosLabel>En difficulte (&lt; 80 %)</PosLabel>
-              <span className="text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+            </Card>
+            <Card padding="md" className="flex flex-col gap-1">
+              <Label variant="caps">En difficulté (&lt; 80 %)</Label>
+              <span className="text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {rows.filter((row) => row.attainment !== null && row.attainment < 80).length}
               </span>
-            </PosCard>
+            </Card>
           </div>
 
-          <PosCard>
-            <PosLabel className="mb-3">Realisation par fontainier (%)</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Réalisation par fontainier (%)</Label>
             <ResponsiveContainer width="100%" height={Math.max(160, rows.length * 44)}>
               <BarChart data={rows.map((row) => ({ nom: row.nom, pct: Math.round(row.attainment ?? 0) }))} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={(value) => `${value} %`} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <YAxis dataKey="nom" type="category" width={130} tick={{ fill: chartTheme.axis, fontSize: 12 }} />
-                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Realisation']} />
-                <Bar dataKey="pct" fill="#009EFB" radius={[0, 4, 4, 0]} barSize={18} />
+                <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Réalisation']} />
+                <Bar dataKey="pct" fill={chartTheme.blue} radius={[0, 4, 4, 0]} barSize={18} />
               </BarChart>
             </ResponsiveContainer>
-          </PosCard>
+          </Card>
 
           <div className="hidden sm:block">
             <DataTable columns={columns} data={rows} getRowKey={(row) => row.id} />
@@ -233,26 +235,26 @@ export default function FontainierPerformance() {
                 <div key={row.id} className="rounded-md border border-border bg-surface p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-text">{row.nom}</p>
-                      <p className="text-[12px] text-text-secondary">{row.kiosque}</p>
+                      <p className="text-sm font-semibold text-text">{row.nom}</p>
+                      <p className="text-xs text-text-secondary">{row.kiosque}</p>
                     </div>
                     <p className="shrink-0 text-right text-base font-bold text-text [font-variant-numeric:tabular-nums]">
                       {toCFA(row.ca)}
                     </p>
                   </div>
                   <div className="mt-2">
-                    <PosProgress
+                    <Progress
                       value={Math.min(100, row.attainment ?? 0)}
                       className="rounded-full bg-muted"
                       barClassName={`rounded-full ${tone.fill}`}
                     />
-                    <p className={`mt-1 text-right text-[11px] font-semibold [font-variant-numeric:tabular-nums] ${tone.text}`}>
+                    <p className={`mt-1 text-right text-xs font-semibold [font-variant-numeric:tabular-nums] ${tone.text}`}>
                       {row.attainment !== null
                         ? `${row.attainment.toFixed(0)} % de ${row.target ? toCFA(row.target) : '—'}`
-                        : 'Objectif non defini'}
+                        : 'Objectif non défini'}
                     </p>
                   </div>
-                  <p className="mt-1 text-[12px] text-text-secondary [font-variant-numeric:tabular-nums]">
+                  <p className="mt-1 text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                     {row.ventes} vente(s) - {row.clients} client(s) - panier {toCFA(row.panier)}
                   </p>
                 </div>
