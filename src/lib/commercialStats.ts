@@ -1,106 +1,8 @@
 /**
- * Pure aggregation logic for the commercial supervisor dashboard.
- * Kept free of React/Supabase so the KPI math is unit-testable.
+ * Pure date/series helpers shared by the dashboards. Kept free of
+ * React/Supabase so they are unit-testable. (Per-kiosk KPIs are computed in
+ * Postgres: kiosk_overview, migration 20261011_scalable_pages.sql.)
  */
-
-export interface SupervisedKiosque {
-  id: string
-  nom: string
-}
-
-export interface CommercialSale {
-  id: string
-  kiosque_id: string
-  client_id: string | null
-  montant_total: number | null
-  created_at: string
-}
-
-export interface CommercialClient {
-  id: string
-  kiosque_id: string
-  nom: string
-  telephone?: string | null
-}
-
-export interface CommercialKpis {
-  /** Sum of montant_total across all supervised kiosques for the month. */
-  revenueMonth: number
-  salesCount: number
-  /** Total number of client rows across supervised kiosques. */
-  clientsCount: number
-  kiosquesCount: number
-}
-
-export function computeCommercialKpis(
-  kiosques: SupervisedKiosque[],
-  sales: CommercialSale[],
-  clients: CommercialClient[]
-): CommercialKpis {
-  return {
-    revenueMonth: sales.reduce((sum, sale) => sum + (sale.montant_total ?? 0), 0),
-    salesCount: sales.length,
-    clientsCount: clients.length,
-    kiosquesCount: kiosques.length,
-  }
-}
-
-export interface KioskRevenue {
-  kiosqueId: string
-  nom: string
-  revenue: number
-  salesCount: number
-}
-
-/** Revenue per kiosk for the bar chart, highest first; zero-revenue kiosques included. */
-export function revenuePerKiosk(
-  kiosques: SupervisedKiosque[],
-  sales: CommercialSale[]
-): KioskRevenue[] {
-  const byId = new Map<string, KioskRevenue>(
-    kiosques.map((kiosque) => [kiosque.id, { kiosqueId: kiosque.id, nom: kiosque.nom, revenue: 0, salesCount: 0 }])
-  )
-
-  for (const sale of sales) {
-    const entry = byId.get(sale.kiosque_id)
-    if (!entry) continue
-    entry.revenue += sale.montant_total ?? 0
-    entry.salesCount += 1
-  }
-
-  return Array.from(byId.values()).sort((a, b) => b.revenue - a.revenue)
-}
-
-export interface ClientPurchaseSummary {
-  lastPurchase: string | null
-  totalSpent: number
-  purchaseCount: number
-}
-
-/** Per-client rollup of a sales list: last purchase date, total spent, count. */
-export function clientPurchaseMap(
-  sales: CommercialSale[]
-): Map<string, ClientPurchaseSummary> {
-  const map = new Map<string, ClientPurchaseSummary>()
-
-  for (const sale of sales) {
-    if (!sale.client_id) continue
-    const entry = map.get(sale.client_id) ?? {
-      lastPurchase: null,
-      totalSpent: 0,
-      purchaseCount: 0,
-    }
-
-    entry.totalSpent += sale.montant_total ?? 0
-    entry.purchaseCount += 1
-    if (!entry.lastPurchase || sale.created_at > entry.lastPurchase) {
-      entry.lastPurchase = sale.created_at
-    }
-    map.set(sale.client_id, entry)
-  }
-
-  return map
-}
 
 /** 'YYYY-MM-01' — the format of the objectifs.mois column. */
 export function monthKey(date: Date = new Date()): string {
@@ -112,6 +14,16 @@ export function startOfMonth(date: Date = new Date()): Date {
   result.setDate(1)
   result.setHours(0, 0, 0, 0)
   return result
+}
+
+/**
+ * [from, to) ISO bounds of a calendar-month period: monthsAgo = 0 is the
+ * current month; months > 1 extends back (3 = this month and the 2 before).
+ */
+export function monthPeriod(monthsAgo = 0, months = 1, now: Date = new Date()): { from: string; to: string } {
+  const from = new Date(now.getFullYear(), now.getMonth() - monthsAgo - (months - 1), 1)
+  const to = new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 1)
+  return { from: from.toISOString(), to: to.toISOString() }
 }
 
 /**
