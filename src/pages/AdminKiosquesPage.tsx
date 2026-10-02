@@ -18,12 +18,13 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { KiosqueImportDialog } from '@/components/admin/KiosqueImportDialog'
-import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
 import { logError } from '@/lib/telemetry'
 import { normalizeTypeCode, typeBadgeClass, type KiosqueType } from '@/lib/kiosqueTypes'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface KiosqueRow {
   id: string
@@ -311,13 +312,13 @@ export default function AdminKiosquesPage() {
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             to="/admin/tarifs"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-[#DCE1E5] bg-white px-4 text-sm font-semibold text-[#12364D] transition-colors hover:border-[#12364D]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border-2 border-border bg-white px-4 text-sm font-semibold text-text transition-colors hover:border-text"
           >
             Tarifs
           </Link>
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline" size="touch"
             onClick={() => setIsImportOpen(true)}
           >
             <Upload className="h-4 w-4" />
@@ -380,7 +381,7 @@ export default function AdminKiosquesPage() {
                   <Button type="button" variant="primary" onClick={openCreate}>
                     Ajouter manuellement
                   </Button>
-                  <Button type="button" variant="pos-secondary" onClick={() => setIsImportOpen(true)}>
+                  <Button type="button" variant="outline" size="touch" onClick={() => setIsImportOpen(true)}>
                     Importer via CSV
                   </Button>
                 </div>
@@ -425,8 +426,8 @@ export default function AdminKiosquesPage() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <PosLabel htmlFor="kiosque-nom">Nom *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="kiosque-nom">Nom *</Label>
+              <Input fieldSize="lg"
                 id="kiosque-nom"
                 value={form.nom}
                 onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))}
@@ -435,8 +436,8 @@ export default function AdminKiosquesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="kiosque-adresse">Adresse</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="kiosque-adresse">Adresse</Label>
+              <Input fieldSize="lg"
                 id="kiosque-adresse"
                 value={form.adresse}
                 onChange={(event) => setForm((current) => ({ ...current, adresse: event.target.value }))}
@@ -444,9 +445,9 @@ export default function AdminKiosquesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="kiosque-type">
+              <Label variant="caps" htmlFor="kiosque-type">
                 Type {!form.id && '*'}
-              </PosLabel>
+              </Label>
               <select
                 id="kiosque-type"
                 value={showNewType ? '__new__' : form.type_code}
@@ -459,7 +460,7 @@ export default function AdminKiosquesPage() {
                   setShowNewType(false)
                   setForm((current) => ({ ...current, type_code: value }))
                 }}
-                className="h-12 w-full rounded-md border-2 border-[#DCE1E5] bg-white px-3 text-base text-[#12364D] focus:border-[#12364D] focus:outline-none sm:h-11 sm:text-sm"
+                className="h-12 w-full rounded-md border-2 border-border bg-white px-3 text-base text-text focus:border-text focus:outline-none sm:h-11 sm:text-sm"
               >
                 <option value="">— Sélectionner un type —</option>
                 {types.map((type) => (
@@ -475,11 +476,11 @@ export default function AdminKiosquesPage() {
               )}
             </div>
             {showNewType && (
-              <div className="space-y-2 rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
+              <div className="space-y-2 rounded-md border border-border bg-bg p-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1.5">
-                    <PosLabel htmlFor="new-type-code">Code *</PosLabel>
-                    <PosInput
+                    <Label variant="caps" htmlFor="new-type-code">Code *</Label>
+                    <Input fieldSize="lg"
                       id="new-type-code"
                       value={newTypeCode}
                       onChange={(event) => setNewTypeCode(normalizeTypeCode(event.target.value))}
@@ -488,8 +489,8 @@ export default function AdminKiosquesPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <PosLabel htmlFor="new-type-label">Libellé *</PosLabel>
-                    <PosInput
+                    <Label variant="caps" htmlFor="new-type-label">Libellé *</Label>
+                    <Input fieldSize="lg"
                       id="new-type-label"
                       value={newTypeLabel}
                       onChange={(event) => setNewTypeLabel(event.target.value)}
@@ -499,7 +500,7 @@ export default function AdminKiosquesPage() {
                 </div>
                 <Button
                   type="button"
-                  variant="pos-secondary"
+                  variant="outline"
                   size="sm"
                   className="w-full"
                   loading={isCreatingType} loadingText="Création du type…"
@@ -518,12 +519,12 @@ export default function AdminKiosquesPage() {
               </div>
             )}
             <DialogFooter>
-              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+              <Button type="button" variant="outline" size="touch" onClick={() => setIsFormOpen(false)}>
                 Annuler
               </Button>
               <Button
                 type="submit"
-                variant="pos-primary"
+                variant="primary" size="touch"
                 loading={isSaving} loadingText="Enregistrement…"
                 disabled={!form.nom.trim() || (!form.id && !form.type_code) || isCreatingType}
               >

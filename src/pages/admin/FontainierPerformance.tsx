@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosLabel, PosProgress } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { chartTheme } from '@/lib/chartTheme'
 import { monthKey, startOfMonth } from '@/lib/commercialStats'
 import { supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
 
 interface FontainierRow {
   id: string
@@ -141,7 +143,7 @@ export default function FontainierPerformance() {
         const tone = attainmentTone(row.attainment)
         return (
           <div className="ml-auto w-28">
-            <PosProgress
+            <Progress
               value={Math.min(100, row.attainment ?? 0)}
               className="h-2 rounded-full bg-muted"
               barClassName={`rounded-full ${tone.fill}`}
@@ -188,38 +190,38 @@ export default function FontainierPerformance() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <PosCard className="flex flex-col gap-1">
-              <PosLabel>Objectif atteint</PosLabel>
-              <span className="text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+            <Card padding="md" className="flex flex-col gap-1">
+              <Label variant="caps">Objectif atteint</Label>
+              <span className="text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {rows.filter((row) => (row.attainment ?? 0) > 100).length}
               </span>
-            </PosCard>
-            <PosCard className="flex flex-col gap-1">
-              <PosLabel>En bonne voie (80-100 %)</PosLabel>
-              <span className="text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+            </Card>
+            <Card padding="md" className="flex flex-col gap-1">
+              <Label variant="caps">En bonne voie (80-100 %)</Label>
+              <span className="text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {rows.filter((row) => row.attainment !== null && row.attainment >= 80 && row.attainment <= 100).length}
               </span>
-            </PosCard>
-            <PosCard className="flex flex-col gap-1">
-              <PosLabel>En difficulté (&lt; 80 %)</PosLabel>
-              <span className="text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+            </Card>
+            <Card padding="md" className="flex flex-col gap-1">
+              <Label variant="caps">En difficulté (&lt; 80 %)</Label>
+              <span className="text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {rows.filter((row) => row.attainment !== null && row.attainment < 80).length}
               </span>
-            </PosCard>
+            </Card>
           </div>
 
-          <PosCard>
-            <PosLabel className="mb-3">Réalisation par fontainier (%)</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Réalisation par fontainier (%)</Label>
             <ResponsiveContainer width="100%" height={Math.max(160, rows.length * 44)}>
               <BarChart data={rows.map((row) => ({ nom: row.nom, pct: Math.round(row.attainment ?? 0) }))} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={(value) => `${value} %`} tick={{ fill: chartTheme.axis, fontSize: 11 }} />
                 <YAxis dataKey="nom" type="category" width={130} tick={{ fill: chartTheme.axis, fontSize: 12 }} />
                 <Tooltip contentStyle={chartTheme.tooltip} formatter={(value) => [`${value} %`, 'Réalisation']} />
-                <Bar dataKey="pct" fill="#009EFB" radius={[0, 4, 4, 0]} barSize={18} />
+                <Bar dataKey="pct" fill={chartTheme.blue} radius={[0, 4, 4, 0]} barSize={18} />
               </BarChart>
             </ResponsiveContainer>
-          </PosCard>
+          </Card>
 
           <div className="hidden sm:block">
             <DataTable columns={columns} data={rows} getRowKey={(row) => row.id} />
@@ -241,7 +243,7 @@ export default function FontainierPerformance() {
                     </p>
                   </div>
                   <div className="mt-2">
-                    <PosProgress
+                    <Progress
                       value={Math.min(100, row.attainment ?? 0)}
                       className="rounded-full bg-muted"
                       barClassName={`rounded-full ${tone.fill}`}

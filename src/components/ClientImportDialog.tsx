@@ -10,11 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PosLabel, PosSelect } from '@/components/pos'
 import { normalizePhone } from '@/lib/phone'
 import { logAudit } from '@/lib/audit'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
+import { Label } from '@/components/ui/label'
+import { Select } from '@/components/ui/input'
 
 interface ClientImportDialogProps {
   open: boolean
@@ -241,7 +242,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
           />
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline" size="touch"
             className="w-full"
             onClick={() => fileInputRef.current?.click()}
           >
@@ -252,11 +253,11 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
           {headers.length > 0 && (
             <>
               <div className="space-y-3">
-                <PosLabel>Colonnes du fichier</PosLabel>
+                <Label variant="caps">Colonnes du fichier</Label>
                 {FIELDS.map((field) => (
                   <div key={field.key} className="space-y-1.5">
-                    <PosLabel htmlFor={`map-${field.key}`}>{field.label}</PosLabel>
-                    <PosSelect
+                    <Label variant="caps" htmlFor={`map-${field.key}`}>{field.label}</Label>
+                    <Select fieldSize="lg"
                       id={`map-${field.key}`}
                       value={mapping[field.key]}
                       onChange={(event) =>
@@ -269,36 +270,36 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
                           {header}
                         </option>
                       ))}
-                    </PosSelect>
+                    </Select>
                   </div>
                 ))}
               </div>
 
-              <div className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
-                <PosLabel className="mb-2">Aperçu (5 premières lignes)</PosLabel>
+              <div className="rounded-md border border-border bg-bg p-3">
+                <Label variant="caps" className="mb-2">Aperçu (5 premières lignes)</Label>
                 <div className="space-y-1 text-sm">
                   {mappedRows.slice(0, 5).map((row, index) => (
                     <p key={index} className="truncate">
                       <span
                         className={
                           !row.nom || duplicateFlags[index]
-                            ? 'font-semibold text-[#C62828]'
-                            : 'font-semibold text-[#12364D]'
+                            ? 'font-semibold text-red'
+                            : 'font-semibold text-text'
                         }
                       >
                         {row.nom || '(sans nom — sera ignorée)'}
                         {duplicateFlags[index] ? ' — doublon dans ce kiosque' : ''}
                       </span>
-                      {row.telephone ? <span className="text-[#1C5376]"> - {row.telephone}</span> : null}
+                      {row.telephone ? <span className="text-text-secondary"> - {row.telephone}</span> : null}
                     </p>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                <p className="mt-2 text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                   {validRows.length} ligne(s) valide(s), {invalidCount} invalide(s)
                   {duplicateCount > 0 ? `, ${duplicateCount} doublon(s)` : ''}.
                 </p>
                 {duplicateCount > 0 && (
-                  <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-[#12364D]">
+                  <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-text">
                     <input
                       type="checkbox"
                       checked={skipDuplicates}
@@ -309,7 +310,7 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
                   </label>
                 )}
                 {invalidCount > 0 && (
-                  <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-[#12364D]">
+                  <label className="mt-2 flex min-h-12 items-center gap-2 text-sm text-text">
                     <input
                       type="checkbox"
                       checked={skipInvalid}
@@ -323,16 +324,16 @@ export function ClientImportDialog({ open, onOpenChange, kiosqueId, onImported }
             </>
           )}
 
-          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
+          {error && <p className="text-sm font-medium text-red">{error}</p>}
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" size="touch" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
           <Button
             type="button"
-            variant="pos-primary"
+            variant="primary" size="touch"
             loading={isImporting} loadingText="Import…"
             disabled={rows.length === 0}
             onClick={importClients}

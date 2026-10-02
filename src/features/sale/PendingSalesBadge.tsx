@@ -83,13 +83,13 @@ export function PendingSalesBadge({ pendingCount, isOnline, isSyncing, onSync, c
             {rows.map((row) => (
               <li
                 key={row.id}
-                className="flex items-center justify-between gap-3 rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3"
+                className="flex items-center justify-between gap-3 rounded-md border border-border bg-bg p-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[#12364D]">{row.clientNom}</p>
-                  <p className="text-xs text-[#1C5376]">{new Date(row.createdAt).toLocaleString('fr-FR')}</p>
+                  <p className="truncate text-sm font-semibold text-text">{row.clientNom}</p>
+                  <p className="text-xs text-text-secondary">{new Date(row.createdAt).toLocaleString('fr-FR')}</p>
                 </div>
-                <span className="shrink-0 font-mono text-sm font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                <span className="shrink-0 font-mono text-sm font-bold text-text [font-variant-numeric:tabular-nums]">
                   {toCFA(row.montant)}
                 </span>
               </li>
@@ -99,7 +99,7 @@ export function PendingSalesBadge({ pendingCount, isOnline, isSyncing, onSync, c
           {isOnline ? (
             <Button
               type="button"
-              variant="pos-primary"
+              variant="primary" size="touch"
               className="w-full"
               loading={isSyncing}
               loadingText="Synchronisation…"
@@ -109,7 +109,7 @@ export function PendingSalesBadge({ pendingCount, isOnline, isSyncing, onSync, c
               Synchroniser maintenant
             </Button>
           ) : (
-            <p className="text-center text-sm text-[#1C5376]">Hors ligne : la synchronisation reprendra au retour du réseau.</p>
+            <p className="text-center text-sm text-text-secondary">Hors ligne : la synchronisation reprendra au retour du réseau.</p>
           )}
         </DialogContent>
       </Dialog>

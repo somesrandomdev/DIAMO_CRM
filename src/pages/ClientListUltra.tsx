@@ -191,14 +191,17 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
           {profile?.kiosque_id && (
             <Button
               type="button"
-              variant="pos-secondary"
+              variant="outline" size="touch"
               onClick={() => setIsImportOpen(true)}
             >
               <Upload className="h-4 w-4" />
               Importer
             </Button>
           )}
-          <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
+          {/* Fontainier : « Retour » mènerait à l'onglet Vendre, déjà dans la barre d'onglets. */}
+          {profile?.role !== 'fontainier' && (
+            <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
+          )}
         </div>
       </div>
 
@@ -270,19 +273,19 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                 <div className="flex items-center justify-between gap-2 sm:col-span-2 xl:col-span-3">
                   <Button
                     type="button"
-                    variant="pos-secondary"
+                    variant="outline" size="touch"
                     className="h-12"
                     disabled={page === 0}
                     onClick={() => setPage((current) => Math.max(0, current - 1))}
                   >
                     Précédent
                   </Button>
-                  <span className="text-sm text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                  <span className="text-sm text-text-secondary [font-variant-numeric:tabular-nums]">
                     Page {page + 1} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
                   </span>
                   <Button
                     type="button"
-                    variant="pos-secondary"
+                    variant="outline" size="touch"
                     className="h-12"
                     disabled={(page + 1) * PAGE_SIZE >= totalCount}
                     onClick={() => setPage((current) => current + 1)}
@@ -355,7 +358,7 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                         {vente.lien_ticket && (
                           <Button
                             type="button"
-                            variant="pos-secondary"
+                            variant="outline" size="touch"
                             className="mt-2 w-full"
                             aria-label="Télécharger le ticket"
                             onClick={() => downloadTicket(vente.lien_ticket as string)}

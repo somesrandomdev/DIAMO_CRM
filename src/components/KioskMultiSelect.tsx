@@ -71,11 +71,11 @@ export function KioskMultiSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 z-30 mt-1 rounded-md border-2 border-[#DCE1E5] bg-white shadow-lg sm:right-auto sm:w-72">
-          <div className="border-b border-[#DCE1E5] p-2">
+        <div className="absolute left-0 right-0 z-30 mt-1 rounded-md border-2 border-border bg-white shadow-lg sm:right-auto sm:w-72">
+          <div className="border-b border-border p-2">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5C7385]"
+                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
                 aria-hidden="true"
               />
               <input
@@ -84,21 +84,21 @@ export function KioskMultiSelect({
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Rechercher un kiosque..."
                 aria-label="Rechercher un kiosque"
-                className="h-10 w-full rounded-md border border-[#DCE1E5] pl-8 pr-3 text-sm text-[#12364D] placeholder:text-[#8AA3B5] focus:border-[#006EBD] focus:outline-none"
+                className="h-10 w-full rounded-md border border-border pl-8 pr-3 text-sm text-text placeholder:text-text-tertiary focus:border-blue focus:outline-none"
               />
             </div>
             <div className="mt-2 flex gap-2">
               <button
                 type="button"
                 onClick={onSelectAll}
-                className="min-h-9 flex-1 rounded-md border border-[#DCE1E5] text-xs font-semibold text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
+                className="min-h-9 flex-1 rounded-md border border-border text-xs font-semibold text-text-secondary hover:border-blue hover:text-blue"
               >
                 Tout
               </button>
               <button
                 type="button"
                 onClick={onClear}
-                className="min-h-9 flex-1 rounded-md border border-[#DCE1E5] text-xs font-semibold text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
+                className="min-h-9 flex-1 rounded-md border border-border text-xs font-semibold text-text-secondary hover:border-blue hover:text-blue"
               >
                 Aucun
               </button>
@@ -111,14 +111,14 @@ export function KioskMultiSelect({
             aria-label="Kiosques"
           >
             {visible.length === 0 ? (
-              <p className="p-3 text-center text-xs text-[#1C5376]">Aucun kiosque trouvé</p>
+              <p className="p-3 text-center text-xs text-text-secondary">Aucun kiosque trouvé</p>
             ) : (
               visible.map((kiosque) => {
                 const checked = selectedKiosqueIds.includes(kiosque.id)
                 return (
                   <label
                     key={kiosque.id}
-                    className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md px-2 hover:bg-[#F6F9FB]"
+                    className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md px-2 hover:bg-bg"
                   >
                     <input
                       type="checkbox"
@@ -126,16 +126,16 @@ export function KioskMultiSelect({
                       onChange={() => onToggle(kiosque.id)}
                       className="h-4 w-4"
                     />
-                    <span className="truncate text-sm text-[#12364D]">
+                    <span className="truncate text-sm text-text">
                       {kiosque.typeCode ? (
-                        <span className="mr-1.5 inline-block rounded bg-[#F6F9FB] px-1 text-xs font-bold text-[#1C5376]">
+                        <span className="mr-1.5 inline-block rounded bg-bg px-1 text-xs font-bold text-text-secondary">
                           {kiosque.typeCode}
                         </span>
                       ) : null}
                       {kiosque.nom}
                     </span>
                     {checked && (
-                      <Check className="ml-auto h-4 w-4 shrink-0 text-[#006EBD]" aria-hidden="true" />
+                      <Check className="ml-auto h-4 w-4 shrink-0 text-blue" aria-hidden="true" />
                     )}
                   </label>
                 )

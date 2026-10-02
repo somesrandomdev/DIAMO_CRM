@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
-import { FormInput } from '@/components/ui/form-input'
 import { KPICard } from '@/components/ui/kpi-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
@@ -17,6 +16,7 @@ import { resolveKioskScope } from '@/lib/kioskScope'
 import { supabase } from '@/lib/supabase'
 import { exportRowsCSV } from '@/utils/exportCSV'
 import { toCFA } from '@/utils/price'
+import { Input } from '@/components/ui/input'
 
 interface Sale {
   id: string
@@ -198,8 +198,8 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
         sale.lien_ticket ? (
           <Button
             type="button"
-            variant="pos-secondary"
-            size="icon"
+            variant="outline"
+            size="icon-lg"
             className="h-12 w-12 min-h-12"
             aria-label="Télécharger le ticket"
             onClick={(event) => {
@@ -247,7 +247,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                 </Button>
               ) : (
                 <span
-                  className="inline-flex h-12 w-12 items-center justify-center text-[#5C7385]"
+                  className="inline-flex h-12 w-12 items-center justify-center text-text-tertiary"
                   title="Suppression admin au-delà de 24 h"
                 >
                   <Trash2 className="h-4 w-4 opacity-30" />
@@ -267,7 +267,10 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
           <p className="text-xs text-text-secondary">Recherche, filtres et export CSV.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
+          {/* Fontainier : « Retour » mènerait à l'onglet Vendre, déjà dans la barre d'onglets. */}
+          {profile?.role !== 'fontainier' && (
+            <Button type="button" variant="default" size="sm" onClick={onBack}>Retour</Button>
+          )}
           <Button type="button" variant="primary" size="sm" onClick={exportToCSV} disabled={filteredSales.length === 0}>
             <Download className="h-4 w-4" />
             Exporter CSV
@@ -323,7 +326,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
               </button>
             ))}
             {datePreset === 'custom' && (
-              <FormInput
+              <Input
                 type="date"
                 value={dateFilter}
                 onChange={(event) => setDateFilter(event.target.value)}
@@ -372,7 +375,7 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
                     {sale.lien_ticket && (
                       <Button
                         type="button"
-                        variant="pos-secondary"
+                        variant="outline" size="touch"
                         className="mt-3 w-full"
                         onClick={() => downloadTicket(sale.lien_ticket as string)}
                       >

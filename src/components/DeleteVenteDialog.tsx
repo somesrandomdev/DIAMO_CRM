@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { PosInput, PosLabel, PosSelect } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { logError, logInfo, logWarn } from '@/lib/telemetry'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
@@ -17,6 +16,8 @@ export interface VenteDeleteTarget {
 }
 
 import { validateDeleteVente, type DeleteMotif } from '@/lib/venteDeleteRules'
+import { Label } from '@/components/ui/label'
+import { Input, Select } from '@/components/ui/input'
 
 const MOTIFS: DeleteMotif[] = ['Erreur de saisie', 'Doublon', 'Retour client', 'Autre']
 
@@ -124,7 +125,7 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Trash2 className="h-5 w-5 text-[#C62828]" aria-hidden="true" />
+            <Trash2 className="h-5 w-5 text-red" aria-hidden="true" />
             Supprimer la vente
           </DialogTitle>
           <DialogDescription>
@@ -136,20 +137,20 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <PosLabel htmlFor="delete-vente-motif">Motif *</PosLabel>
-            <PosSelect id="delete-vente-motif" value={motif} onChange={(e) => setMotif(e.target.value as DeleteMotif)}>
+            <Label variant="caps" htmlFor="delete-vente-motif">Motif *</Label>
+            <Select fieldSize="lg" id="delete-vente-motif" value={motif} onChange={(e) => setMotif(e.target.value as DeleteMotif)}>
               <option value="">Choisir un motif…</option>
               {MOTIFS.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>
               ))}
-            </PosSelect>
+            </Select>
           </div>
           {motif === 'Autre' && (
             <div className="space-y-1.5">
-              <PosLabel htmlFor="delete-vente-comment">Commentaire *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="delete-vente-comment">Commentaire *</Label>
+              <Input fieldSize="lg"
                 id="delete-vente-comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
@@ -157,17 +158,17 @@ export function DeleteVenteDialog({ target, role, onOpenChange, onDeleted }: Del
               />
             </div>
           )}
-          <p className="rounded-md bg-[#FDF1F2] p-2.5 text-xs text-[#C62828]">
+          <p className="rounded-md bg-red-soft p-2.5 text-xs text-red">
             Action définitive. Elle sera tracée dans le journal d'audit.
           </p>
-          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
+          {error && <p className="text-sm font-medium text-red">{error}</p>}
         </div>
 
         <DialogFooter>
-          <Button variant="pos-secondary" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" size="touch" onClick={() => onOpenChange(false)}>
             Annuler
           </Button>
-          <Button variant="pos-destructive" loading={isDeleting} loadingText="Suppression…" onClick={submit} disabled={!motif}>
+          <Button variant="destructive" size="touch" loading={isDeleting} loadingText="Suppression…" onClick={submit} disabled={!motif}>
             <Trash2 className="h-4 w-4" />
             Supprimer
           </Button>

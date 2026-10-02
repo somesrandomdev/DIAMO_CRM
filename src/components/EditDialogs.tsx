@@ -8,9 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PosInput, PosLabel, PosSelect, PosTextarea } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
+import { Label } from '@/components/ui/label'
+import { Input, Select, Textarea } from '@/components/ui/input'
 
 /**
  * POS-styled edit dialogs shared by the commercial supervisor dashboard and
@@ -97,32 +98,32 @@ export function EditClientDialog({ open, onOpenChange, client, onSaved }: EditCl
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
-            <PosLabel htmlFor="client-nom">Nom *</PosLabel>
-            <PosInput
+            <Label variant="caps" htmlFor="client-nom">Nom *</Label>
+            <Input fieldSize="lg"
               id="client-nom"
               value={form.nom}
               onChange={(event) => setForm((current) => ({ ...current, nom: event.target.value }))}
             />
           </div>
           <div className="space-y-1.5">
-            <PosLabel htmlFor="client-telephone">Téléphone</PosLabel>
-            <PosInput
+            <Label variant="caps" htmlFor="client-telephone">Téléphone</Label>
+            <Input fieldSize="lg"
               id="client-telephone"
               value={form.telephone}
               onChange={(event) => setForm((current) => ({ ...current, telephone: event.target.value }))}
             />
           </div>
           <div className="space-y-1.5">
-            <PosLabel htmlFor="client-adresse">Adresse</PosLabel>
-            <PosInput
+            <Label variant="caps" htmlFor="client-adresse">Adresse</Label>
+            <Input fieldSize="lg"
               id="client-adresse"
               value={form.adresse}
               onChange={(event) => setForm((current) => ({ ...current, adresse: event.target.value }))}
             />
           </div>
           <div className="space-y-1.5">
-            <PosLabel htmlFor="client-email">Email</PosLabel>
-            <PosInput
+            <Label variant="caps" htmlFor="client-email">Email</Label>
+            <Input fieldSize="lg"
               id="client-email"
               type="email"
               value={form.email}
@@ -130,20 +131,20 @@ export function EditClientDialog({ open, onOpenChange, client, onSaved }: EditCl
             />
           </div>
           <div className="space-y-1.5">
-            <PosLabel htmlFor="client-notes">Notes</PosLabel>
-            <PosTextarea
+            <Label variant="caps" htmlFor="client-notes">Notes</Label>
+            <Textarea fieldSize="lg"
               id="client-notes"
               rows={3}
               value={form.notes}
               onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
             />
           </div>
-          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
+          {error && <p className="text-sm font-medium text-red">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" size="touch" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" variant="pos-primary" loading={isSaving} loadingText="Enregistrement…">
+            <Button type="submit" variant="primary" size="touch" loading={isSaving} loadingText="Enregistrement…">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -242,8 +243,8 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
-            <PosLabel htmlFor="vente-offre">Offre</PosLabel>
-            <PosSelect
+            <Label variant="caps" htmlFor="vente-offre">Offre</Label>
+            <Select fieldSize="lg"
               id="vente-offre"
               value={form.offre_id}
               onChange={(event) => setForm((current) => ({ ...current, offre_id: event.target.value }))}
@@ -252,11 +253,11 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
               {offres.map((offre) => (
                 <option key={offre.id} value={offre.id}>{offre.nom}</option>
               ))}
-            </PosSelect>
+            </Select>
           </div>
           <div className="space-y-1.5">
-            <PosLabel htmlFor="vente-client">Client</PosLabel>
-            <PosSelect
+            <Label variant="caps" htmlFor="vente-client">Client</Label>
+            <Select fieldSize="lg"
               id="vente-client"
               value={form.client_id}
               onChange={(event) => setForm((current) => ({ ...current, client_id: event.target.value }))}
@@ -265,12 +266,12 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>{client.nom}</option>
               ))}
-            </PosSelect>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <PosLabel htmlFor="vente-quantite">Quantité</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="vente-quantite">Quantité</Label>
+              <Input fieldSize="lg"
                 id="vente-quantite"
                 type="number"
                 min={1}
@@ -281,8 +282,8 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="vente-montant">Montant total (CFA)</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="vente-montant">Montant total (CFA)</Label>
+              <Input fieldSize="lg"
                 id="vente-montant"
                 type="number"
                 min={0}
@@ -293,12 +294,12 @@ export function EditVenteDialog({ open, onOpenChange, vente, clients, offres, on
               />
             </div>
           </div>
-          {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
+          {error && <p className="text-sm font-medium text-red">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" size="touch" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" variant="pos-primary" loading={isSaving} loadingText="Enregistrement…">
+            <Button type="submit" variant="primary" size="touch" loading={isSaving} loadingText="Enregistrement…">
               Enregistrer
             </Button>
           </DialogFooter>

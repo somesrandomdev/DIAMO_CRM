@@ -250,7 +250,7 @@ export default function Layout({ children }: LayoutProps) {
                     {item.icon}
                     {item.id === 'logs' && techErrorCount > 0 && (
                       <span
-                        className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C62828] px-1 text-xs font-bold text-white [font-variant-numeric:tabular-nums]"
+                        className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red px-1 text-xs font-bold text-white [font-variant-numeric:tabular-nums]"
                         aria-label={`${techErrorCount} erreurs techniques`}
                       >
                         {techErrorCount > 99 ? '99+' : techErrorCount}
@@ -351,7 +351,7 @@ export default function Layout({ children }: LayoutProps) {
         {!isOnline && (
           <div
             role="status"
-            className="flex min-h-10 shrink-0 items-center justify-center gap-2 bg-[#C62828] px-3 py-2 text-center text-sm font-semibold text-white"
+            className="flex min-h-10 shrink-0 items-center justify-center gap-2 bg-red px-3 py-2 text-center text-sm font-semibold text-white"
           >
             <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>

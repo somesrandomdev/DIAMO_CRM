@@ -46,35 +46,35 @@ export function SaleConfirmation({ receipt, ticket, onClose }: SaleConfirmationP
           <>
             <div className="flex flex-col items-center text-center">
               {receipt.queued ? (
-                <CloudOff className="h-16 w-16 text-[#8A5A00]" aria-hidden="true" />
+                <CloudOff className="h-16 w-16 text-amber" aria-hidden="true" />
               ) : (
-                <CheckCircle2 className="h-16 w-16 text-[#0A7A5A]" aria-hidden="true" />
+                <CheckCircle2 className="h-16 w-16 text-teal" aria-hidden="true" />
               )}
-              <DialogTitle className="mt-3 text-xl font-bold text-[#12364D]">
+              <DialogTitle className="mt-3 text-xl font-bold text-text">
                 {receipt.alreadyRecorded ? 'Vente déjà enregistrée' : 'Vente enregistrée'}
               </DialogTitle>
-              <DialogDescription className="mt-1 text-sm text-[#1C5376]">
+              <DialogDescription className="mt-1 text-sm text-text-secondary">
                 {receipt.queued
                   ? 'Gardée sur ce téléphone : elle sera envoyée au retour du réseau.'
                   : `Client : ${receipt.clientNom}`}
               </DialogDescription>
             </div>
 
-            <div className="rounded-md border-2 border-[#DCE1E5] bg-[#F6F9FB] p-4">
-              {receipt.queued && <p className="mb-2 text-sm font-semibold text-[#12364D]">Client : {receipt.clientNom}</p>}
+            <div className="rounded-md border-2 border-border bg-bg p-4">
+              {receipt.queued && <p className="mb-2 text-sm font-semibold text-text">Client : {receipt.clientNom}</p>}
               <ul className="space-y-2" aria-label="Offres vendues">
                 {receipt.items.map((item) => (
-                  <li key={item.nom} className="flex items-baseline justify-between gap-3 text-sm text-[#12364D]">
+                  <li key={item.nom} className="flex items-baseline justify-between gap-3 text-sm text-text">
                     <span>
-                      {item.nom} <span className="text-[#1C5376]">× {item.qty}</span>
+                      {item.nom} <span className="text-text-secondary">× {item.qty}</span>
                     </span>
                     <span className="font-semibold [font-variant-numeric:tabular-nums]">{toCFA(item.sousTotal)}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-3 flex items-baseline justify-between border-t-2 border-[#DCE1E5] pt-3">
-                <span className="text-sm font-semibold uppercase tracking-wider text-[#12364D]">Total</span>
-                <span className="font-mono text-xl font-bold text-[#006EBD] [font-variant-numeric:tabular-nums]">
+              <div className="mt-3 flex items-baseline justify-between border-t-2 border-border pt-3">
+                <span className="text-sm font-semibold uppercase tracking-wider text-text">Total</span>
+                <span className="font-mono text-xl font-bold text-blue [font-variant-numeric:tabular-nums]">
                   {toCFA(receipt.total)}
                 </span>
               </div>
@@ -84,7 +84,7 @@ export function SaleConfirmation({ receipt, ticket, onClose }: SaleConfirmationP
               {ticket ? (
                 <Button
                   type="button"
-                  variant="pos-primary"
+                  variant="primary" size="touch"
                   className="h-14 w-full text-base"
                   loading={isSharing}
                   loadingText="Ouverture du partage…"
@@ -94,13 +94,13 @@ export function SaleConfirmation({ receipt, ticket, onClose }: SaleConfirmationP
                   Partager le ticket
                 </Button>
               ) : (
-                <p className="text-center text-sm text-[#1C5376]">
+                <p className="text-center text-sm text-text-secondary">
                   {receipt.queued
                     ? 'Le ticket sera disponible après la synchronisation.'
                     : 'Ticket non disponible pour cette vente.'}
                 </p>
               )}
-              <Button type="button" variant="pos-secondary" className="h-14 w-full text-base" onClick={onClose}>
+              <Button type="button" variant="outline" size="touch" className="h-14 w-full text-base" onClick={onClose}>
                 Fermer
               </Button>
             </div>

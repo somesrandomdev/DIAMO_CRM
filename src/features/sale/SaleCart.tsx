@@ -2,10 +2,11 @@ import { Minus, Plus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosLabel } from '@/components/pos'
 import type { OfferRow } from '@/stores/venteStore'
 import { toCFA } from '@/utils/price'
 import type { CartItem } from './useVenteForm'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
 
 interface SaleCartProps {
   offres: OfferRow[]
@@ -33,25 +34,25 @@ export function SaleCart({
   const inCart = (offreId: string) => cartItems.some((item) => item.offreId === offreId)
 
   return (
-    <PosCard className="space-y-3">
-      <PosLabel>Panier de vente</PosLabel>
+    <Card padding="md" className="space-y-3">
+      <Label variant="caps">Panier de vente</Label>
 
       {isLoading ? (
         <div className="space-y-2" aria-live="polite">
           <Skeleton className="h-12 w-full" />
-          <p className="text-xs text-[#1C5376]">Chargement des offres disponibles...</p>
+          <p className="text-xs text-text-secondary">Chargement des offres disponibles...</p>
         </div>
       ) : loadError ? (
-        <div className="rounded-md border-2 border-[#C62828] bg-[#FDF1F2] p-3">
-          <p className="text-sm font-semibold text-[#C62828]">
+        <div className="rounded-md border-2 border-red bg-red-soft p-3">
+          <p className="text-sm font-semibold text-red">
             Impossible de charger les offres de ce kiosque
           </p>
-          <p className="mt-1 text-xs text-[#1C5376]">{loadError}</p>
+          <p className="mt-1 text-xs text-text-secondary">{loadError}</p>
         </div>
       ) : offres.length === 0 ? (
-        <div className="rounded-md border-2 border-dashed border-[#DCE1E5] bg-[#F6F9FB] p-3">
-          <p className="text-sm font-semibold text-[#12364D]">Aucune offre active pour ce kiosque</p>
-          <p className="mt-1 text-xs text-[#1C5376]">
+        <div className="rounded-md border-2 border-dashed border-border bg-bg p-3">
+          <p className="text-sm font-semibold text-text">Aucune offre active pour ce kiosque</p>
+          <p className="mt-1 text-xs text-text-secondary">
             L'administrateur doit définir les tarifs de ce kiosque (page Tarifs) pour activer la
             vente.
           </p>
@@ -66,12 +67,12 @@ export function SaleCart({
               aria-label={`Ajouter ${offer.offre.nom}`}
               className={
                 inCart(offer.offre_id)
-                  ? 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#006EBD] bg-[#E3F3FE] px-3 py-2 text-left transition-colors active:scale-[0.98]'
-                  : 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-[#DCE1E5] bg-white px-3 py-2 text-left transition-colors hover:border-[#12364D] active:scale-[0.98]'
+                  ? 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-blue bg-blue-light px-3 py-2 text-left transition-colors active:scale-[0.98]'
+                  : 'flex min-h-12 flex-col items-start justify-center rounded-md border-2 border-border bg-white px-3 py-2 text-left transition-colors hover:border-text active:scale-[0.98]'
               }
             >
-              <span className="text-sm font-semibold text-[#12364D]">{offer.offre.nom}</span>
-              <span className="text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
+              <span className="text-sm font-semibold text-text">{offer.offre.nom}</span>
+              <span className="text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
                 {toCFA(offer.prix)}
               </span>
             </button>
@@ -82,19 +83,19 @@ export function SaleCart({
       {cartItems.length > 0 ? (
         <div className="space-y-2">
           {cartItems.map((item) => (
-            <div key={item.offreId} className="rounded-md border border-[#DCE1E5] bg-[#F6F9FB] p-3">
+            <div key={item.offreId} className="rounded-md border border-border bg-bg p-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-[#12364D]">{item.offre.nom}</p>
-                  <p className="text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                  <p className="text-sm font-semibold text-text">{item.offre.nom}</p>
+                  <p className="text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                     {toCFA(item.prix)} x {item.qty} = {toCFA(item.prix * item.qty)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
-                    variant="pos-secondary"
-                    size="icon"
+                    variant="outline"
+                    size="icon-lg"
                     className="h-12 w-12 min-h-12"
                     aria-label={`Retirer une unité de ${item.offre.nom}`}
                     disabled={item.qty <= 1}
@@ -104,14 +105,14 @@ export function SaleCart({
                   </Button>
                   <span
                     aria-live="polite"
-                    className="w-10 text-center text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]"
+                    className="w-10 text-center text-base font-bold text-text [font-variant-numeric:tabular-nums]"
                   >
                     {item.qty}
                   </span>
                   <Button
                     type="button"
-                    variant="pos-secondary"
-                    size="icon"
+                    variant="outline"
+                    size="icon-lg"
                     className="h-12 w-12 min-h-12"
                     aria-label={`Ajouter une unité de ${item.offre.nom}`}
                     onClick={() => onQuantityChange(item.offreId, item.qty + 1)}
@@ -120,8 +121,8 @@ export function SaleCart({
                   </Button>
                   <Button
                     type="button"
-                    variant="pos-destructive"
-                    size="icon"
+                    variant="destructive"
+                    size="icon-lg"
                     className="h-12 w-12 min-h-12"
                     aria-label={`Supprimer ${item.offre.nom} du panier`}
                     onClick={() => onRemoveItem(item.offreId)}
@@ -133,9 +134,9 @@ export function SaleCart({
             </div>
           ))}
 
-          <div className="flex items-center justify-between border-t-2 border-[#DCE1E5] pt-3">
-            <PosLabel>Total</PosLabel>
-            <span className="font-mono text-xl font-bold text-[#006EBD] [font-variant-numeric:tabular-nums]">
+          <div className="flex items-center justify-between border-t-2 border-border pt-3">
+            <Label variant="caps">Total</Label>
+            <span className="font-mono text-xl font-bold text-blue [font-variant-numeric:tabular-nums]">
               {toCFA(total)}
             </span>
           </div>
@@ -144,9 +145,9 @@ export function SaleCart({
         <EmptyState
           title="Panier vide"
           description="Ajoutez au moins une offre pour enregistrer la vente."
-          className="border-0 bg-[#F6F9FB] p-4"
+          className="border-0 bg-bg p-4"
         />
       )}
-    </PosCard>
+    </Card>
   )
 }

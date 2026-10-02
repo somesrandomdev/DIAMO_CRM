@@ -11,12 +11,13 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { SearchBar } from '@/components/SearchBar'
 import { KiosqueSearchSelect } from '@/components/KiosqueSearchSelect'
-import { PosInput, PosLabel } from '@/components/pos'
 import { monthKey } from '@/lib/commercialStats'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { toCFA } from '@/utils/price'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface KiosqueRow {
   id: string
@@ -317,7 +318,7 @@ export default function AdminObjectivesPage() {
             className="space-y-4"
           >
             <div className="space-y-1.5">
-              <PosLabel htmlFor="objectif-kiosque">Kiosque *</PosLabel>
+              <Label variant="caps" htmlFor="objectif-kiosque">Kiosque *</Label>
               <KiosqueSearchSelect
                 id="objectif-kiosque"
                 kiosques={kiosques}
@@ -333,8 +334,8 @@ export default function AdminObjectivesPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="objectif-cible">CA cible (CFA) *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="objectif-cible">CA cible (CFA) *</Label>
+              <Input fieldSize="lg"
                 id="objectif-cible"
                 type="number"
                 min={0}
@@ -345,12 +346,12 @@ export default function AdminObjectivesPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="pos-secondary" onClick={() => setIsFormOpen(false)}>
+              <Button type="button" variant="outline" size="touch" onClick={() => setIsFormOpen(false)}>
                 Annuler
               </Button>
               <Button
                 type="submit"
-                variant="pos-primary"
+                variant="primary" size="touch"
                 loading={isSaving} loadingText="Enregistrement…"
                 disabled={!form.kiosqueId || !form.caCible}
               >

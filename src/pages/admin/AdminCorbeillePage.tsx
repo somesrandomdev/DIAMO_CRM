@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { PosInput } from '@/components/pos'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -14,6 +13,7 @@ import { logAudit } from '@/lib/audit'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { formatPhone } from '@/lib/phone'
 import type { UserRole } from '@/stores/authStore'
+import { Input } from '@/components/ui/input'
 
 interface DeletedProfileRow {
   id: string
@@ -175,7 +175,7 @@ export default function AdminCorbeillePage() {
         <div className="flex justify-end gap-2">
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline" size="touch"
             onClick={() => setRestoring(row)}
           >
             <RotateCcw className="h-4 w-4" />
@@ -245,8 +245,8 @@ export default function AdminCorbeillePage() {
               confirmer.
             </DialogDescription>
           </DialogHeader>
-          {deleteError && <p className="text-sm font-medium text-[#C62828]">{deleteError}</p>}
-          <PosInput
+          {deleteError && <p className="text-sm font-medium text-red">{deleteError}</p>}
+          <Input fieldSize="lg"
             value={confirmName}
             onChange={(event) => setConfirmName(event.target.value)}
             placeholder={deleting?.username ?? ''}
@@ -254,7 +254,7 @@ export default function AdminCorbeillePage() {
           />
           <Button
             type="button"
-            variant="pos-destructive"
+            variant="destructive" size="touch"
             className="w-full"
             disabled={confirmName.trim().toLowerCase() !== (deleting?.username ?? '').trim().toLowerCase()}
             loading={isDeleting} loadingText="Suppression…"

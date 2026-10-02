@@ -24,17 +24,12 @@ const buttonVariants = cva(
           'border border-success bg-success text-success-foreground shadow-none hover:bg-success-hover focus:bg-success-hover active:bg-success-active',
         warning:
           'border border-warning bg-warning text-warning-foreground shadow-none hover:bg-warning-hover focus:bg-warning-hover active:bg-warning-active',
-        // POS design system: Diam'o brand variants (water blue / deep blue / soft red)
-        'pos-primary':
-          'min-h-12 bg-[#006EBD] text-white hover:bg-[#005FA3] focus:bg-[#005FA3]',
-        'pos-destructive':
-          'min-h-12 bg-[#C62828] text-white hover:bg-[#A31F1F] focus:bg-[#A31F1F]',
-        'pos-secondary':
-          'min-h-12 border-2 border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#12364D]',
       },
       size: {
         default: 'h-11 px-4 py-2',
         sm: 'h-9 min-h-9 rounded-md px-3 text-xs sm:h-8 sm:min-h-8',
+        /** 48px touch target (field screens: sale, dialogs on phones). */
+        touch: 'h-12 px-4 py-2',
         lg: 'h-12 rounded-md px-8',
         xl: 'h-12 rounded-lg px-10 text-base',
         icon: 'h-11 w-11',

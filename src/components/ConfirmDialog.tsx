@@ -44,10 +44,10 @@ export function ConfirmDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button type="button" variant="pos-secondary" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" size="touch" onClick={() => onOpenChange(false)}>
             {cancelLabel}
           </Button>
-          <Button type="button" variant="pos-destructive" loading={isBusy} loadingText={busyLabel} onClick={onConfirm}>
+          <Button type="button" variant="destructive" size="touch" loading={isBusy} loadingText={busyLabel} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </DialogFooter>

@@ -68,9 +68,9 @@ function top3For(
 }
 
 const RANK_STYLES = [
-  'bg-[#F5C542] text-[#12364D]', // gold
-  'bg-[#C7CDD4] text-[#12364D]', // silver
-  'bg-[#D9A066] text-white', // bronze
+  'bg-medal-gold text-text', // gold
+  'bg-medal-silver text-text', // silver
+  'bg-medal-bronze text-text', // bronze (blanc dessus : 2.29:1)
 ]
 
 /**
@@ -129,15 +129,15 @@ export function TopClientsCard() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex w-full min-h-12 items-center justify-between gap-3 rounded-lg border border-[#006EBD]/30 bg-[#E3F3FE] p-3 text-left transition-colors hover:border-[#006EBD]"
+        className="flex w-full min-h-12 items-center justify-between gap-3 rounded-lg border border-blue/30 bg-blue-light p-3 text-left transition-colors hover:border-blue"
         aria-label="Voir le top clients par kiosque"
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-[#12364D]">
-          <Trophy className="h-5 w-5 shrink-0 text-[#006EBD]" />
+        <span className="flex items-center gap-2 text-sm font-medium text-text">
+          <Trophy className="h-5 w-5 shrink-0 text-blue" />
           Top clients — {kiosquesWithClients.length} kiosque
           {kiosquesWithClients.length > 1 ? 's' : ''}
         </span>
-        <span className="text-xs font-semibold text-[#006EBD]">Voir</span>
+        <span className="text-xs font-semibold text-blue">Voir</span>
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -151,12 +151,12 @@ export function TopClientsCard() {
           <div className="space-y-4">
             {kiosquesWithClients.map(({ kiosque, top }) => (
               <div key={kiosque.id}>
-                <p className="mb-2 text-sm font-bold text-[#12364D]">{kiosque.nom}</p>
+                <p className="mb-2 text-sm font-bold text-text">{kiosque.nom}</p>
                 <div className="space-y-2">
                   {top.map((client, index) => (
                     <div
                       key={`${kiosque.id}-${client.nom}-${index}`}
-                      className="flex items-center justify-between gap-3 rounded-md border border-[#DCE1E5] bg-white p-3"
+                      className="flex items-center justify-between gap-3 rounded-md border border-border bg-white p-3"
                     >
                       <div className="flex min-w-0 items-center gap-2">
                         <span
@@ -166,16 +166,16 @@ export function TopClientsCard() {
                           {index + 1}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#12364D]">
+                          <p className="truncate text-sm font-semibold text-text">
                             {client.nom}
                           </p>
-                          <p className="truncate text-xs text-[#1C5376]">
+                          <p className="truncate text-xs text-text-secondary">
                             {client.telephone ?? '—'} - {client.achats} achat
                             {client.achats > 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
-                      <p className="shrink-0 text-sm font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                      <p className="shrink-0 text-sm font-bold text-text [font-variant-numeric:tabular-nums]">
                         {toCFA(client.total)}
                       </p>
                     </div>

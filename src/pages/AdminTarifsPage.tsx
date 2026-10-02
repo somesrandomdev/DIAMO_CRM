@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosInput, PosLabel } from '@/components/pos'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import {
@@ -21,6 +20,8 @@ import {
   formatPrixCell,
   isSuspectPrice,
 } from '@/lib/tarifsMatrix'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface OffreRow {
   id: string
@@ -527,7 +528,7 @@ export default function AdminTarifsPage() {
           )}
           <Button
             type="button"
-            variant="pos-secondary"
+            variant="outline"
             size="sm"
             disabled={undoStackRef.current.length === 0}
             onClick={undo}
@@ -599,8 +600,8 @@ export default function AdminTarifsPage() {
               }}
               className={
                 highlightKiosques
-                  ? 'min-h-11 rounded-md border-2 border-[#C62828] bg-[#FDF1F2] px-3 text-xs font-semibold text-[#C62828]'
-                  : 'min-h-11 rounded-md border border-[#C62828]/40 bg-[#FDF1F2] px-3 text-xs font-semibold text-[#C62828] hover:border-[#C62828]'
+                  ? 'min-h-11 rounded-md border-2 border-red bg-red-soft px-3 text-xs font-semibold text-red'
+                  : 'min-h-11 rounded-md border border-red/40 bg-red-soft px-3 text-xs font-semibold text-red hover:border-red'
               }
             >
               {kiosquesSansOffre.length} kiosque(s) sans offre
@@ -662,7 +663,7 @@ export default function AdminTarifsPage() {
               {copyBuffer !== null && (
                 <Button
                   type="button"
-                  variant="pos-secondary"
+                  variant="outline"
                   size="sm"
                   onClick={pasteOnSelection}
                 >
@@ -673,7 +674,7 @@ export default function AdminTarifsPage() {
             </>
           )}
           {copyBuffer !== null && !multiSelect && (
-            <span className="text-xs text-[#1C5376]">
+            <span className="text-xs text-text-secondary">
               Prix {formatPrixCell(copyBuffer)} copié — activez la sélection multiple pour coller.
             </span>
           )}
@@ -708,26 +709,26 @@ export default function AdminTarifsPage() {
               <table className="border-collapse text-xs">
                 <thead>
                   <tr>
-                    <th className="sticky left-0 z-20 border-b border-r-2 border-r-[#DCE1E5] border-b-[#DCE1E5] bg-white p-2 text-left">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-[#1C5376]">
+                    <th className="sticky left-0 z-20 border-b border-r-2 border-r-border border-b-border bg-white p-2 text-left">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">
                         Offre
                       </span>
                     </th>
                     {visibleKiosques.map((kiosque) => (
                       <th
                         key={kiosque.id}
-                        className="min-w-[96px] border-b border-b-[#DCE1E5] border-l border-l-[#F6F9FB] bg-white p-2 text-center"
+                        className="min-w-[96px] border-b border-b-border border-l border-l-bg bg-white p-2 text-center"
                       >
-                        <span className="block text-xs font-bold text-[#12364D]">
+                        <span className="block text-xs font-bold text-text">
                           {kiosque.nom}
                         </span>
                       </th>
                     ))}
-                    <th className="min-w-[120px] border-b border-b-[#DCE1E5] border-l border-l-[#F6F9FB] bg-[#F6F9FB] p-2">
+                    <th className="min-w-[120px] border-b border-b-border border-l border-l-bg bg-bg p-2">
                       <button
                         type="button"
                         onClick={() => setNewKiosqueOpen(true)}
-                        className="flex min-h-11 w-full flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-[#DCE1E5] text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
+                        className="flex min-h-11 w-full flex-col items-center justify-center gap-0.5 rounded-md border-2 border-dashed border-border text-text-secondary hover:border-blue hover:text-blue"
                       >
                         <Plus className="h-4 w-4" />
                         <span className="text-xs font-semibold">Ajouter un kiosque</span>
@@ -738,12 +739,12 @@ export default function AdminTarifsPage() {
                 <tbody>
                   {visibleOffres.map((offre) => (
                     <tr key={offre.id} className="group">
-                      <td className="sticky left-0 z-10 border-r-2 border-r-[#DCE1E5] border-b border-b-[#F6F9FB] bg-white p-2">
-                        <span className="block text-xs font-semibold text-[#12364D]">
+                      <td className="sticky left-0 z-10 border-r-2 border-r-border border-b border-b-bg bg-white p-2">
+                        <span className="block text-xs font-semibold text-text">
                           {offre.nom}
                         </span>
                         {offre.volume_ml ? (
-                          <span className="text-xs text-[#5C7385]">
+                          <span className="text-xs text-text-tertiary">
                             {offre.volume_ml % 1000 === 0
                               ? `${offre.volume_ml / 1000}L`
                               : `${offre.volume_ml} ml`}
@@ -760,7 +761,7 @@ export default function AdminTarifsPage() {
                         return (
                           <td
                             key={key}
-                            className="border-b border-b-[#F6F9FB] border-l border-l-[#F6F9FB] p-0.5"
+                            className="border-b border-b-bg border-l border-l-bg p-0.5"
                           >
                             {isEditing ? (
                               <input
@@ -774,7 +775,7 @@ export default function AdminTarifsPage() {
                                   if (event.key === 'Enter') commitEdit(kiosque.id, offre.id)
                                   if (event.key === 'Escape') setEditingCell(null)
                                 }}
-                                className="h-9 w-full rounded border-2 border-[#006EBD] px-1 text-center text-xs font-semibold text-[#12364D] focus:outline-none [font-variant-numeric:tabular-nums]"
+                                className="h-9 w-full rounded border-2 border-blue px-1 text-center text-xs font-semibold text-text focus:outline-none [font-variant-numeric:tabular-nums]"
                               />
                             ) : (
                               <div
@@ -798,11 +799,11 @@ export default function AdminTarifsPage() {
                                 }}
                                 className={`relative flex h-9 min-w-[88px] cursor-pointer items-center justify-center rounded border text-xs font-semibold transition-colors [font-variant-numeric:tabular-nums] ${
                                   prix === undefined
-                                    ? 'border-dashed border-[#DCE1E5] bg-white text-[#5C7385] hover:border-[#006EBD] hover:text-[#006EBD]'
+                                    ? 'border-dashed border-border bg-white text-text-tertiary hover:border-blue hover:text-blue'
                                     : suspect
-                                      ? 'border-2 border-[#C62828] bg-[#FDF1F2] text-[#12364D] hover:border-[#006EBD]'
-                                      : 'border border-[#DCE1E5] bg-white text-[#12364D] hover:border-[#006EBD]'
-                                } ${isSelected ? 'ring-2 ring-[#006EBD]' : ''}`}
+                                      ? 'border-2 border-red bg-red-soft text-text hover:border-blue'
+                                      : 'border border-border bg-white text-text hover:border-blue'
+                                } ${isSelected ? 'ring-2 ring-blue' : ''}`}
                               >
                                 {prix === undefined ? (
                                   '+'
@@ -817,7 +818,7 @@ export default function AdminTarifsPage() {
                                         event.stopPropagation()
                                         setCopyBuffer(prix)
                                       }}
-                                      className="absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#006EBD] text-white group-hover:flex"
+                                      className="absolute -left-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-blue text-white group-hover:flex"
                                       title="Copier ce prix"
                                     >
                                       <Copy className="h-2.5 w-2.5" />
@@ -830,7 +831,7 @@ export default function AdminTarifsPage() {
                                         event.stopPropagation()
                                         deleteCell(kiosque.id, offre.id)
                                       }}
-                                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#C62828] text-xs font-bold text-white group-hover:flex"
+                                      className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-red text-xs font-bold text-white group-hover:flex"
                                     >
                                       ×
                                     </button>
@@ -841,11 +842,11 @@ export default function AdminTarifsPage() {
                           </td>
                         )
                       })}
-                      <td className="border-b border-b-[#F6F9FB] border-l border-l-[#F6F9FB] bg-[#F6F9FB] p-1">
+                      <td className="border-b border-b-bg border-l border-l-bg bg-bg p-1">
                         <button
                           type="button"
                           onClick={() => setNewKiosqueOpen(true)}
-                          className="flex min-h-9 w-full items-center justify-center rounded-md text-[#5C7385] hover:text-[#006EBD]"
+                          className="flex min-h-9 w-full items-center justify-center rounded-md text-text-tertiary hover:text-blue"
                           aria-label="Ajouter un kiosque"
                         >
                           <Plus className="h-3.5 w-3.5" />
@@ -854,11 +855,11 @@ export default function AdminTarifsPage() {
                     </tr>
                   ))}
                   <tr>
-                    <td className="sticky left-0 z-10 border-r-2 border-r-[#DCE1E5] border-t border-t-[#DCE1E5] bg-[#F6F9FB] p-1.5">
+                    <td className="sticky left-0 z-10 border-r-2 border-r-border border-t border-t-border bg-bg p-1.5">
                       <button
                         type="button"
                         onClick={() => setNewOffreOpen(true)}
-                        className="flex min-h-11 w-full items-center justify-center gap-1 rounded-md border-2 border-dashed border-[#DCE1E5] text-xs font-semibold text-[#1C5376] hover:border-[#006EBD] hover:text-[#006EBD]"
+                        className="flex min-h-11 w-full items-center justify-center gap-1 rounded-md border-2 border-dashed border-border text-xs font-semibold text-text-secondary hover:border-blue hover:text-blue"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Ajouter une offre
@@ -866,11 +867,11 @@ export default function AdminTarifsPage() {
                     </td>
                     <td
                       colSpan={visibleKiosques.length + 1}
-                      className="border-t border-t-[#DCE1E5] bg-[#F6F9FB] p-1.5"
+                      className="border-t border-t-border bg-bg p-1.5"
                     >
                       <Button
                         type="button"
-                        variant="pos-secondary"
+                        variant="outline"
                         size="sm"
                         onClick={() => setNewOffreOpen(true)}
                       >
@@ -895,8 +896,8 @@ export default function AdminTarifsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <PosLabel htmlFor="matrix-offre-nom">Nom *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="matrix-offre-nom">Nom *</Label>
+              <Input fieldSize="lg"
                 id="matrix-offre-nom"
                 value={newOffreForm.nom}
                 onChange={(event) => setNewOffreForm((c) => ({ ...c, nom: event.target.value }))}
@@ -905,8 +906,8 @@ export default function AdminTarifsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="matrix-offre-volume">Volume (ml)</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="matrix-offre-volume">Volume (ml)</Label>
+              <Input fieldSize="lg"
                 id="matrix-offre-volume"
                 type="number"
                 min={0}
@@ -917,10 +918,10 @@ export default function AdminTarifsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="pos-secondary" onClick={() => setNewOffreOpen(false)}>
+            <Button variant="outline" size="touch" onClick={() => setNewOffreOpen(false)}>
               Annuler
             </Button>
-            <Button variant="pos-primary" onClick={createOffre} disabled={!newOffreForm.nom.trim()}>
+            <Button variant="primary" size="touch" onClick={createOffre} disabled={!newOffreForm.nom.trim()}>
               Créer
             </Button>
           </DialogFooter>
@@ -935,8 +936,8 @@ export default function AdminTarifsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <PosLabel htmlFor="matrix-kiosque-nom">Nom *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="matrix-kiosque-nom">Nom *</Label>
+              <Input fieldSize="lg"
                 id="matrix-kiosque-nom"
                 value={newKiosqueForm.nom}
                 onChange={(event) => setNewKiosqueForm((c) => ({ ...c, nom: event.target.value }))}
@@ -945,8 +946,8 @@ export default function AdminTarifsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="matrix-kiosque-adresse">Adresse</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="matrix-kiosque-adresse">Adresse</Label>
+              <Input fieldSize="lg"
                 id="matrix-kiosque-adresse"
                 value={newKiosqueForm.adresse}
                 onChange={(event) => setNewKiosqueForm((c) => ({ ...c, adresse: event.target.value }))}
@@ -955,10 +956,10 @@ export default function AdminTarifsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="pos-secondary" onClick={() => setNewKiosqueOpen(false)}>
+            <Button variant="outline" size="touch" onClick={() => setNewKiosqueOpen(false)}>
               Annuler
             </Button>
-            <Button variant="pos-primary" onClick={createKiosque} disabled={!newKiosqueForm.nom.trim()}>
+            <Button variant="primary" size="touch" onClick={createKiosque} disabled={!newKiosqueForm.nom.trim()}>
               Créer
             </Button>
           </DialogFooter>
@@ -981,11 +982,11 @@ function ApplyPriceBar({ onApply }: { onApply: (prix: number) => void }) {
         onChange={(event) => setPrix(event.target.value)}
         placeholder="Prix CFA"
         aria-label="Prix à appliquer à la sélection"
-        className="h-9 w-28 rounded-md border border-[#DCE1E5] px-2 text-xs text-[#12364D] focus:border-[#006EBD] focus:outline-none [font-variant-numeric:tabular-nums]"
+        className="h-9 w-28 rounded-md border border-border px-2 text-xs text-text focus:border-blue focus:outline-none [font-variant-numeric:tabular-nums]"
       />
       <Button
         type="button"
-        variant="pos-primary"
+        variant="primary"
         size="sm"
         disabled={!valid}
         onClick={() => onApply(Math.round(Number(prix)))}

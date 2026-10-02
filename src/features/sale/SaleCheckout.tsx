@@ -24,14 +24,14 @@ export function SaleCheckout({
   itemCount,
 }: SaleCheckoutProps) {
   return (
-    <div className="sticky bottom-3 z-10 rounded-lg border-2 border-[#DCE1E5] bg-white p-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#1C5376]">
+    <div className="sticky bottom-3 z-10 rounded-lg border-2 border-border bg-white p-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-secondary">
         {clientSelected ? 'Client sélectionné' : 'Client requis'} -{' '}
         {itemCount > 0 ? `${itemCount} article(s)` : 'Panier vide'}
       </p>
       <Button
         type="submit"
-        variant="pos-primary"
+        variant="primary" size="touch"
         className="h-14 w-full text-base"
         // isSubmitting keeps the button disabled from the FIRST click (the
         // hook also guards synchronously against double-submits).

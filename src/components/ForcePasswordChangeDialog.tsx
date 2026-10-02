@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { KeyRound, ShieldAlert } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { PosInput, PosLabel } from '@/components/pos'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 /**
  * Blocking first-login password change. Rendered INSTEAD of the app while
@@ -101,17 +102,17 @@ export function ForcePasswordChangeDialog() {
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-6 w-6 text-[#006EBD]" aria-hidden="true" />
+              <ShieldAlert className="h-6 w-6 text-blue" aria-hidden="true" />
               Changement de mot de passe requis
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#1C5376]">
+          <p className="text-sm text-text-secondary">
             Votre mot de passe doit être changé avant de continuer.
           </p>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
-              <PosLabel htmlFor="force-new-password">Nouveau mot de passe *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="force-new-password">Nouveau mot de passe *</Label>
+              <Input fieldSize="lg"
                 id="force-new-password"
                 type="password"
                 autoComplete="new-password"
@@ -122,8 +123,8 @@ export function ForcePasswordChangeDialog() {
               />
             </div>
             <div className="space-y-1.5">
-              <PosLabel htmlFor="force-confirm-password">Confirmer le mot de passe *</PosLabel>
-              <PosInput
+              <Label variant="caps" htmlFor="force-confirm-password">Confirmer le mot de passe *</Label>
+              <Input fieldSize="lg"
                 id="force-confirm-password"
                 type="password"
                 autoComplete="new-password"
@@ -132,8 +133,8 @@ export function ForcePasswordChangeDialog() {
                 placeholder="Répétez le mot de passe"
               />
             </div>
-            {error && <p className="text-sm font-medium text-[#C62828]">{error}</p>}
-            <Button type="submit" variant="pos-primary" className="w-full" loading={isSaving} loadingText="Changement du mot de passe…">
+            {error && <p className="text-sm font-medium text-red">{error}</p>}
+            <Button type="submit" variant="primary" size="touch" className="w-full" loading={isSaving} loadingText="Changement du mot de passe…">
               <KeyRound className="h-4 w-4" />
               Changer mon mot de passe
             </Button>

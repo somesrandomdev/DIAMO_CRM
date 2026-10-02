@@ -13,13 +13,13 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormInput } from '@/components/ui/form-input'
 import { StatusBadge } from '@/components/ui/status-badge'
 import { APP_BUILD } from '@/lib/build'
 import { normalizePhone } from '@/lib/phone'
 import { fetchServedBuild } from '@/lib/build'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
+import { Input } from '@/components/ui/input'
 
 interface ProfileData {
   username: string
@@ -165,7 +165,7 @@ export default function ProfilePage() {
               <label className="block space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Nom utilisateur</span>
                 {isEditing ? (
-                  <FormInput
+                  <Input
                     value={formData.username}
                     onChange={(event) => setFormData({ ...formData, username: event.target.value })}
                   />
@@ -177,7 +177,7 @@ export default function ProfilePage() {
               <label className="block space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Email</span>
                 {isEditing ? (
-                  <FormInput
+                  <Input
                     type="email"
                     value={formData.email}
                     onChange={(event) => setFormData({ ...formData, email: event.target.value })}
@@ -190,7 +190,7 @@ export default function ProfilePage() {
               <label className="block space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Téléphone</span>
                 {isEditing ? (
-                  <FormInput
+                  <Input
                     type="tel"
                     value={formData.phone}
                     onChange={(event) => setFormData({ ...formData, phone: event.target.value })}

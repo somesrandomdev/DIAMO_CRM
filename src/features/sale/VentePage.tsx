@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddClientUltra from '@/pages/AddClientUltra'
-import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/authStore'
 import { useVenteStore } from '@/stores/venteStore'
 import { SaleCart } from './SaleCart'
@@ -138,7 +137,7 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-[#12364D]">Nouvelle vente</h1>
+            <h1 className="text-xl font-bold tracking-tight text-text">Nouvelle vente</h1>
             <PendingSalesBadge
               pendingCount={queue.pendingCount}
               isOnline={queue.isOnline}
@@ -147,9 +146,10 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
               clients={safeClients}
             />
           </div>
-          <p className="text-sm text-[#1C5376]">Enregistrer une vente et partager le ticket.</p>
+          <p className="text-sm text-text-secondary">Enregistrer une vente et partager le ticket.</p>
         </div>
-        <Button type="button" variant="pos-secondary" onClick={onBack}>Retour</Button>
+        {/* Pas de « Retour » : cet écran EST l'accueil du fontainier (seul rôle
+            autorisé) ; la barre d'onglets couvre la navigation. */}
       </div>
 
       <OnboardingTip role="fontainier" message="Bienvenue ! Sélectionnez un client, touchez les offres à vendre, puis validez — vous pourrez ensuite partager le ticket." />

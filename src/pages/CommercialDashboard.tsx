@@ -14,7 +14,6 @@ import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SearchBar } from '@/components/SearchBar'
-import { PosCard, PosChip, PosKpi, PosLabel, PosProgress } from '@/components/pos'
 import {
   EditClientDialog,
   EditVenteDialog,
@@ -40,6 +39,10 @@ import { DailyTrendChart } from '@/components/charts/DailyTrendChart'
 import type { DailyRevenuePoint } from '@/components/dashboard/useAdminDashboard'
 import { useAuthStore } from '@/stores/authStore'
 import { formatCFACompact, toCFA } from '@/utils/price'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { KPICard } from '@/components/ui/kpi-card'
 
 interface SaleRow extends CommercialSale {
   offre_id: string | null
@@ -313,8 +316,8 @@ export default function CommercialDashboard() {
       render: (client) => (
         <Button
           type="button"
-          variant="pos-secondary"
-          size="icon"
+          variant="outline"
+          size="icon-lg"
           className="h-12 w-12 min-h-12"
           aria-label={`Modifier ${client.nom}`}
           onClick={(event) => {
@@ -365,8 +368,8 @@ export default function CommercialDashboard() {
       render: (sale) => (
         <Button
           type="button"
-          variant="pos-secondary"
-          size="icon"
+          variant="outline"
+          size="icon-lg"
           className="h-12 w-12 min-h-12"
           aria-label="Modifier la vente"
           onClick={(event) => {
@@ -403,7 +406,7 @@ export default function CommercialDashboard() {
       <div className="space-y-4">
         <div>
           <h1 className="text-base font-semibold text-text">Supervision</h1>
-          <p className="text-sm text-[#1C5376]">Performance des kiosques que vous supervisez.</p>
+          <p className="text-sm text-text-secondary">Performance des kiosques que vous supervisez.</p>
         </div>
         <EmptyState
           icon={<Store className="h-5 w-5" />}
@@ -418,27 +421,27 @@ export default function CommercialDashboard() {
     <div className="space-y-4">
       <div>
         <h1 className="text-base font-semibold text-text">Supervision</h1>
-        <p className="text-sm text-[#1C5376]">
+        <p className="text-sm text-text-secondary">
           Performance de vos {kiosques.length} kiosque{kiosques.length > 1 ? 's' : ''} — cumul du mois.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <PosKpi label="CA du mois" value={toCFA(kpis.revenueMonth)} sub="Tous kiosques confondus" />
-        <PosKpi label="Ventes" value={kpis.salesCount} sub="Ce mois" />
-        <PosKpi label="Clients" value={kpis.clientsCount} sub="Tous kiosques confondus" />
-        <PosKpi label="Kiosques" value={kpis.kiosquesCount} sub="Sous supervision" />
+        <KPICard label="CA du mois" value={toCFA(kpis.revenueMonth)} sub="Tous kiosques confondus" />
+        <KPICard label="Ventes" value={kpis.salesCount} sub="Ce mois" />
+        <KPICard label="Clients" value={kpis.clientsCount} sub="Tous kiosques confondus" />
+        <KPICard label="Kiosques" value={kpis.kiosquesCount} sub="Sous supervision" />
       </div>
 
-      <PosCard>
-        <PosLabel className="mb-3">Tendance 30 jours (tous kiosques)</PosLabel>
+      <Card padding="md">
+        <Label variant="caps" className="mb-3">Tendance 30 jours (tous kiosques)</Label>
         <DailyTrendChart data={dailySeries} />
-      </PosCard>
+      </Card>
 
-      <PosCard>
-        <PosLabel className="mb-3">Objectifs en cours</PosLabel>
+      <Card padding="md">
+        <Label variant="caps" className="mb-3">Objectifs en cours</Label>
         {objectifRows.every((row) => row.target === null) ? (
-          <p className="text-sm text-[#1C5376]">
+          <p className="text-sm text-text-secondary">
             Aucun objectif défini ce mois. Ouvrez un kiosque ci-dessous pour en définir un.
           </p>
         ) : (
@@ -452,16 +455,16 @@ export default function CommercialDashboard() {
                 onClick={() => setSelectedKiosqueId(row.kiosque.id)}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-[#12364D]">{row.kiosque.nom}</span>
-                  <span className="text-xs text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                  <span className="text-sm font-semibold text-text">{row.kiosque.nom}</span>
+                  <span className="text-xs text-text-secondary [font-variant-numeric:tabular-nums]">
                     {toCFA(row.revenue)}
                     {row.target !== null ? ` / ${toCFA(row.target)}` : ' - Non défini'}
                   </span>
                 </div>
                 {row.pct !== null && (
                   <div className="mt-1.5">
-                    <PosProgress value={row.pct} />
-                    <p className="mt-0.5 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                    <Progress value={row.pct} />
+                    <p className="mt-0.5 text-right text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
                       {row.pct.toFixed(0)} %
                     </p>
                   </div>
@@ -470,10 +473,10 @@ export default function CommercialDashboard() {
             ))}
           </div>
         )}
-      </PosCard>
+      </Card>
 
-      <PosCard>
-        <PosLabel className="mb-3">Revenus par kiosque (mois en cours)</PosLabel>
+      <Card padding="md">
+        <Label variant="caps" className="mb-3">Revenus par kiosque (mois en cours)</Label>
         <ResponsiveContainer width="100%" height={Math.max(160, perKiosk.length * 44)}>
           <BarChart data={perKiosk} layout="vertical" margin={{ left: 8, right: 16 }}>
             <CartesianGrid stroke={chartTheme.grid} strokeDasharray="3 3" horizontal={false} />
@@ -492,61 +495,67 @@ export default function CommercialDashboard() {
               contentStyle={chartTheme.tooltip}
               formatter={(value) => [toCFA(Number(value)), 'CA']}
             />
-            <Bar dataKey="revenue" fill="#009EFB" radius={[0, 4, 4, 0]} barSize={18} />
+            <Bar dataKey="revenue" fill={chartTheme.blue} radius={[0, 4, 4, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
-      </PosCard>
+      </Card>
 
       <div>
-        <PosLabel className="mb-2">Explorer un kiosque</PosLabel>
+        <Label variant="caps" className="mb-2">Explorer un kiosque</Label>
         <div className="flex flex-wrap gap-2">
-          <PosChip
-            active={selectedKiosqueId === null}
+          <Button
+            type="button"
+            variant={selectedKiosqueId === null ? 'primary' : 'outline'}
+            size="touch"
+            aria-pressed={selectedKiosqueId === null}
             onClick={() => setSelectedKiosqueId(null)}
           >
             Vue d'ensemble
-          </PosChip>
+          </Button>
           {perKiosk.map((row) => (
-            <PosChip
+            <Button
               key={row.kiosqueId}
-              active={selectedKiosqueId === row.kiosqueId}
+              type="button"
+              variant={selectedKiosqueId === row.kiosqueId ? 'primary' : 'outline'}
+              size="touch"
+              aria-pressed={selectedKiosqueId === row.kiosqueId}
               onClick={() => setSelectedKiosqueId(row.kiosqueId)}
             >
               {row.nom}
-            </PosChip>
+            </Button>
           ))}
         </div>
       </div>
 
       {selectedKiosque ? (
         <div className="space-y-4">
-          <PosCard>
+          <Card padding="md">
             <div>
-              <PosLabel>Objectif du mois</PosLabel>
+              <Label variant="caps">Objectif du mois</Label>
               {kioskObjectif ? (
                 <p className="mt-1 text-lg font-bold [font-variant-numeric:tabular-nums]">
                   {toCFA(kioskRevenue)}{' '}
-                  <span className="text-sm font-medium text-[#1C5376]">
+                  <span className="text-sm font-medium text-text-secondary">
                     / {toCFA(kioskObjectif.ca_cible)}
                   </span>
                 </p>
               ) : (
-                <p className="mt-1 text-sm text-[#1C5376]">Aucun objectif défini pour ce mois.</p>
+                <p className="mt-1 text-sm text-text-secondary">Aucun objectif défini pour ce mois.</p>
               )}
-              <p className="mt-0.5 text-xs text-[#1C5376]">Objectif fixé par l'administrateur.</p>
+              <p className="mt-0.5 text-xs text-text-secondary">Objectif fixé par l'administrateur.</p>
             </div>
             {kioskObjectif && (
               <div className="mt-3">
-                <PosProgress value={objectifProgress} className="h-3 bg-[#F6F9FB]" />
-                <p className="mt-1 text-right text-xs font-semibold text-[#1C5376] [font-variant-numeric:tabular-nums]">
+                <Progress value={objectifProgress} className="h-3 bg-bg" />
+                <p className="mt-1 text-right text-xs font-semibold text-text-secondary [font-variant-numeric:tabular-nums]">
                   {objectifProgress.toFixed(1)} %
                 </p>
               </div>
             )}
-          </PosCard>
+          </Card>
 
-          <PosCard>
-            <PosLabel className="mb-3">Clients du kiosque</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Clients du kiosque</Label>
             <div className="mb-3">
               <SearchBar
                 value={clientSearch}
@@ -580,14 +589,14 @@ export default function CommercialDashboard() {
                     return (
                       <div
                         key={client.id}
-                        className="flex items-start justify-between gap-2 rounded-lg border border-[#DCE1E5] bg-white p-3"
+                        className="flex items-start justify-between gap-2 rounded-lg border border-border bg-white p-3"
                       >
                         <div className="min-w-0">
-                          <p className="text-base font-bold text-[#12364D]">{client.nom}</p>
-                          <p className="mt-0.5 text-xs text-[#1C5376]">
+                          <p className="text-base font-bold text-text">{client.nom}</p>
+                          <p className="mt-0.5 text-xs text-text-secondary">
                             {client.telephone || 'Téléphone non renseigné'}
                           </p>
-                          <p className="mt-0.5 text-xs text-[#1C5376]">
+                          <p className="mt-0.5 text-xs text-text-secondary">
                             Dernier achat :{' '}
                             {stats?.lastPurchase
                               ? new Date(stats.lastPurchase).toLocaleDateString('fr-FR')
@@ -595,13 +604,13 @@ export default function CommercialDashboard() {
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-2">
-                          <p className="text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                          <p className="text-base font-bold text-text [font-variant-numeric:tabular-nums]">
                             {toCFA(stats?.totalSpent ?? 0)}
                           </p>
                           <Button
                             type="button"
-                            variant="pos-secondary"
-                            size="icon"
+                            variant="outline"
+                            size="icon-lg"
                             className="h-12 w-12 min-h-12"
                             aria-label={`Modifier ${client.nom}`}
                             onClick={() => setEditingClient(client)}
@@ -617,7 +626,7 @@ export default function CommercialDashboard() {
                 {visibleClients < kioskClients.length && (
                   <Button
                     type="button"
-                    variant="pos-secondary"
+                    variant="outline" size="touch"
                     className="w-full"
                     onClick={() => setVisibleClients((count) => count + 20)}
                   >
@@ -626,10 +635,10 @@ export default function CommercialDashboard() {
                 )}
               </>
             )}
-          </PosCard>
+          </Card>
 
-          <PosCard>
-            <PosLabel className="mb-3">Ventes récentes</PosLabel>
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">Ventes récentes</Label>
             {kioskSales.length === 0 ? (
               <EmptyState title="Aucune vente ce mois" className="border-0" />
             ) : (
@@ -647,24 +656,24 @@ export default function CommercialDashboard() {
                   {kioskSales.map((sale) => (
                     <div
                       key={sale.id}
-                      className="flex items-start justify-between gap-2 rounded-lg border border-[#DCE1E5] bg-white p-3"
+                      className="flex items-start justify-between gap-2 rounded-lg border border-border bg-white p-3"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-[#12364D]">
+                        <p className="text-sm font-semibold text-text">
                           {new Date(sale.created_at).toLocaleDateString('fr-FR')}
                         </p>
-                        <p className="mt-0.5 truncate text-xs text-[#1C5376]">
+                        <p className="mt-0.5 truncate text-xs text-text-secondary">
                           {firstJoined(sale.clients)?.nom ?? '—'} - {firstJoined(sale.offres)?.nom ?? '—'}
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        <p className="text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                        <p className="text-base font-bold text-text [font-variant-numeric:tabular-nums]">
                           {toCFA(sale.montant_total ?? 0)}
                         </p>
                         <Button
                           type="button"
-                          variant="pos-secondary"
-                          size="icon"
+                          variant="outline"
+                          size="icon-lg"
                           className="h-12 w-12 min-h-12"
                           aria-label="Modifier la vente"
                           onClick={() =>
@@ -687,7 +696,7 @@ export default function CommercialDashboard() {
                 {visibleSales < allKioskSales.length && (
                   <Button
                     type="button"
-                    variant="pos-secondary"
+                    variant="outline" size="touch"
                     className="w-full"
                     onClick={() => setVisibleSales((count) => count + 20)}
                   >
@@ -696,14 +705,14 @@ export default function CommercialDashboard() {
                 )}
               </>
             )}
-          </PosCard>
+          </Card>
         </div>
       ) : (
-        <PosCard>
-          <p className="text-sm text-[#1C5376]">
+        <Card padding="md">
+          <p className="text-sm text-text-secondary">
             Sélectionnez un kiosque ci-dessus pour voir ses clients, ses ventes récentes et son objectif.
           </p>
-        </PosCard>
+        </Card>
       )}
 
       <EditClientDialog

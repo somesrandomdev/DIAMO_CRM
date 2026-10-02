@@ -9,13 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PosLabel } from '@/components/pos'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supabase } from '@/lib/supabase'
 import { DOW_LABELS, type Insights } from '@/lib/adminInsights'
 import { exportRowsCSV } from '@/utils/exportCSV'
 import { toCFA } from '@/utils/price'
 import { chartTheme } from '@/lib/chartTheme'
+import { Label } from '@/components/ui/label'
 
 interface InsightsSectionProps {
   insights: Insights | null
@@ -33,11 +33,11 @@ interface HealthCategory {
 }
 
 const HEALTH_CATEGORIES: HealthCategory[] = [
-  { key: 'nouveaux', label: 'Nouveaux', color: '#009EFB', description: 'Créés pendant la période' },
-  { key: 'vip', label: 'VIP', color: '#7C3AED', description: '3 achats ou plus sur la période' },
-  { key: 'actifs', label: 'Actifs', color: '#0D9E75', description: '1-2 achats sur les 30 derniers jours' },
-  { key: 'a_risque', label: 'À risque', color: '#E09A1A', description: 'Dernier achat il y a 30-60 jours' },
-  { key: 'dormants', label: 'Dormants', color: '#FF4949', description: 'Aucun achat depuis plus de 60 jours' },
+  { key: 'nouveaux', label: 'Nouveaux', color: chartTheme.blue, description: 'Créés pendant la période' },
+  { key: 'vip', label: 'VIP', color: chartTheme.purple, description: '3 achats ou plus sur la période' },
+  { key: 'actifs', label: 'Actifs', color: chartTheme.teal, description: '1-2 achats sur les 30 derniers jours' },
+  { key: 'a_risque', label: 'À risque', color: chartTheme.amber, description: 'Dernier achat il y a 30-60 jours' },
+  { key: 'dormants', label: 'Dormants', color: chartTheme.red, description: 'Aucun achat depuis plus de 60 jours' },
 ]
 
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0] // Lun → Dim
@@ -187,7 +187,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
           <h2 className="text-sm font-semibold text-text">Insights</h2>
           <p className="text-xs text-text-secondary">Comportement de vente et santé du portefeuille — {periodLabel.toLowerCase()}.</p>
         </div>
-        <Button type="button" variant="pos-secondary" size="sm" onClick={exportCsv}>
+        <Button type="button" variant="outline" size="sm" onClick={exportCsv}>
           <Download className="h-4 w-4" />
           Exporter CSV
         </Button>
@@ -196,7 +196,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
       <div className="grid gap-4 lg:grid-cols-2">
         {/* ── Heatmap jour × heure ── */}
         <div className="rounded-lg border border-border bg-surface p-4">
-          <PosLabel className="mb-3">Affluence par jour et heure</PosLabel>
+          <Label variant="caps" className="mb-3">Affluence par jour et heure</Label>
           {hasHeatData ? (
             <div className="overflow-x-auto">
               <table className="border-separate border-spacing-0.5 text-xs">
@@ -204,7 +204,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                   <tr>
                     <th />
                     {Array.from({ length: 24 }, (_, hour) => (
-                      <th key={hour} className="w-4 font-medium text-[#5C7385]">
+                      <th key={hour} className="w-4 font-medium text-text-tertiary">
                         {hour % 3 === 0 ? hour : ''}
                       </th>
                     ))}
@@ -213,7 +213,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                 <tbody>
                   {DOW_ORDER.map((dow) => (
                     <tr key={dow}>
-                      <td className="pr-2 text-right font-semibold text-[#1C5376]">{DOW_LABELS[dow]}</td>
+                      <td className="pr-2 text-right font-semibold text-text-secondary">{DOW_LABELS[dow]}</td>
                       {Array.from({ length: 24 }, (_, hour) => {
                         const slot = heatBySlot.get(`${dow}-${hour}`)
                         const nb = slot?.nb ?? 0
@@ -225,7 +225,9 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                               className="h-5 w-5 rounded-[3px]"
                               style={{
                                 backgroundColor:
-                                  nb === 0 ? '#F6F9FB' : `rgba(0, 158, 251, ${0.15 + 0.85 * intensity})`,
+                                  nb === 0
+                                    ? 'var(--color-bg)'
+                                    : `color-mix(in srgb, var(--color-brand) ${Math.round((0.15 + 0.85 * intensity) * 100)}%, transparent)`,
                               }}
                             />
                           </td>
@@ -245,7 +247,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
 
         {/* ── Top 5 offres ── */}
         <div className="rounded-lg border border-border bg-surface p-4">
-          <PosLabel className="mb-3">Top 5 offres (CA)</PosLabel>
+          <Label variant="caps" className="mb-3">Top 5 offres (CA)</Label>
           {insights.top_offres.length === 0 ? (
             <p className="text-sm text-text-secondary">Aucune vente sur la période.</p>
           ) : (
@@ -258,9 +260,9 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                       {toCFA(offre.ca)} · {offre.qty} u.
                     </span>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-md bg-[#E3F3FE]">
+                  <div className="h-2.5 w-full overflow-hidden rounded-md bg-blue-light">
                     <div
-                      className="h-full rounded-md bg-[#006EBD] transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                      className="h-full rounded-md bg-blue transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
                       style={{ width: `${Math.max(4, (offre.ca / maxTopCa) * 100)}%` }}
                     />
                   </div>
@@ -272,7 +274,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
 
         {/* ── Santé clients (compteurs cliquables) ── */}
         <div className="rounded-lg border border-border bg-surface p-4">
-          <PosLabel className="mb-3">Santé du portefeuille clients</PosLabel>
+          <Label variant="caps" className="mb-3">Santé du portefeuille clients</Label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {HEALTH_CATEGORIES.map((category) => (
               <button
@@ -280,40 +282,40 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                 type="button"
                 title={category.description}
                 onClick={() => void fetchHealthClients(category)}
-                className="flex min-h-16 flex-col items-start gap-0.5 rounded-md border border-[#DCE1E5] bg-white p-2.5 text-left transition-colors hover:border-[#006EBD] active:scale-[0.98]"
+                className="flex min-h-16 flex-col items-start gap-0.5 rounded-md border border-border bg-white p-2.5 text-left transition-colors hover:border-blue active:scale-[0.98]"
               >
-                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#5C7385]">
+                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: category.color }} />
                   {category.label}
                 </span>
-                <span className="text-xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                <span className="text-xl font-bold text-text [font-variant-numeric:tabular-nums]">
                   {insights.client_health[category.key]}
                 </span>
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-[#5C7385]">
+          <p className="mt-2 text-xs text-text-tertiary">
             Cliquez un compteur pour voir les clients concernés.
           </p>
         </div>
 
         {/* ── Rétention + croissance ── */}
         <div className="rounded-lg border border-border bg-surface p-4">
-          <PosLabel className="mb-3">Rétention &amp; croissance</PosLabel>
+          <Label variant="caps" className="mb-3">Rétention &amp; croissance</Label>
           <div className="mb-3 grid grid-cols-2 gap-2">
-            <div className="rounded-md bg-[#F6F9FB] p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#5C7385]">
+            <div className="rounded-md bg-bg p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Clients fidèles (≥ 2 achats)
               </p>
-              <p className="mt-1 text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+              <p className="mt-1 text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {insights.retention.repeat_rate} %
               </p>
             </div>
-            <div className="rounded-md bg-[#F6F9FB] p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#5C7385]">
+            <div className="rounded-md bg-bg p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
                 Écart moyen entre achats
               </p>
-              <p className="mt-1 text-2xl font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+              <p className="mt-1 text-2xl font-bold text-text [font-variant-numeric:tabular-nums]">
                 {insights.retention.avg_days_between} j
               </p>
             </div>
@@ -331,8 +333,8 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
                 <Area
                   type="monotone"
                   dataKey="clients"
-                  stroke="#009EFB"
-                  fill="#009EFB"
+                  stroke={chartTheme.blue}
+                  fill={chartTheme.blue}
                   fillOpacity={0.15}
                   strokeWidth={2}
                 />
@@ -356,7 +358,7 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
               {[1, 2, 3].map((item) => <Skeleton key={item} className="h-12" />)}
             </div>
           ) : dialogClients.length === 0 ? (
-            <p className="rounded-md border border-dashed border-[#DCE1E5] p-4 text-center text-sm text-[#1C5376]">
+            <p className="rounded-md border border-dashed border-border p-4 text-center text-sm text-text-secondary">
               Aucun client dans cette catégorie pour le filtre actif.
             </p>
           ) : (
@@ -364,10 +366,10 @@ export function InsightsSection({ insights, isLoading, error, kiosqueIds, period
               {dialogClients.map((client) => (
                 <div
                   key={client.id}
-                  className="flex items-center justify-between gap-3 rounded-md border border-[#DCE1E5] bg-white p-3"
+                  className="flex items-center justify-between gap-3 rounded-md border border-border bg-white p-3"
                 >
-                  <p className="truncate text-sm font-semibold text-[#12364D]">{client.nom}</p>
-                  <p className="shrink-0 text-xs text-[#1C5376]">{client.telephone ?? '—'}</p>
+                  <p className="truncate text-sm font-semibold text-text">{client.nom}</p>
+                  <p className="shrink-0 text-xs text-text-secondary">{client.telephone ?? '—'}</p>
                 </div>
               ))}
             </div>

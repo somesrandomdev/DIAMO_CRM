@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/Toast'
 import { normalizePhone } from '@/lib/phone'
@@ -20,6 +19,7 @@ import {
   type ProvisionEmployeeResult,
 } from '@/lib/userProvisioning'
 import type { UserRole } from '@/stores/authStore'
+import { Input, Select } from '@/components/ui/input'
 
 interface KiosqueOption {
   id: string
@@ -231,7 +231,7 @@ export function AddEmployeeDialog({
             <Label htmlFor={`${fieldId}-name`} className="text-sm">
               Nom complet
             </Label>
-            <FormInput
+            <Input
               id={`${fieldId}-name`}
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
@@ -254,7 +254,7 @@ export function AddEmployeeDialog({
             <Label htmlFor={`${fieldId}-phone`} className="text-sm">
               Téléphone (optionnel)
             </Label>
-            <FormInput
+            <Input
               id={`${fieldId}-phone`}
               type="tel"
               value={phone}
@@ -269,7 +269,7 @@ export function AddEmployeeDialog({
             <Label htmlFor={`${fieldId}-email`} className="text-sm">
               Adresse e-mail (optionnelle)
             </Label>
-            <FormInput
+            <Input
               id={`${fieldId}-email`}
               type="email"
               value={email}
@@ -294,7 +294,7 @@ export function AddEmployeeDialog({
               Mot de passe temporaire
             </Label>
             <div className="flex gap-2">
-              <FormInput
+              <Input
                 id={`${fieldId}-password`}
                 // Intentionally type="text": the admin must be able to read this
                 // aloud to the employee. Masking it here helps no one — nobody is
@@ -346,7 +346,7 @@ export function AddEmployeeDialog({
             <Label htmlFor={`${fieldId}-role`} className="text-sm">
               Rôle
             </Label>
-            <FormSelect
+            <Select
               id={`${fieldId}-role`}
               value={role}
               onChange={(event) => {
@@ -363,7 +363,7 @@ export function AddEmployeeDialog({
                   {option.label}
                 </option>
               ))}
-            </FormSelect>
+            </Select>
             <p className="text-xs text-text-secondary">{selectedRoleHelp}</p>
           </div>
 

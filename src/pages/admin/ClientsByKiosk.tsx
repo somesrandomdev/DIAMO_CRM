@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PosCard, PosKpi, PosLabel } from '@/components/pos'
 import { SearchBar } from '@/components/SearchBar'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { ClientImportDialog } from '@/components/ClientImportDialog'
@@ -12,6 +11,9 @@ import { EditClientDialog, type EditableClient } from '@/components/EditDialogs'
 import { useToast } from '@/components/Toast'
 import { handleSupabaseError, supabase } from '@/lib/supabase'
 import { toCFA } from '@/utils/price'
+import { Label } from '@/components/ui/label'
+import { Card } from '@/components/ui/card'
+import { KPICard } from '@/components/ui/kpi-card'
 
 interface KiosqueRow {
   id: string
@@ -209,8 +211,8 @@ export default function ClientsByKiosk() {
         <div className="flex justify-end gap-2">
           <Button
             type="button"
-            variant="pos-secondary"
-            size="icon"
+            variant="outline"
+            size="icon-lg"
             className="h-12 w-12 min-h-12"
             aria-label={`Modifier ${client.nom}`}
             onClick={(event) => {
@@ -222,8 +224,8 @@ export default function ClientsByKiosk() {
           </Button>
           <Button
             type="button"
-            variant="pos-destructive"
-            size="icon"
+            variant="destructive"
+            size="icon-lg"
             className="h-12 w-12 min-h-12"
             aria-label={`Supprimer ${client.nom}`}
             onClick={(event) => {
@@ -255,20 +257,20 @@ export default function ClientsByKiosk() {
     <div className="space-y-4">
       <div>
         <h1 className="text-base font-semibold text-text">Clients par kiosque</h1>
-        <p className="text-sm text-[#1C5376]">Répartition et activité des clients à travers le réseau.</p>
+        <p className="text-sm text-text-secondary">Répartition et activité des clients à travers le réseau.</p>
       </div>
 
       {selectedKiosque ? (
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="pos-secondary" onClick={() => { setSelectedKiosqueId(null); setSearch('') }}>
+            <Button type="button" variant="outline" size="touch" onClick={() => { setSelectedKiosqueId(null); setSearch('') }}>
               <ArrowLeft className="h-4 w-4" />
               Tous les kiosques
             </Button>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Button
                 type="button"
-                variant="pos-secondary"
+                variant="outline" size="touch"
                 onClick={() => setIsImportOpen(true)}
               >
                 <Upload className="h-4 w-4" />
@@ -292,10 +294,10 @@ export default function ClientsByKiosk() {
             onImported={load}
           />
 
-          <PosCard>
-            <PosLabel className="mb-3">
+          <Card padding="md">
+            <Label variant="caps" className="mb-3">
               Clients de {selectedKiosque.nom} ({kioskClients.length})
-            </PosLabel>
+            </Label>
             {kioskClients.length === 0 ? (
               <EmptyState title="Aucun client trouvé" className="border-0" />
             ) : (
@@ -307,33 +309,33 @@ export default function ClientsByKiosk() {
                 {/* Mobile: client cards, phone is tap-to-call */}
                 <div className="space-y-3 sm:hidden">
                   {kioskClients.map((client) => (
-                    <div key={client.id} className="rounded-lg border border-[#DCE1E5] bg-white p-3">
+                    <div key={client.id} className="rounded-lg border border-border bg-white p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-base font-bold text-[#12364D]">{client.nom}</p>
+                          <p className="text-base font-bold text-text">{client.nom}</p>
                           {client.telephone ? (
                             <a
                               href={`tel:${client.telephone}`}
-                              className="mt-0.5 inline-flex min-h-12 items-center text-sm font-semibold text-[#006EBD] underline"
+                              className="mt-0.5 inline-flex min-h-12 items-center text-sm font-semibold text-blue underline"
                             >
                               {client.telephone}
                             </a>
                           ) : (
-                            <p className="mt-0.5 text-xs text-[#1C5376]">Téléphone non renseigné</p>
+                            <p className="mt-0.5 text-xs text-text-secondary">Téléphone non renseigné</p>
                           )}
                         </div>
-                        <p className="shrink-0 text-right text-base font-bold text-[#12364D] [font-variant-numeric:tabular-nums]">
+                        <p className="shrink-0 text-right text-base font-bold text-text [font-variant-numeric:tabular-nums]">
                           {toCFA(spentByClient.get(client.id) ?? 0)}
                         </p>
                       </div>
-                      <p className="mt-1 text-xs text-[#1C5376]">
+                      <p className="mt-1 text-xs text-text-secondary">
                         {client.type_client || '—'} - {client.nombre_personnes ?? '—'} pers.
                       </p>
                       <div className="mt-3 flex justify-end gap-2">
                         <Button
                           type="button"
-                          variant="pos-secondary"
-                          size="icon"
+                          variant="outline"
+                          size="icon-lg"
                           className="h-12 w-12 min-h-12"
                           aria-label={`Modifier ${client.nom}`}
                           onClick={() => setEditingClient(client)}
@@ -342,8 +344,8 @@ export default function ClientsByKiosk() {
                         </Button>
                         <Button
                           type="button"
-                          variant="pos-destructive"
-                          size="icon"
+                          variant="destructive"
+                          size="icon-lg"
                           className="h-12 w-12 min-h-12"
                           aria-label={`Supprimer ${client.nom}`}
                           onClick={() => setDeletingClient(client)}
@@ -356,18 +358,18 @@ export default function ClientsByKiosk() {
                 </div>
               </>
             )}
-          </PosCard>
+          </Card>
         </>
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <PosKpi label="Total clients" value={clients.length} sub="Tous kiosques" />
-            <PosKpi
+            <KPICard label="Total clients" value={clients.length} sub="Tous kiosques" />
+            <KPICard
               label="Kiosque le plus actif"
               value={mostActiveKiosque?.nom ?? '—'}
               sub={mostActiveKiosque ? toCFA(mostActiveKiosque.revenue) : 'Aucune vente'}
             />
-            <PosKpi label="Nouveaux clients" value={newClientsThisWeek} sub="7 derniers jours" />
+            <KPICard label="Nouveaux clients" value={newClientsThisWeek} sub="7 derniers jours" />
           </div>
 
           {kiosques.length === 0 ? (
@@ -385,11 +387,11 @@ export default function ClientsByKiosk() {
                     key={kiosque.id}
                     type="button"
                     onClick={() => setSelectedKiosqueId(kiosque.id)}
-                    className="rounded-lg border border-[#DCE1E5] bg-white p-4 text-left transition-colors hover:border-[#12364D] active:scale-[0.98]"
+                    className="rounded-lg border border-border bg-white p-4 text-left transition-colors hover:border-text active:scale-[0.98]"
                     aria-label={`Voir les clients de ${kiosque.nom}`}
                   >
-                    <p className="text-lg font-bold tracking-tight text-[#12364D]">{kiosque.nom}</p>
-                    <dl className="mt-3 space-y-1 text-sm text-[#1C5376]">
+                    <p className="text-lg font-bold tracking-tight text-text">{kiosque.nom}</p>
+                    <dl className="mt-3 space-y-1 text-sm text-text-secondary">
                       <div className="flex justify-between gap-2">
                         <dt>Clients</dt>
                         <dd className="font-semibold [font-variant-numeric:tabular-nums]">{clientCount}</dd>

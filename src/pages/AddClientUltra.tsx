@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FormInput, FormSelect } from '@/components/ui/form-input'
 import { useToast } from '@/components/Toast'
 import { normalizePhone } from '@/lib/phone'
 import { supabase } from '@/lib/supabase'
 import { enqueueClient, type QueuedClient } from '@/utils/offlineClientQueue'
 import { useAuthStore } from '@/stores/authStore'
+import { Input, Select } from '@/components/ui/input'
 
 export default function AddClientUltra({ onDone }: { onDone: (newId: string) => void }) {
   const { profile } = useAuthStore()
@@ -165,7 +165,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Nom et prénom</span>
-                <FormInput
+                <Input
                   type="text"
                   value={formData.nom_prenom}
                   onChange={(event) => setFormData({ ...formData, nom_prenom: event.target.value })}
@@ -175,7 +175,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Téléphone</span>
-                <FormInput
+                <Input
                   type="tel"
                   value={formData.telephone}
                   onChange={(event) => setFormData({ ...formData, telephone: event.target.value })}
@@ -185,7 +185,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Email</span>
-                <FormInput
+                <Input
                   type="email"
                   value={formData.email}
                   onChange={(event) => setFormData({ ...formData, email: event.target.value })}
@@ -194,7 +194,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Localité</span>
-                <FormInput
+                <Input
                   type="text"
                   value={formData.localite}
                   onChange={(event) => setFormData({ ...formData, localite: event.target.value })}
@@ -213,17 +213,17 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Type</span>
-                <FormSelect
+                <Select
                   value={formData.type_client}
                   onChange={(event) => setFormData({ ...formData, type_client: event.target.value })}
                 >
                   <option value="Particulier">Particulier</option>
                   <option value="Entreprise">Entreprise</option>
-                </FormSelect>
+                </Select>
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Nombre de personnes</span>
-                <FormInput
+                <Input
                   type="number"
                   min={1}
                   value={formData.nombre_personnes}
@@ -233,7 +233,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Contenant préféré</span>
-                <FormSelect
+                <Select
                   value={formData.contenant_prefere}
                   onChange={(event) => setFormData({ ...formData, contenant_prefere: event.target.value })}
                 >
@@ -241,18 +241,18 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
                   <option value="F 19L">F 19L</option>
                   <option value="Bouteille 11L">Bouteille 11L</option>
                   <option value="Reservoir">Réservoir</option>
-                </FormSelect>
+                </Select>
               </label>
               <label className="space-y-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">Contact préféré</span>
-                <FormSelect
+                <Select
                   value={formData.preference_contact}
                   onChange={(event) => setFormData({ ...formData, preference_contact: event.target.value })}
                 >
                   <option value="Telephone">Téléphone</option>
                   <option value="WhatsApp">WhatsApp</option>
                   <option value="Email">Email</option>
-                </FormSelect>
+                </Select>
               </label>
             </div>
 
