@@ -1,0 +1,46 @@
+# Lint + types + tests + build on every PR and on main.
+# Vercel deploys main automatically: this is the gate BEFORE merging.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # E2E only (cy:run); not needed here.
+      CYPRESS_INSTALL_BINARY: '0'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npx eslint . --max-warnings 0
+
+      - name: Tests
+        run: npx jest --ci
+
+      - name: Types + build
+        run: npm run build
+        env:
+          # Placeholders: the build only embeds them, nothing is called.
+          VITE_SUPABASE_URL: https://ci.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-anon-key

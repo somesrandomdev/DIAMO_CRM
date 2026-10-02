@@ -59,7 +59,9 @@ export default function HistoriquePage({ onBack }: { onBack: () => void }) {
       loadSalesHistory()
     }
     // Reload when the user's kiosk reach changes: fontainier kiosk edit,
-    // commercial junction assignment, or role switch.
+    // commercial junction assignment, or role switch — not on every new
+    // profile object from the store (that would refetch the whole history).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.role, profile?.kiosque_id])
 
   const loadSalesHistory = async () => {

@@ -51,9 +51,16 @@ describe('ui — champs unifiés', () => {
 })
 
 describe('ui — boutons', () => {
-  it('size="touch" : 48px', () => {
-    render(<Button variant="primary" size="touch">Valider</Button>)
-    expect(screen.getByRole('button', { name: 'Valider' })).toHaveClass('h-12')
+  it('size="touch" : 48px et bordure 2px (lisible en plein soleil)', () => {
+    render(<Button variant="outline" size="touch">Valider</Button>)
+    expect(screen.getByRole('button', { name: 'Valider' })).toHaveClass('h-12', 'border-2')
+  })
+
+  it('taille par défaut (desktop admin) : bordure 1px inchangée', () => {
+    render(<Button variant="outline">Filtrer</Button>)
+    const button = screen.getByRole('button', { name: 'Filtrer' })
+    expect(button).toHaveClass('border')
+    expect(button).not.toHaveClass('border-2')
   })
 
   it('puce bascule = Button + aria-pressed', () => {

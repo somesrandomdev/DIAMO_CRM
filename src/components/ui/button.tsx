@@ -28,8 +28,8 @@ const buttonVariants = cva(
       size: {
         default: 'h-11 px-4 py-2',
         sm: 'h-9 min-h-9 rounded-md px-3 text-xs sm:h-8 sm:min-h-8',
-        /** 48px touch target (field screens: sale, dialogs on phones). */
-        touch: 'h-12 px-4 py-2',
+        /** 48px touch target + 2px border, legible in full sun (field screens). */
+        touch: 'h-12 border-2 px-4 py-2',
         lg: 'h-12 rounded-md px-8',
         xl: 'h-12 rounded-lg px-10 text-base',
         icon: 'h-11 w-11',
@@ -96,4 +96,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 )
 Button.displayName = 'Button'
 
-export { Button, buttonVariants }
+export { Button }

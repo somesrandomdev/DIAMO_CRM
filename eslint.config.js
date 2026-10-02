@@ -19,5 +19,10 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Toast.tsx exports its hook next to its provider: the hook and the
+      // context it reads change together (Fast Refresh does a full reload).
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true, allowExportNames: ['useToast'] }],
+    },
   },
 ])

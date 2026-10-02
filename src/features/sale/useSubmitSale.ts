@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useToast } from '@/components/Toast'
 import {
   describeSaleError,
@@ -99,13 +99,27 @@ export function useSubmitSale({
     inFlightRef.current = false
   }, [])
 
+  // Only the "Vente enregistrée" button label is deferred; one pending timer
+  // at most, cleared on unmount.
+  const savedLabelTimerRef = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (savedLabelTimerRef.current !== null) window.clearTimeout(savedLabelTimerRef.current)
+    },
+    []
+  )
+
+  // The form is reset NOW, not after the delay: a deferred reset wiped the
+  // next sale the fontainier had already started (client picked, items added).
   const finishWithReset = useCallback(
     (delayMs: number) => {
-      window.setTimeout(() => {
-        resetForm()
-        setResetKey((key) => key + 1)
+      resetForm()
+      setResetKey((key) => key + 1)
+      reloadSummary()
+      if (savedLabelTimerRef.current !== null) window.clearTimeout(savedLabelTimerRef.current)
+      savedLabelTimerRef.current = window.setTimeout(() => {
+        savedLabelTimerRef.current = null
         setSaleSaved(false)
-        reloadSummary()
       }, delayMs)
     },
     [reloadSummary, resetForm]

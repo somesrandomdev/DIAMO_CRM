@@ -323,8 +323,8 @@ export default function ClientListUltra({ onBack }: { onBack: () => void }) {
                   ['Adresse', selected.adresse || 'Non renseignée'],
                   ['Situation', selected.situation_familiale || 'Non renseignée'],
                   ['Personnes', String(selected.nombre_personnes || 1)],
-                  ['Contenant', selected.contenant_prefere || 'Bouteille 10L'],
-                  ['Contact', selected.preference_contact || 'Telephone'],
+                  ['Contenant', selected.contenant_prefere || 'Non renseigné'],
+                  ['Contact', selected.preference_contact || 'Non renseigné'],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-md bg-muted p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-text-tertiary">{label}</p>

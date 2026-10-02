@@ -56,9 +56,12 @@ export default function VentePage({ onBack }: { onBack: () => void }) {
 
   const kiosqueId = profile?.kiosque_id
   const { recentClients, reload: reloadRecentClients } = useRecentClients(kiosqueId)
+  // After each sale (and each offline-queue flush): stats + recent buyers.
   const reloadSummary = useCallback(() => {
-    if (kiosqueId) loadVenteSummary(kiosqueId)
-  }, [kiosqueId, loadVenteSummary])
+    if (!kiosqueId) return
+    loadVenteSummary(kiosqueId)
+    void reloadRecentClients()
+  }, [kiosqueId, loadVenteSummary, reloadRecentClients])
 
   const queue = useOfflineQueue({ onFlushed: reloadSummary })
   const { submit, loading, saleSaved, resetKey } = useSubmitSale({

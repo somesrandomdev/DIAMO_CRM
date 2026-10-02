@@ -45,9 +45,7 @@ export interface ProvisionEmployeeResult {
  * warning quiet.
  */
 function createProvisioningClient() {
-  // getEnvConfig(), not useEnv(): the latter is a plain function with a
-  // hook-shaped name, so calling it outside a component trips
-  // react-hooks/rules-of-hooks. Same values, no false positive.
+  // Uncached getEnvConfig(): same values as getEnv().
   const env = getEnvConfig()
 
   return createClient(env.supabaseUrl, env.supabaseAnonKey, {

@@ -19,7 +19,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
     type_client: 'Particulier',
     nombre_personnes: '',
     contenant_prefere: 'Bouteille 10L',
-    preference_contact: 'Telephone',
+    preference_contact: 'Téléphone',
     accepte_offres: false,
   })
   const [loading, setLoading] = useState(false)
@@ -240,7 +240,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
                   <option value="Bouteille 10L">Bouteille 10L</option>
                   <option value="F 19L">F 19L</option>
                   <option value="Bouteille 11L">Bouteille 11L</option>
-                  <option value="Reservoir">Réservoir</option>
+                  <option value="Réservoir">Réservoir</option>
                 </Select>
               </label>
               <label className="space-y-1">
@@ -249,7 +249,7 @@ export default function AddClientUltra({ onDone }: { onDone: (newId: string) => 
                   value={formData.preference_contact}
                   onChange={(event) => setFormData({ ...formData, preference_contact: event.target.value })}
                 >
-                  <option value="Telephone">Téléphone</option>
+                  <option value="Téléphone">Téléphone</option>
                   <option value="WhatsApp">WhatsApp</option>
                   <option value="Email">Email</option>
                 </Select>
