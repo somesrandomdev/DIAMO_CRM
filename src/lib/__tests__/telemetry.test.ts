@@ -25,7 +25,7 @@ jest.mock('@/lib/restConfig', () => ({
   REST_API_KEY: 'fake-anon-key',
 }))
 
-import { _resetTelemetryForTests, flushTelemetry, logError, logInfo, logWarn } from '../telemetry'
+import { _resetTelemetryForTests, flushTelemetry, logError, logInfo, logWarn, setupTelemetry } from '../telemetry'
 
 function lastBatch(): Array<Record<string, unknown>> {
   const call = mockFetch.mock.calls[mockFetch.mock.calls.length - 1]
@@ -120,5 +120,34 @@ describe('telemetry', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1)
     expect(lastBatch()[0].message).toBe('sans session')
     expect(lastBatch()[0].user_id).toBe('user-1')
+  })
+
+  it('onglet masqué + réseau coupé : aucune promesse rejetée non gérée, lot conservé', async () => {
+    // Prod 02/10 (build ec232e6) : « Promesse rejetée non gérée — Failed to
+    // fetch ». Le flush de fin de session lançait sendBatch sans .catch.
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown) => unhandled.push(reason)
+    process.on('unhandledRejection', onUnhandled)
+    const visibility = jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+    try {
+      setupTelemetry()
+      mockFetch.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      logInfo('test', 'avant fermeture')
+
+      document.dispatchEvent(new Event('visibilitychange'))
+      await new Promise((resolve) => setTimeout(resolve, 20))
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(mockFetch.mock.calls[0][1].keepalive).toBe(true)
+      expect(unhandled).toEqual([])
+
+      // Le lot n'est pas perdu : renvoyé au flush suivant.
+      await flushTelemetry()
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(lastBatch()[0].message).toBe('avant fermeture')
+    } finally {
+      visibility.mockRestore()
+      process.off('unhandledRejection', onUnhandled)
+    }
   })
 })
