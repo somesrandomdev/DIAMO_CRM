@@ -159,12 +159,13 @@ function startTimers(): void {
     if (buffer.length === 0) return
     const batch = buffer
     buffer = []
-    try {
-      // keepalive: la requête survit à la fermeture de l'onglet.
-      void sendBatch(batch, true)
-    } catch {
-      // Silencieux.
-    }
+    // keepalive: la requête survit à la fermeture de l'onglet. L'échec est
+    // ASYNCHRONE (réseau coupé au passage en arrière-plan) : un try/catch
+    // ne l'attrapait pas → « Promesse rejetée non gérée : Failed to fetch »
+    // et lot perdu. Ré-enqueue comme flushTelemetry (envoyé au retour).
+    sendBatch(batch, true).catch(() => {
+      buffer = [...batch, ...buffer].slice(0, REQUEUE_CAP)
+    })
   }
 
   document.addEventListener('visibilitychange', () => {
